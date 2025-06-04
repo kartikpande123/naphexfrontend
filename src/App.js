@@ -1,24 +1,67 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import AuthPage from './components/AuthPage';
+import SignupPage from './components/Signup';
+import Home from './components/Home';
+import ForgotPassword from './components/Forgotpassword';
+import PaymentGetway from './components/PaymentGetway';
+import Game1 from "./components/Game1"
+import UserProfile from './components/Users';
+import AdminLogin from './components/AdminLogin';
+import AdminDashboard from './components/AdminDashboard';
+import AdminOpenClose from './components/AdminOpenClose';
+import AdminOpenCloseResults from './components/AdminOpenCloseResult';
+import AdminWhoPlayOpenClose from './components/AdminWhoPlayOpenClose';
+import AdminUserAmtPlayed from './components/AdminOpenCloseAmtPlayed';
+import WinnersDetailsComponent from './components/AdminWinners';
+import AdminProfitLoss from './components/AdminProfitLoss';
+import AdminProfitLossChart from './components/AdminProfitLossChart'; 
+import Game2 from './components/Game2';
+import AdminBinary from './components/AdminBinary';
+import NaphexHelpSection from './components/Help';
+import AdminConcerns from './components/AdminConcerns';
+import History from './components/History';
+import MyAccount from './components/MyAccount';
+import UserBinaryTree from './components/UerBinary';
+import AdminBinaryTree from './components/AdminBinary';
+import FriendsEarning from './components/FriendsEarning';
+import BinaryDataTable from './components/AdminBinaryTable';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <div className="App">
+        <Routes>
+          <Route path="/login" element={<AuthPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/" element={<AuthPage />} />
+          <Route path="/home" element={<Home />} />
+          <Route path='/forgotpassword' element={<ForgotPassword />} />
+          <Route path='/paymentgateway' element={<PaymentGetway />}/>
+          <Route path='/game1' element={<Game1 />}/>
+          <Route path='/game2' element={<Game2 />}/>
+          <Route path='/users' element={<UserProfile />}/>
+          <Route path='/adminlogin'element={<AdminLogin />}/>
+          <Route path='/admindashboard'element={<AdminDashboard />}/>
+          <Route path='/adminopenclose'element={<AdminOpenClose />}/>
+          <Route path='/opencloseresult'element={<AdminOpenCloseResults />}/>
+          <Route path='/adminwhoplayopenclose'element={<AdminWhoPlayOpenClose />}/>
+          <Route path='/adminuseramtplayed' element={<AdminUserAmtPlayed />} />
+          <Route path='/adminwinners' element={<WinnersDetailsComponent />} />
+          <Route path='/adminprofit' element={<AdminProfitLoss />} />
+          <Route path="/profitlosschart" element={<AdminProfitLossChart />} />
+          <Route path="/binary" element={<AdminBinary />} />
+          <Route path="/help" element={<NaphexHelpSection />} />
+          <Route path="/adminhelp" element={<AdminConcerns />} />
+          <Route path="/history" element={<History />} />
+          <Route path="/Myaccount" element={<MyAccount />} />
+          <Route path="/userbinary" element={<UserBinaryTree />} />
+          <Route path="/adminbinarytree" element={<AdminBinaryTree />} />
+          <Route path="/earnings" element={<FriendsEarning />} />
+          <Route path="/binarytable" element={<BinaryDataTable />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 

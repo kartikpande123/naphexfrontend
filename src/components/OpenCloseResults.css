@@ -1,0 +1,283 @@
+/* Global Styles */
+/* body,
+html {
+  font-family: "Roboto", sans-serif;
+  background: linear-gradient(180deg, #f5f7fa 0%, #c3cfe2 100%);
+} */
+
+/* Component Styles */
+.player-bet-details {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.player-bet-details__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.player-bet-details__header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #333;
+}
+
+.player-bet-details__header p {
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.player-bet-details__search {
+  margin-bottom: 2rem;
+}
+
+.player-bet-details__search input {
+  width: 100%;
+  padding: 0.8rem 1.2rem;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  outline: none;
+}
+
+.player-bet-details__section {
+  margin-bottom: 2rem;
+}
+
+.player-bet-details__section h2 {
+  font-size: 1.8rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.player-bet-details__result {
+  background-color: #f9f9f9;
+  padding: 1.5rem;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.player-bet-details__result h3 {
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 1rem;
+}
+
+.player-bet-details__result p {
+  font-size: 1.1rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+}
+
+.player-bet-details__result--open {
+  border-left: 4px solid #007bff;
+}
+
+.player-bet-details__result--close {
+  border-left: 4px solid #28a745;
+}
+
+.player-bet-details__no-data {
+  text-align: center;
+  color: #666;
+  padding: 2rem;
+}
+
+/* Parent container for result images */
+.result-images {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 16px; /* Space between images */
+  margin: 20px 0;
+  flex-wrap: wrap; /* Responsive design for smaller screens */
+  padding: 10px; /* Spacing inside the container */
+  background: linear-gradient(
+    135deg,
+    #e0f7fa,
+    #80deea
+  ); /* Soft gradient background */
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+/* Styling for individual number images */
+.result-images img {
+  width: 80px; /* Larger image size */
+  height: 80px;
+  object-fit: contain;
+  margin: 10px;
+  border: 3px solid #1a73e8; /* Pronounced border */
+  background-color: #f0f8ff;
+  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2); /* 3D effect with shadow */
+  transition: all 0.3s ease-in-out;
+  cursor: pointer;
+}
+
+/* Hover effect for images */
+.result-images img:hover {
+  transform: scale(1.15); /* Zoom effect on hover */
+  box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.3); /* Stronger shadow on hover */
+  border-color: #ff5722; /* Change border color on hover */
+  background-color: #ffffff; /* White background for pop-out effect */
+}
+
+/* Results container styling */
+.card-body2 {
+  text-align: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #e3f2fd, #90caf9); /* Subtle gradient */
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1); /* Light shadow for depth */
+  color: #37474f; /* Slightly muted color for better readability */
+  font-family: "Poppins", sans-serif; /* Modern, clean font */
+}
+
+/* Section headings */
+.card-title {
+  text-align: center;
+  font-size: 2rem; /* Larger and bolder font */
+  font-weight: bold;
+  color: #1a73e8; /* Blue for titles */
+  text-transform: uppercase; /* Capitalized headings for emphasis */
+  letter-spacing: 1px; /* Slight spacing for better readability */
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.card-title::after {
+  content: "";
+  display: block;
+  width: 60px;
+  height: 4px;
+  background-color: #1a73e8;
+  margin: 8px auto 0 auto;
+}
+
+/* Flex wrapper for result panes */
+.result-pane {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: 20px;
+  padding: 20px;
+  background: #fafafa;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+  transition: all 0.3s ease-in-out;
+}
+
+.result-pane:hover {
+  transform: scale(1.02); /* Slight zoom-in on hover */
+  box-shadow: 0px 16px 32px rgba(0, 0, 0, 0.1); /* Stronger shadow on hover */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  /* Adjust the result-images container to use a grid for mobile */
+  .result-images {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns by default */
+    gap: 10px; /* Space between items */
+  }
+
+  /* First row: 3 images */
+  .result-images .image-container:nth-child(1),
+  .result-images .image-container:nth-child(2),
+  .result-images .image-container:nth-child(3) {
+    grid-column: auto; /* Normal 3-column layout */
+  }
+
+  /* Second row: 2 images centered */
+  .result-images .image-container:nth-child(4),
+  .result-images .image-container:nth-child(5) {
+    grid-column: span 1;
+    justify-self: center; /* Center the images */
+  }
+
+  /* Third row: 3 images */
+  .result-images .image-container:nth-child(6),
+  .result-images .image-container:nth-child(7),
+  .result-images .image-container:nth-child(8) {
+    grid-column: auto; /* Normal 3-column layout */
+  }
+
+  /* Adjust image size for mobile */
+  .result-images .image-container {
+    width: 70px; /* Smaller image size for mobile */
+    height: 70px;
+  }
+
+  /* Remove hyphens in labels for mobile */
+  .image-label {
+    text-transform: none; /* Disable uppercase and hyphenation */
+    font-size: 12px; /* Slightly smaller text for labels */
+  }
+
+  /* Optional: Adjust other elements for better readability on mobile */
+  .card-title {
+    font-size: 1.5rem; /* Smaller title font size */
+  }
+
+  .result-pane {
+    padding: 15px;
+  }
+}
+
+
+/* Style for the container of images */
+.result-images {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Style for each image container */
+.image-container {
+  position: relative;
+  width: 100px; /* Increased size */
+  height: 100px; /* Increased size */
+  overflow: hidden;
+  transition: transform 0.2s;
+  transition: transform 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.image-container:hover {
+  transform: scale(1.15); /* Makes the image slightly larger on hover */
+}
+
+/* Image itself */
+.number-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.2s;
+}
+
+/* Label that appears on hover */
+.image-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  font-size: 14px;
+  text-align: center;
+  padding: 5px 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.image-container:hover .image-label {
+  opacity: 1;
+}
+
+

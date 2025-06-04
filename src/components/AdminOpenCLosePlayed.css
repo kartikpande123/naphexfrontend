@@ -1,0 +1,26 @@
+.full-width-modal .modal-dialog {
+    max-width: 100%; /* Make the modal take full width */
+    margin: 0;       /* Remove default margin */
+  }
+  
+  .full-width-modal .modal-content {
+    width: 100%;     /* Set modal content to full width */
+    border-radius: 0; /* Optional: remove rounded corners */
+  }
+  
+  .full-width-modal .modal-header, 
+  .full-width-modal .modal-body, 
+  .full-width-modal .modal-footer {
+    padding: 15px; /* Adjust padding to fit your design */
+  }
+  
+  .full-width-modal .modal-title {
+    font-size: 1.5rem; /* Optional: Adjust the title size */
+  }
+  
+
+  .full-width-modal .modal-content {
+    width: 100%;
+    border-radius: 0;
+    max-width: 100%;
+}
