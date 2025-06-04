@@ -76,7 +76,7 @@ const Game2 = () => {
             }
 
             if (betAmountNum > tokenCount) {
-                alert('Insufficient balance!');
+                alert('Insufficient balance!!!!!!!!!');
                 return;
             }
 
