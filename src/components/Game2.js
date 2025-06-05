@@ -69,14 +69,14 @@ const Game2 = () => {
         try {
             const betAmountNum = Number(betAmount);
 
-            // Basic validation
+            // Basic validation.......
             if (!betAmount) {
-                alert('Please enter a bet amount');
+                alert('Please enter a bet amount!!!!!!!!!');
                 return;
             }
 
             if (betAmountNum > tokenCount) {
-                alert('Insufficient balance!!!!!!!!!');
+                alert('Insufficient balance!');
                 return;
             }
 
