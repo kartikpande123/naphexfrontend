@@ -94,7 +94,7 @@ const ForgotPassword = () => {
 
     setIsLoading(true);
     try {
-      const response = await axios.post(`${API_BASE_URL}/api/send-otp`, {
+      const response = await axios.post(`${API_BASE_URL}/send-otp`, {
         phoneNo: formData.phone
       });
 
@@ -143,7 +143,7 @@ const ForgotPassword = () => {
   const handleResetPassword = async () => {
     setIsLoading(true);
     try {
-        const response = await axios.post(`${API_BASE_URL}/api/reset-password`, {
+        const response = await axios.post(`${API_BASE_URL}/reset-password`, {
             phoneNo: formData.phone,
             newPassword: formData.password
         });
