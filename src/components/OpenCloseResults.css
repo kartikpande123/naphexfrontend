@@ -5,6 +5,108 @@ html {
   background: linear-gradient(180deg, #f5f7fa 0%, #c3cfe2 100%);
 } */
 
+/* Mobile Responsive Header */
+.header-container {
+  background-color: #f0f8ff;
+  border: 1px solid #1a73e8;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  margin: 10px auto 20px auto;
+  padding: 15px;
+  max-width: 100%;
+  width: 100%;
+}
+
+.header-title {
+  color: #1a73e8;
+  text-align: center;
+  margin: 0;
+  font-size: 2rem;
+  font-weight: bold;
+}
+
+/* Mobile Responsive Date Search */
+.date-search-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+  padding: 0 10px;
+}
+
+.date-input {
+  border: 1px solid blue;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 6px;
+}
+
+/* Results Titles */
+.results-date-title {
+  color: #1a73e8;
+  font-size: 1.8rem;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.session-title {
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin-bottom: 15px;
+  color: #333;
+}
+
+.previous-results-title {
+  color: #666;
+  font-size: 1.8rem;
+  font-weight: bold;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Accordion Styles */
+.accordion-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.accordion-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  cursor: pointer;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #ddd;
+}
+
+.accordion-title {
+  color: #1a73e8;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.accordion-icon {
+  color: #1a73e8;
+  font-size: 1.2rem;
+}
+
+.accordion-body {
+  border: 1px solid blue;
+  background-color: #fff;
+}
+
+.no-results-alert {
+  font-size: 1.1rem;
+  padding: 20px;
+}
+
 /* Component Styles */
 .player-bet-details {
   max-width: 800px;
@@ -94,57 +196,56 @@ html {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 16px; /* Space between images */
+  gap: 16px;
   margin: 20px 0;
-  flex-wrap: wrap; /* Responsive design for smaller screens */
-  padding: 10px; /* Spacing inside the container */
-  background: linear-gradient(
-    135deg,
-    #e0f7fa,
-    #80deea
-  ); /* Soft gradient background */
-  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+  flex-wrap: wrap;
+  padding: 10px;
+  background: linear-gradient(135deg, #e0f7fa, #80deea);
+  box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
 }
 
 /* Styling for individual number images */
 .result-images img {
-  width: 80px; /* Larger image size */
+  width: 80px;
   height: 80px;
   object-fit: contain;
   margin: 10px;
-  border: 3px solid #1a73e8; /* Pronounced border */
+  border: 3px solid #1a73e8;
   background-color: #f0f8ff;
-  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2); /* 3D effect with shadow */
+  box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
   transition: all 0.3s ease-in-out;
   cursor: pointer;
+  border-radius: 6px;
 }
 
 /* Hover effect for images */
 .result-images img:hover {
-  transform: scale(1.15); /* Zoom effect on hover */
-  box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.3); /* Stronger shadow on hover */
-  border-color: #ff5722; /* Change border color on hover */
-  background-color: #ffffff; /* White background for pop-out effect */
+  transform: scale(1.15);
+  box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.3);
+  border-color: #ff5722;
+  background-color: #ffffff;
 }
 
 /* Results container styling */
 .card-body2 {
   text-align: center;
   padding: 20px;
-  background: linear-gradient(135deg, #e3f2fd, #90caf9); /* Subtle gradient */
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1); /* Light shadow for depth */
-  color: #37474f; /* Slightly muted color for better readability */
-  font-family: "Poppins", sans-serif; /* Modern, clean font */
+  background: linear-gradient(135deg, #e3f2fd, #90caf9);
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.1);
+  color: #37474f;
+  font-family: "Poppins", sans-serif;
+  border-radius: 8px;
 }
 
 /* Section headings */
 .card-title {
   text-align: center;
-  font-size: 2rem; /* Larger and bolder font */
+  font-size: 1.8rem;
   font-weight: bold;
-  color: #1a73e8; /* Blue for titles */
-  text-transform: uppercase; /* Capitalized headings for emphasis */
-  letter-spacing: 1px; /* Slight spacing for better readability */
+  color: #1a73e8;
+  text-transform: uppercase;
+  letter-spacing: 1px;
   margin-bottom: 20px;
   position: relative;
 }
@@ -166,67 +267,15 @@ html {
   margin-bottom: 20px;
   padding: 20px;
   background: #fafafa;
-  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.05); /* Subtle shadow for depth */
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease-in-out;
+  border-radius: 8px;
 }
 
 .result-pane:hover {
-  transform: scale(1.02); /* Slight zoom-in on hover */
-  box-shadow: 0px 16px 32px rgba(0, 0, 0, 0.1); /* Stronger shadow on hover */
+  transform: scale(1.02);
+  box-shadow: 0px 16px 32px rgba(0, 0, 0, 0.1);
 }
-
-/* Responsive Design */
-@media (max-width: 768px) {
-  /* Adjust the result-images container to use a grid for mobile */
-  .result-images {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 columns by default */
-    gap: 10px; /* Space between items */
-  }
-
-  /* First row: 3 images */
-  .result-images .image-container:nth-child(1),
-  .result-images .image-container:nth-child(2),
-  .result-images .image-container:nth-child(3) {
-    grid-column: auto; /* Normal 3-column layout */
-  }
-
-  /* Second row: 2 images centered */
-  .result-images .image-container:nth-child(4),
-  .result-images .image-container:nth-child(5) {
-    grid-column: span 1;
-    justify-self: center; /* Center the images */
-  }
-
-  /* Third row: 3 images */
-  .result-images .image-container:nth-child(6),
-  .result-images .image-container:nth-child(7),
-  .result-images .image-container:nth-child(8) {
-    grid-column: auto; /* Normal 3-column layout */
-  }
-
-  /* Adjust image size for mobile */
-  .result-images .image-container {
-    width: 70px; /* Smaller image size for mobile */
-    height: 70px;
-  }
-
-  /* Remove hyphens in labels for mobile */
-  .image-label {
-    text-transform: none; /* Disable uppercase and hyphenation */
-    font-size: 12px; /* Slightly smaller text for labels */
-  }
-
-  /* Optional: Adjust other elements for better readability on mobile */
-  .card-title {
-    font-size: 1.5rem; /* Smaller title font size */
-  }
-
-  .result-pane {
-    padding: 15px;
-  }
-}
-
 
 /* Style for the container of images */
 .result-images {
@@ -239,10 +288,9 @@ html {
 /* Style for each image container */
 .image-container {
   position: relative;
-  width: 100px; /* Increased size */
-  height: 100px; /* Increased size */
+  width: 100px;
+  height: 100px;
   overflow: hidden;
-  transition: transform 0.2s;
   transition: transform 0.2s;
   display: flex;
   align-items: center;
@@ -250,7 +298,7 @@ html {
 }
 
 .image-container:hover {
-  transform: scale(1.15); /* Makes the image slightly larger on hover */
+  transform: scale(1.15);
 }
 
 /* Image itself */
@@ -261,7 +309,7 @@ html {
   transition: transform 0.2s;
 }
 
-/* Label that appears on hover */
+/* Label that appears always visible */
 .image-label {
   position: absolute;
   bottom: 0;
@@ -269,15 +317,283 @@ html {
   width: 100%;
   background-color: rgba(0, 0, 0, 0.7);
   color: white;
-  font-size: 14px;
+  font-size: 12px;
   text-align: center;
-  padding: 5px 0;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.image-container:hover .image-label {
+  padding: 3px 0;
   opacity: 1;
+  font-weight: 600;
 }
 
+/* Mobile Responsive Styles */
+@media (max-width: 768px) {
+  /* Container adjustments */
+  .container-fluid {
+    padding: 10px 5px;
+  }
 
+  /* Header mobile styles */
+  .header-container {
+    margin: 5px auto 15px auto;
+    padding: 10px;
+    width: 95%;
+  }
+
+  .header-title {
+    font-size: 1.5rem;
+  }
+
+  /* Date search mobile styles */
+  .date-search-container {
+    padding: 0 5px;
+    margin-bottom: 15px;
+  }
+
+  .date-input {
+    padding: 10px;
+    font-size: 16px;
+    width: 100%;
+  }
+
+  /* Title adjustments */
+  .results-date-title {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+  }
+
+  .session-title {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+
+  .previous-results-title {
+    font-size: 1.4rem;
+    margin-bottom: 15px;
+  }
+
+  /* Accordion mobile styles */
+  .accordion-header {
+    padding: 12px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .accordion-title {
+    font-size: 1.1rem;
+    line-height: 1.3;
+  }
+
+  .accordion-icon {
+    align-self: flex-end;
+    margin-top: -25px;
+  }
+
+  /* Card and results mobile styles */
+  .card-body2 {
+    padding: 15px 10px;
+  }
+
+  .card-title {
+    font-size: 1.3rem;
+    margin-bottom: 15px;
+  }
+
+  /* Mobile responsive row */
+  .mobile-responsive-row {
+    margin: 0;
+  }
+
+  .mobile-responsive-row .col-lg-6 {
+    padding: 0 5px;
+    margin-bottom: 15px;
+  }
+
+  /* Mobile labels */
+  .mobile-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .mobile-pana-section {
+    margin-top: 15px;
+  }
+
+  /* Full Pictures Mobile Layout - 3/2/3 pattern (even with 7 images) */
+  .result-images {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 15px;
+    margin: 20px 0;
+    justify-items: center;
+    grid-template-rows: repeat(3, auto);
+  }
+
+  /* First row: 3 images (positions 1-3) */
+  .result-images .image-container:nth-child(1) { grid-column: 1; grid-row: 1; }
+  .result-images .image-container:nth-child(2) { grid-column: 2; grid-row: 1; }
+  .result-images .image-container:nth-child(3) { grid-column: 3; grid-row: 1; }
+
+  /* Second row: 2 images centered (positions 4-5) */
+  .result-images .image-container:nth-child(4) { 
+    grid-column: 1; 
+    grid-row: 2; 
+    justify-self: end;
+    margin-right: 15px;
+  }
+  .result-images .image-container:nth-child(5) { 
+    grid-column: 3; 
+    grid-row: 2; 
+    justify-self: start;
+    margin-left: 15px;
+  }
+
+  /* Third row: 3 images (positions 6-7, with 8th position empty) */
+  .result-images .image-container:nth-child(6) { grid-column: 1; grid-row: 3; }
+  .result-images .image-container:nth-child(7) { grid-column: 2; grid-row: 3; }
+  /* Position 3 in row 3 will be empty until you have an 8th image */
+
+  .image-container {
+    width: 80px;
+    height: 80px;
+  }
+
+  .result-images img {
+    width: 80px;
+    height: 80px;
+    margin: 8px;
+    border-width: 3px;
+  }
+
+  .image-label {
+    font-size: 11px;
+    padding: 3px 0;
+  }
+
+  /* Hyphen container mobile */
+  .hyphen-container {
+    margin: 0 5px;
+  }
+
+  .hyphen-container span {
+    font-size: 18px;
+  }
+
+  /* Alert mobile styles */
+  .no-results-alert {
+    font-size: 1rem;
+    padding: 15px;
+  }
+
+  /* Remove hover effects on mobile */
+  .image-container:hover {
+    transform: none;
+  }
+
+  .result-images img:hover {
+    transform: none;
+    box-shadow: 0px 8px 15px rgba(0, 0, 0, 0.2);
+    border-color: #1a73e8;
+    background-color: #f0f8ff;
+  }
+
+  .result-pane:hover {
+    transform: none;
+  }
+}
+
+/* Extra small devices (phones, 600px and down) */
+@media (max-width: 600px) {
+  .header-title {
+    font-size: 1.3rem;
+  }
+
+  .results-date-title {
+    font-size: 1.2rem;
+  }
+
+  .session-title {
+    font-size: 1.1rem;
+  }
+
+  .previous-results-title {
+    font-size: 1.2rem;
+  }
+
+  .accordion-title {
+    font-size: 1rem;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+  }
+
+  /* Full Pictures Mobile Layout - 3/2/3 pattern for small phones */
+  .result-images {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 12px;
+  }
+
+  /* Second row: 2 images centered (positions 4-5) */
+  .result-images .image-container:nth-child(4) {
+    grid-column: 1 / 3;
+    justify-self: end;
+    margin-right: 12px;
+  }
+
+  .result-images .image-container:nth-child(5) {
+    grid-column: 2 / 4;
+    justify-self: start;
+    margin-left: 12px;
+  }
+
+  .image-container {
+    width: 70px;
+    height: 70px;
+  }
+
+  .result-images img {
+    width: 70px;
+    height: 70px;
+    margin: 6px;
+    border-width: 2px;
+  }
+
+  .image-label {
+    font-size: 10px;
+    padding: 2px 0;
+  }
+
+  .mobile-label {
+    font-size: 0.8rem;
+  }
+}
+
+/* Landscape mobile orientation */
+@media (max-width: 896px) and (orientation: landscape) {
+  .header-container {
+    margin: 3px auto 10px auto;
+    padding: 8px;
+  }
+
+  .header-title {
+    font-size: 1.4rem;
+  }
+
+  .date-search-container {
+    margin-bottom: 10px;
+  }
+
+  .results-date-title {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+  }
+
+  .session-title {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+}

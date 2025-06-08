@@ -145,9 +145,6 @@ const ResultsDashboard = () => {
         );
     };
 
-
-
-
     // Format results for display
     const formatResult = (result, sessionType) => {
         if (!result) {
@@ -161,32 +158,32 @@ const ResultsDashboard = () => {
         return (
             <div className="card mb-3">
                 <div className="card-body2">
-                    <div className="row">
+                    <div className="row mobile-responsive-row">
                         {result['open-number'] && (
-                            <div className="col-6 mb-3">
+                            <div className="col-lg-6 col-12 mb-3">
                                 <div className="bg-primary-subtle p-3 rounded">
                                     <h5 className="card-title text-primary">Open Details</h5>
                                     <div className="d-flex align-items-center justify-content-center text-primary fs-5 flex-column">
-                                        <span>open-number</span>
+                                        <span className="mobile-label">open-number</span>
                                         {formatNumbers(result['open-number'])}
                                     </div>
-                                    <div className="text-primary fs-5">
-                                        <span>close-pana</span>
+                                    <div className="text-primary fs-5 mobile-pana-section">
+                                        <span className="mobile-label">close-pana</span>
                                         {formatNumbers(result['open-pana'])}
                                     </div>
                                 </div>
                             </div>
                         )}
                         {result['close-number'] && (
-                            <div className="col-6 mb-3">
+                            <div className="col-lg-6 col-12 mb-3">
                                 <div className="bg-success-subtle p-3 rounded">
                                     <h5 className="card-title text-success">Close Details</h5>
                                     <div className="d-flex flex-column align-items-center justify-content-center text-primary fs-5">
-                                        <span>close-number</span>
+                                        <span className="mobile-label">close-number</span>
                                         {formatNumbers(result['close-number'])}
                                     </div>
-                                    <div className="text-success fs-5">
-                                        <span>close-pana</span>
+                                    <div className="text-success fs-5 mobile-pana-section">
+                                        <span className="mobile-label">close-pana</span>
                                         {formatNumbers(result['close-pana'])}
                                     </div>
                                 </div>
@@ -229,85 +226,67 @@ const ResultsDashboard = () => {
     }
 
     return (
-        <div className="container py-4">
-            <div className="fixed top-0 left-0 right-0 bg-blue-600 text-white p-4 z-10" style={{
-                backgroundColor: '#f0f8ff', border: "1px solid #1a73e8", boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)", width: "600px", margin: "auto",
-                borderRadius: "8px", marginTop: "10px"
-            }}>
-                <h1
-                    style={{
-                        color: "#1a73e8",
-                        textAlign: "center",
-                        marginBottom: "20px"
-                    }}
-                >
-                    Results
-                </h1>
+        <div className="container-fluid py-4 px-2">
+            {/* Header - Mobile Responsive */}
+            <div className="header-container">
+                <h1 className="header-title">Results</h1>
             </div>
 
-            <div className="mb-4" style={{ marginTop: "20px", display: "flex", justifyContent: "center" }}>
-    <input
-        type="date"
-        className="form-control"
-        placeholder="Search by Date (YYYY-MM-DD)"
-        value={searchDate}
-        onChange={handleDateSearch}
-        style={{
-            border: "1px solid blue",
-            width: "60%",
-            textAlign: "center",
-        }}
-    />
-</div>
+            {/* Date Search - Mobile Responsive */}
+            <div className="date-search-container">
+                <input
+                    type="date"
+                    className="form-control date-input"
+                    placeholder="Search by Date"
+                    value={searchDate}
+                    onChange={handleDateSearch}
+                />
+            </div>
 
-
-
+            {/* Today's Results */}
             <div className="mb-4">
-                <h2 className="text-primary">{results.date ? `Results for ${results.date}` : 'Results'}</h2>
+                <h2 className="results-date-title">
+                    {results.date ? `Results for ${results.date}` : 'Results'}
+                </h2>
                 <div className="row">
                     <div className="col-12 mb-3">
-                        <h6 className="text-center" style={{ fontSize: "24px", fontWeight: "bold" }}>
-                            Today Session 1
-                        </h6>
+                        <h6 className="session-title">Today Session 1</h6>
                         {formatResult(results.todayResults.session1, 'Today Session 1')}
                     </div>
                     <div className="col-12 mb-3">
-                        <h6 className="text-center" style={{ fontSize: "24px", fontWeight: "bold" }}>
-                            Today Session 2
-                        </h6>
+                        <h6 className="session-title">Today Session 2</h6>
                         {formatResult(results.todayResults.session2, 'Today Session 2')}
                     </div>
                 </div>
             </div>
 
+            {/* Previous Results */}
             <div>
-                <h2 className="text-secondary" style={{ fontSize: "28px", fontWeight: "bold" }}>Previous Results</h2>
+                <h2 className="previous-results-title">Previous Results</h2>
                 {results.previousResults.length > 0 ? (
                     <div className="accordion">
                         {results.previousResults.map((prevResult, index) => (
-                            <div className="card mb-2" key={index}>
+                            <div className="card mb-2 accordion-card" key={index}>
                                 <div
-                                    className="card-header d-flex justify-content-between align-items-center"
+                                    className="card-header accordion-header"
                                     onClick={() => toggleResultsVisibility(index)}
                                 >
-                                    <h5 className="mb-0 text-primary" style={{ fontSize: "22px" }}>
+                                    <h5 className="mb-0 accordion-title">
                                         Results for {prevResult.date}
                                     </h5>
-                                    {openResultsIndex === index ? <ChevronUp /> : <ChevronDown />}
+                                    <span className="accordion-icon">
+                                        {openResultsIndex === index ? <ChevronUp /> : <ChevronDown />}
+                                    </span>
                                 </div>
                                 {openResultsIndex === index && (
-                                    <div className="card-body" style={{ border: "1px solid blue" }}>
+                                    <div className="card-body accordion-body">
                                         <div className="row">
                                             <div className="col-12 mb-3">
-                                                <h6 className="text-center" style={{ fontSize: "24px", fontWeight: "bold" }}>
-                                                    Session 1
-                                                </h6>
+                                                <h6 className="session-title">Session 1</h6>
                                                 {formatResult(prevResult.session1, 'Previous Session 1')}
                                             </div>
                                             <div className="col-12 mb-3">
-                                                <h6 className="text-center" style={{ fontSize: "24px", fontWeight: "bold" }}>
-                                                    Session 2
-                                                </h6>
+                                                <h6 className="session-title">Session 2</h6>
                                                 {formatResult(prevResult.session2, 'Previous Session 2')}
                                             </div>
                                         </div>
@@ -317,7 +296,7 @@ const ResultsDashboard = () => {
                         ))}
                     </div>
                 ) : (
-                    <div className="alert alert-info text-center" style={{ fontSize: "20px" }}>
+                    <div className="alert alert-info text-center no-results-alert">
                         No previous results available
                     </div>
                 )}
