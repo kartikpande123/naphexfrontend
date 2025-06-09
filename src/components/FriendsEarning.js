@@ -22,6 +22,43 @@ const FriendsEarnings = () => {
         note: '#f9a825'       // Warning/note color
     };
 
+    // Function to sort bonus history by date (newest first)
+    const sortBonusHistoryByDate = (history) => {
+        return history.sort((a, b) => {
+            if (!a.date || !b.date) return 0;
+            
+            // Parse dates - assuming format could be DD/MM/YYYY, DD-MM-YYYY, or YYYY-MM-DD
+            const parseDate = (dateStr) => {
+                // Handle different date formats
+                if (dateStr.includes('/')) {
+                    const parts = dateStr.split('/');
+                    // Assume DD/MM/YYYY format
+                    if (parts.length === 3) {
+                        return new Date(parts[2], parts[1] - 1, parts[0]);
+                    }
+                } else if (dateStr.includes('-')) {
+                    const parts = dateStr.split('-');
+                    if (parts.length === 3) {
+                        // Check if it's YYYY-MM-DD or DD-MM-YYYY
+                        if (parts[0].length === 4) {
+                            return new Date(parts[0], parts[1] - 1, parts[2]);
+                        } else {
+                            return new Date(parts[2], parts[1] - 1, parts[0]);
+                        }
+                    }
+                }
+                // Fallback to standard Date parsing
+                return new Date(dateStr);
+            };
+
+            const dateA = parseDate(a.date);
+            const dateB = parseDate(b.date);
+            
+            // Sort in descending order (newest first)
+            return dateB - dateA;
+        });
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -62,7 +99,9 @@ const FriendsEarnings = () => {
                 });
 
                 if (historyResponse.data.success) {
-                    setBonusHistory(historyResponse.data.data);
+                    // Sort the bonus history by date (newest first)
+                    const sortedHistory = sortBonusHistoryByDate(historyResponse.data.data);
+                    setBonusHistory(sortedHistory);
                 } else {
                     console.warn('No bonus history found or error fetching history');
                     setBonusHistory([]);
@@ -381,7 +420,7 @@ const FriendsEarnings = () => {
                                 borderBottom: `1px solid ${colors.secondary}`
                             }}>
                                 <h5 className="mb-0 fw-bold">
-                                    Bonus History
+                                    Bonus History (Latest First)
                                 </h5>
                             </div>
                             <div className="card-body p-0">

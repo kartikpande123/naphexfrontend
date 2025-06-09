@@ -27,7 +27,7 @@ const Home = () => {
 
   // Fetch user tokens and check for winners
   useEffect(() => {
-    let eventSource = null;
+    let pollingInterval = null;
     const userData = JSON.parse(localStorage.getItem("userData"));
 
     // Function to check for winners
@@ -59,45 +59,74 @@ const Home = () => {
       }
     };
 
-    const connectToTokenUpdates = () => {
+    // Function to fetch user tokens
+    const fetchUserTokens = async () => {
       try {
-        if (!userData || !userData.phoneNo) return;
-
-        console.log("Connecting to token updates for:", userData.phoneNo);
-
-        // Create EventSource connection
-        eventSource = new EventSource(
-          `${API_BASE_URL}/user-profile/${userData.phoneNo}`
-        );
-
-        // Handle incoming messages
-        eventSource.onmessage = (event) => {
-          const data = JSON.parse(event.data);
-          if (data.success) {
-            console.log("Received token update:", data.tokens);
-            setTokenCount(data.tokens);
-
-            // Update localStorage with new data
-            const currentUserData = JSON.parse(localStorage.getItem("userData"));
-            localStorage.setItem("userData", JSON.stringify({
-              ...currentUserData,
-              tokens: data.tokens
-            }));
-          } else {
-            console.error("Error in token update:", data.message);
+        if (!userData || !userData.phoneNo) {
+          // If no user data, try to get from localStorage
+          const storedUserData = JSON.parse(localStorage.getItem("userData"));
+          if (storedUserData && storedUserData.tokens) {
+            setTokenCount(storedUserData.tokens);
           }
-        };
+          return;
+        }
 
-        // Handle connection errors
-        eventSource.onerror = (error) => {
-          console.error("EventSource failed:", error);
-          eventSource.close();
-          // Attempt to reconnect after 5 seconds
-          setTimeout(connectToTokenUpdates, 5000);
-        };
+        console.log("Fetching tokens for:", userData.phoneNo);
 
+        // Use fetch instead of axios to handle SSE text response
+        const response = await fetch(`${API_BASE_URL}/user-profile/${userData.phoneNo}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/event-stream',
+            'Cache-Control': 'no-cache'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        // Read the response as text since it's SSE format
+        const responseText = await response.text();
+        console.log("Raw response:", responseText);
+
+        // Parse SSE data format (data: {...})
+        const lines = responseText.split('\n');
+        let jsonData = null;
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataString = line.substring(6); // Remove 'data: ' prefix
+            try {
+              jsonData = JSON.parse(dataString);
+              break;
+            } catch (parseError) {
+              console.error("Error parsing JSON from SSE:", parseError);
+            }
+          }
+        }
+
+        if (jsonData && jsonData.success) {
+          console.log("Received token update:", jsonData.tokens);
+          setTokenCount(jsonData.tokens);
+
+          // Update localStorage with new data
+          const currentUserData = JSON.parse(localStorage.getItem("userData"));
+          localStorage.setItem("userData", JSON.stringify({
+            ...currentUserData,
+            tokens: jsonData.tokens,
+            ...jsonData.userData
+          }));
+        } else {
+          console.error("Error in token fetch:", jsonData?.message || "No valid data received");
+          // Fallback to stored tokens
+          const storedUserData = JSON.parse(localStorage.getItem("userData"));
+          if (storedUserData && storedUserData.tokens) {
+            setTokenCount(storedUserData.tokens);
+          }
+        }
       } catch (error) {
-        console.error("Error setting up token updates:", error);
+        console.error("Error fetching tokens:", error.message || error);
         // Fallback to stored tokens
         const storedUserData = JSON.parse(localStorage.getItem("userData"));
         if (storedUserData && storedUserData.tokens) {
@@ -106,15 +135,21 @@ const Home = () => {
       }
     };
 
-    // Initial connection and winner check
-    connectToTokenUpdates();
+    // Initial fetch
+    fetchUserTokens();
     checkForWinners();
+
+    // Set up polling for real-time updates (every 30 seconds)
+    pollingInterval = setInterval(() => {
+      fetchUserTokens();
+      checkForWinners();
+    }, 30000); // Poll every 30 seconds
 
     // Cleanup on component unmount
     return () => {
-      if (eventSource) {
-        console.log("Closing token update connection");
-        eventSource.close();
+      if (pollingInterval) {
+        console.log("Clearing token polling interval");
+        clearInterval(pollingInterval);
       }
     };
   }, []); // Empty dependency array for initial setup only
