@@ -937,9 +937,22 @@
   }
 
   .results-button{
-    right: 114px;
+    right: 117px;
     top: -50px;
     padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .how-to-play-button{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .back-button{
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 }
 

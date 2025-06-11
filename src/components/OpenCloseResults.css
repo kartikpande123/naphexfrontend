@@ -25,59 +25,22 @@ html {
   font-weight: bold;
 }
 
-/* Mobile Responsive Date Search - Enhanced Visibility */
+/* Mobile Responsive Date Search */
 .date-search-container {
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
   margin-bottom: 20px;
   padding: 0 10px;
-  position: relative;
-  color: black;
-}
-
-.date-search-container::before {
-  content: "📅 Select Date to View Results click below";
-  display: block;
-  text-align: center;
-  font-size: 16px;
-  font-weight: 600;
-  color: #1a73e8;
-  margin-bottom: 8px;
-  background-color: rgba(26, 115, 232, 0.1);
-  padding: 8px 16px;
-  border-radius: 20px;
-  border: 1px solid #1a73e8;
 }
 
 .date-input {
-  border: 2px solid #1a73e8;
-  background-color: #ffffff;
+  border: 1px solid blue;
   text-align: center;
   width: 100%;
   max-width: 400px;
-  padding: 15px;
-  font-size: 18px;
-  font-weight: 600;
-  border-radius: 8px;
-  color: #000205;
-  box-shadow: 0 2px 8px rgba(26, 115, 232, 0.2);
-  transition: all 0.3s ease;
-}
-
-.date-input:focus {
-  outline: none;
-  border-color: #0d47a1;
-  box-shadow: 0 4px 12px rgba(26, 115, 232, 0.3);
-  transform: translateY(-2px);
-}
-
-.date-input::-webkit-calendar-picker-indicator {
-  color: #1a73e8;
-  cursor: pointer;
-  font-size: 20px;
-  padding: 4px;
+  padding: 12px;
+  font-size: 16px;
+  border-radius: 6px;
 }
 
 /* Results Titles */
@@ -365,98 +328,74 @@ html {
 @media (max-width: 768px) {
   /* Container adjustments */
   .container-fluid {
-    padding: 12px 8px;
+    padding: 10px 5px;
   }
 
-  /* Header mobile styles - Larger */
+  /* Header mobile styles */
   .header-container {
-    margin: 8px auto 20px auto;
-    padding: 15px;
+    margin: 5px auto 15px auto;
+    padding: 10px;
     width: 95%;
   }
 
   .header-title {
-    font-size: 1.8rem;
-    font-weight: bold;
+    font-size: 1.5rem;
   }
 
-  /* Enhanced Date search mobile styles */
+  /* Date search mobile styles */
   .date-search-container {
-    padding: 0 8px;
-    margin-bottom: 25px;
-  }
-
-  .date-search-container::before {
-    font-size: 18px;
-    padding: 12px 20px;
-    margin-bottom: 12px;
-    border-radius: 25px;
-    border-width: 2px;
+    padding: 0 5px;
+    margin-bottom: 15px;
   }
 
   .date-input {
-    padding: 18px;
-    font-size: 20px;
-    font-weight: 700;
+    padding: 10px;
+    font-size: 16px;
     width: 100%;
-    border-width: 3px;
-    border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(0, 9, 20, 0.25);
   }
 
-  .date-input::-webkit-calendar-picker-indicator {
-    font-size: 24px;
-    padding: 6px;
-  }
-
-  /* Title adjustments - Larger */
+  /* Title adjustments */
   .results-date-title {
-    font-size: 1.6rem;
-    margin-bottom: 20px;
-    font-weight: bold;
+    font-size: 1.4rem;
+    margin-bottom: 15px;
   }
 
   .session-title {
-    font-size: 1.4rem;
-    margin-bottom: 15px;
-    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 10px;
   }
 
   .previous-results-title {
-    font-size: 1.6rem;
-    margin-bottom: 20px;
-    font-weight: bold;
+    font-size: 1.4rem;
+    margin-bottom: 15px;
   }
 
-  /* Accordion mobile styles - Larger */
+  /* Accordion mobile styles */
   .accordion-header {
-    padding: 15px;
+    padding: 12px;
     flex-direction: column;
     align-items: flex-start;
-    gap: 10px;
+    gap: 8px;
   }
 
   .accordion-title {
-    font-size: 1.3rem;
-    line-height: 1.4;
-    font-weight: 600;
+    font-size: 1.1rem;
+    line-height: 1.3;
   }
 
   .accordion-icon {
     align-self: flex-end;
-    margin-top: -30px;
-    font-size: 1.4rem;
+    margin-top: -25px;
   }
 
-  /* Card and results mobile styles - Larger */
+  /* Card and results mobile styles */
   .card-body2 {
-    padding: 20px 15px;
+    padding: 15px 10px;
   }
 
   .card-title {
-    font-size: 1.5rem;
-    margin-bottom: 20px;
-    font-weight: bold;
+    font-size: 1.3rem;
+    margin-bottom: 15px;
   }
 
   /* Mobile responsive row */
@@ -465,30 +404,29 @@ html {
   }
 
   .mobile-responsive-row .col-lg-6 {
-    padding: 0 8px;
-    margin-bottom: 20px;
+    padding: 0 5px;
+    margin-bottom: 15px;
   }
 
-  /* Mobile labels - Larger */
+  /* Mobile labels */
   .mobile-label {
-    font-size: 1.1rem;
-    font-weight: 700;
-    margin-bottom: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin-bottom: 8px;
     display: block;
-    color: #1a73e8;
   }
 
   .mobile-pana-section {
-    margin-top: 18px;
+    margin-top: 15px;
   }
 
-  /* Full Pictures Mobile Layout - Larger Images */
+  /* Full Pictures Mobile Layout - 3/2/3 pattern (even with 7 images) */
   .result-images {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 15px;
-    padding: 20px;
-    margin: 25px 0;
+    gap: 12px;
+    padding: 15px;
+    margin: 20px 0;
     justify-items: center;
     grid-template-rows: repeat(3, auto);
   }
@@ -503,52 +441,50 @@ html {
     grid-column: 1; 
     grid-row: 2; 
     justify-self: end;
-    margin-right: 18px;
+    margin-right: 15px;
   }
   .result-images .image-container:nth-child(5) { 
     grid-column: 3; 
     grid-row: 2; 
     justify-self: start;
-    margin-left: 18px;
+    margin-left: 15px;
   }
 
   /* Third row: 3 images (positions 6-7, with 8th position empty) */
   .result-images .image-container:nth-child(6) { grid-column: 1; grid-row: 3; }
   .result-images .image-container:nth-child(7) { grid-column: 2; grid-row: 3; }
+  /* Position 3 in row 3 will be empty until you have an 8th image */
 
   .image-container {
-    width: 95px;
-    height: 95px;
+    width: 80px;
+    height: 80px;
   }
 
   .result-images img {
-    width: 95px;
-    height: 95px;
-    margin: 10px;
+    width: 80px;
+    height: 80px;
+    margin: 8px;
     border-width: 3px;
   }
 
   .image-label {
-    font-size: 13px;
-    padding: 4px 0;
-    font-weight: 700;
+    font-size: 11px;
+    padding: 3px 0;
   }
 
   /* Hyphen container mobile */
   .hyphen-container {
-    margin: 0 8px;
+    margin: 0 5px;
   }
 
   .hyphen-container span {
-    font-size: 22px;
-    font-weight: bold;
+    font-size: 18px;
   }
 
-  /* Alert mobile styles - Larger */
+  /* Alert mobile styles */
   .no-results-alert {
-    font-size: 1.2rem;
-    padding: 20px;
-    font-weight: 600;
+    font-size: 1rem;
+    padding: 15px;
   }
 
   /* Remove hover effects on mobile */
@@ -566,132 +502,98 @@ html {
   .result-pane:hover {
     transform: none;
   }
-
-  /* Larger font sizes for better readability */
-  .bg-primary-subtle .fs-5,
-  .bg-success-subtle .fs-5,
-  .bg-info-subtle .fs-5 {
-    font-size: 1.3rem !important;
-    font-weight: 600;
-  }
 }
 
 /* Extra small devices (phones, 600px and down) */
 @media (max-width: 600px) {
   .header-title {
-    font-size: 1.6rem;
-  }
-
-  .date-search-container::before {
-    font-size: 16px;
-    padding: 10px 16px;
-  }
-
-  .date-input {
-    font-size: 18px;
-    padding: 16px;
-  }
-
-  .results-date-title {
-    font-size: 1.4rem;
-  }
-
-  .session-title {
-    font-size: 1.2rem;
-  }
-
-  .previous-results-title {
-    font-size: 1.4rem;
-  }
-
-  .accordion-title {
-    font-size: 1.1rem;
-  }
-
-  .card-title {
     font-size: 1.3rem;
   }
 
-  /* Full Pictures Mobile Layout - Smaller phones */
+  .results-date-title {
+    font-size: 1.2rem;
+  }
+
+  .session-title {
+    font-size: 1.1rem;
+  }
+
+  .previous-results-title {
+    font-size: 1.2rem;
+  }
+
+  .accordion-title {
+    font-size: 1rem;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+  }
+
+  /* Full Pictures Mobile Layout - 3/2/3 pattern for small phones */
   .result-images {
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
-    padding: 15px;
+    gap: 10px;
+    padding: 12px;
   }
 
   /* Second row: 2 images centered (positions 4-5) */
   .result-images .image-container:nth-child(4) {
     grid-column: 1 / 3;
     justify-self: end;
-    margin-right: 15px;
+    margin-right: 12px;
   }
 
   .result-images .image-container:nth-child(5) {
     grid-column: 2 / 4;
     justify-self: start;
-    margin-left: 15px;
+    margin-left: 12px;
   }
 
   .image-container {
-    width: 80px;
-    height: 80px;
+    width: 70px;
+    height: 70px;
   }
 
   .result-images img {
-    width: 80px;
-    height: 80px;
-    margin: 8px;
+    width: 70px;
+    height: 70px;
+    margin: 6px;
     border-width: 2px;
   }
 
   .image-label {
-    font-size: 11px;
-    padding: 3px 0;
+    font-size: 10px;
+    padding: 2px 0;
   }
 
   .mobile-label {
-    font-size: 1rem;
-    font-weight: 600;
-  }
-
-  .hyphen-container span {
-    font-size: 20px;
+    font-size: 0.8rem;
   }
 }
 
 /* Landscape mobile orientation */
 @media (max-width: 896px) and (orientation: landscape) {
   .header-container {
-    margin: 5px auto 15px auto;
-    padding: 10px;
+    margin: 3px auto 10px auto;
+    padding: 8px;
   }
 
   .header-title {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
 
   .date-search-container {
-    margin-bottom: 15px;
-  }
-
-  .date-search-container::before {
-    font-size: 14px;
-    padding: 8px 12px;
-  }
-
-  .date-input {
-    padding: 12px;
-    font-size: 16px;
+    margin-bottom: 10px;
   }
 
   .results-date-title {
-    font-size: 1.4rem;
-    margin-bottom: 12px;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
   }
 
   .session-title {
-    font-size: 1.2rem;
-    margin-bottom: 10px;
+    font-size: 1.1rem;
+    margin-bottom: 8px;
   }
 }
-

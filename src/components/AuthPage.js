@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import image from "../images/promo1.jpg";
-import { FaUserShield } from "react-icons/fa";
+import { FaUserShield, FaQuestionCircle } from "react-icons/fa";
 import API_BASE_URL from './ApiConfig';
 
 const AuthPage = () => {
@@ -150,8 +150,13 @@ const AuthPage = () => {
       setLoading(false);
     }
   };
+  
   const goToAdminLogin = () => {
     navigate("/adminlogin");
+  };
+
+  const goToHelp = () => {
+    navigate("/help");
   };
 
   const handlePhoneNoChange = (e) => {
@@ -169,7 +174,7 @@ const AuthPage = () => {
       <style>
         {`
           body, html {
-            height: 100%;
+            height: 110%;
             margin: 0;
           }
 
@@ -278,6 +283,33 @@ const AuthPage = () => {
             border-radius: 8px;
           }
 
+          .action-icons-container {
+            display: flex;
+            justify-content: flex-start;
+            gap: 20px;
+            margin-top: 20px;
+          }
+
+          .action-icon {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 44px;
+            color: #007bff;
+            transition: color 0.3s ease, transform 0.2s ease;
+          }
+
+          .action-icon:hover {
+            color: #0056b3;
+            transform: scale(1.1);
+          }
+
+          .action-icon:focus {
+            outline: 2px solid #007bff;
+            outline-offset: 2px;
+            border-radius: 4px;
+          }
+
           @media (max-width: 576px) {
             .bottom-image {
               display: block;
@@ -287,8 +319,14 @@ const AuthPage = () => {
               display: none;
             }
 
-            .adminlogo{
-              display: none;
+            .action-icons-container {
+              justify-content: center;
+              gap: 30px;
+              margin-top: 15px;
+            }
+
+            .action-icon {
+              font-size: 36px;
             }
 
             .form-container {
@@ -311,7 +349,26 @@ const AuthPage = () => {
             .btn {
               font-size: 1rem;
             }
+            .adminic{
+              display:none
+            }
+            .helpic{
+              margin-left:300px
+            }
             
+          }
+
+          @media (max-width: 480px) {
+            .action-icon {
+              font-size: 32px;
+            }
+            
+            .action-icons-container {
+              gap: 25px;
+            }
+            .adminic{
+              display:none
+            }
           }
         `}
       </style>
@@ -409,22 +466,26 @@ const AuthPage = () => {
           <img src={image} alt="Bottom Promo" className="bottom-image" />
         </div>
       </div>
-      <button
-        onClick={goToAdminLogin}
-        style={{
-          background: "none",
-          border: "none",
-          cursor: "pointer",
-          color: "#007bff",
-          fontSize: "44px",
-          display: "flex",
-          justifyContent: "flex-start"
-        }}
-        aria-label="Go to Admin Dashboard"
-        className='adminlogo'
-      >
-        <FaUserShield className='adminlogo' /> {/* Admin icon */}
-      </button>
+      
+      {/* Action Icons Container */}
+      <div className="action-icons-container">
+        <button
+          onClick={goToAdminLogin}
+          className="action-icon adminic"
+          aria-label="Go to Admin Dashboard"
+          title="Admin Login"
+        >
+          <FaUserShield />
+        </button>
+        <button
+          onClick={goToHelp}
+          className="action-icon helpic"
+          aria-label="Go to Help Section"
+          title="Help & Support"
+        >
+          <FaQuestionCircle />
+        </button>
+      </div>
     </div>
   );
 };

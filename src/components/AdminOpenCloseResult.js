@@ -23,13 +23,14 @@ const ResultsDashboard = () => {
     });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [searchDate, setSearchDate] = useState('');
     const [openResultsIndex, setOpenResultsIndex] = useState(null);
+    const [searchDate, setSearchDate] = useState('');
+    const [filteredResults, setFilteredResults] = useState([]);
 
     // Fetch results
     useEffect(() => {
         const eventSource = new EventSource(
-            `${API_BASE_URL}/fetch-results?date=${searchDate || ''}`
+            `${API_BASE_URL}/fetch-results`
         );
 
         eventSource.onmessage = (event) => {
@@ -62,7 +63,83 @@ const ResultsDashboard = () => {
         return () => {
             eventSource.close(); // Cleanup on unmount
         };
-    }, [searchDate]);
+    }, []);
+
+    // Filter results based on search date
+    useEffect(() => {
+        if (!searchDate.trim()) {
+            setFilteredResults([]);
+            return;
+        }
+
+        // Parse the search date (dd/mm/yyyy)
+        const searchParts = searchDate.split('/');
+        
+        // Function to normalize date for comparison
+        const normalizeDate = (dateStr) => {
+            if (!dateStr) return null;
+            
+            // Handle different date formats
+            if (dateStr.includes('-')) {
+                // Format: yyyy-mm-dd
+                const [year, month, day] = dateStr.split('-');
+                return {
+                    day: day.padStart(2, '0'),
+                    month: month.padStart(2, '0'),
+                    year: year,
+                    fullDate: `${day.padStart(2, '0')}/${month.padStart(2, '0')}/${year}`
+                };
+            } else if (dateStr.includes('/')) {
+                // Format: dd/mm/yyyy
+                const parts = dateStr.split('/');
+                if (parts.length === 3) {
+                    return {
+                        day: parts[0].padStart(2, '0'),
+                        month: parts[1].padStart(2, '0'),
+                        year: parts[2],
+                        fullDate: `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`
+                    };
+                }
+            }
+            return null;
+        };
+        
+        // If only day is entered (like "10"), show all results with that day
+        if (searchParts.length === 1 && searchParts[0].length <= 2) {
+            const searchDay = searchParts[0].padStart(2, '0');
+            const filtered = results.previousResults.filter(result => {
+                const normalized = normalizeDate(result.date);
+                return normalized && normalized.day === searchDay;
+            });
+            setFilteredResults(filtered);
+        }
+        // If day and month are entered (like "10/12")
+        else if (searchParts.length === 2) {
+            const searchDay = searchParts[0].padStart(2, '0');
+            const searchMonth = searchParts[1].padStart(2, '0');
+            const filtered = results.previousResults.filter(result => {
+                const normalized = normalizeDate(result.date);
+                return normalized && normalized.day === searchDay && normalized.month === searchMonth;
+            });
+            setFilteredResults(filtered);
+        }
+        // If full date is entered (dd/mm/yyyy)
+        else if (searchParts.length === 3) {
+            const searchDay = searchParts[0].padStart(2, '0');
+            const searchMonth = searchParts[1].padStart(2, '0');
+            const searchYear = searchParts[2];
+            const fullSearchDate = `${searchDay}/${searchMonth}/${searchYear}`;
+            
+            const filtered = results.previousResults.filter(result => {
+                const normalized = normalizeDate(result.date);
+                return normalized && normalized.fullDate === fullSearchDate;
+            });
+            setFilteredResults(filtered);
+        }
+        else {
+            setFilteredResults([]);
+        }
+    }, [searchDate, results.previousResults]);
 
     // Function to get the number image based on the digit
     const getNumberImage = (digit) => {
@@ -203,12 +280,12 @@ const ResultsDashboard = () => {
         );
     };
 
-    const handleDateSearch = (e) => {
-        setSearchDate(e.target.value);
-    };
-
     const toggleResultsVisibility = (index) => {
         setOpenResultsIndex(openResultsIndex === index ? null : index);
+    };
+
+    const handleDateSearch = (e) => {
+        setSearchDate(e.target.value);
     };
 
     if (loading) {
@@ -233,15 +310,69 @@ const ResultsDashboard = () => {
             </div>
 
             {/* Date Search - Mobile Responsive */}
-            <div className="date-search-container">
+            <div className="date-search-container mb-4">
                 <input
-                    type="date"
+                    type="text"
                     className="form-control date-input"
-                    placeholder="Search by Date"
+                    placeholder="Search by Date (dd/mm/yyyy or dd/mm or dd)"
                     value={searchDate}
                     onChange={handleDateSearch}
+                    style={{
+                        maxWidth: '400px',
+                        margin: '0 auto',
+                        fontSize: '16px',
+                        padding: '10px',
+                        borderRadius: '8px',
+                        border: '2px solid #ddd'
+                    }}
                 />
             </div>
+
+            {/* Search Results */}
+            {searchDate && (
+                <div className="mb-4">
+                    <h2 className="results-date-title">
+                        Search Results for "{searchDate}"
+                    </h2>
+                    {filteredResults.length > 0 ? (
+                        <div className="accordion">
+                            {filteredResults.map((searchResult, index) => (
+                                <div className="card mb-2 accordion-card" key={`search-${index}`}>
+                                    <div
+                                        className="card-header accordion-header"
+                                        onClick={() => toggleResultsVisibility(`search-${index}`)}
+                                    >
+                                        <h5 className="mb-0 accordion-title">
+                                            Results for {searchResult.date}
+                                        </h5>
+                                        <span className="accordion-icon">
+                                            {openResultsIndex === `search-${index}` ? <ChevronUp /> : <ChevronDown />}
+                                        </span>
+                                    </div>
+                                    {openResultsIndex === `search-${index}` && (
+                                        <div className="card-body accordion-body">
+                                            <div className="row">
+                                                <div className="col-12 mb-3">
+                                                    <h6 className="session-title">Session 1</h6>
+                                                    {formatResult(searchResult.session1, 'Search Session 1')}
+                                                </div>
+                                                <div className="col-12 mb-3">
+                                                    <h6 className="session-title">Session 2</h6>
+                                                    {formatResult(searchResult.session2, 'Search Session 2')}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="alert alert-warning text-center">
+                            No results found for "{searchDate}"
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* Today's Results */}
             <div className="mb-4">
