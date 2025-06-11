@@ -7,13 +7,12 @@ const FriendsEarnings = () => {
     const [earningsData, setEarningsData] = useState(null);
     const [userData, setUserData] = useState(null);
     const [bonusHistory, setBonusHistory] = useState([]);
-    const [filteredBonusHistory, setFilteredBonusHistory] = useState([]); // New state for filtered history
+    const [filteredBonusHistory, setFilteredBonusHistory] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [showFullUI, setShowFullUI] = useState(false);
     const [totalPlayedAmount, setTotalPlayedAmount] = useState(0);
-    const [selectedDate, setSelectedDate] = useState(''); // New state for selected date
-    const [showDatePicker, setShowDatePicker] = useState(false); // New state to toggle date picker
+    const [dateSearch, setDateSearch] = useState(''); // New state for date search
 
     // Color scheme
     const colors = {
@@ -63,59 +62,81 @@ const FriendsEarnings = () => {
         });
     };
 
-    // Function to filter bonus history by selected date
-    const filterBonusHistoryByDate = (history, targetDate) => {
-        if (!targetDate) return history;
+    // Function to filter bonus history based on date search
+    const filterBonusHistoryByDate = (history, searchTerm) => {
+        if (!searchTerm.trim()) {
+            // If no search term, return latest 10 entries
+            return history.slice(0, 10);
+        }
+
+        // Clean the search term and add slashes if needed
+        let formattedSearch = searchTerm.replace(/[^\d]/g, ''); // Remove non-digits
         
+        // Add slashes for better formatting as user types
+        if (formattedSearch.length >= 2) {
+            formattedSearch = formattedSearch.substring(0, 2) + '/' + formattedSearch.substring(2);
+        }
+        if (formattedSearch.length >= 5) {
+            formattedSearch = formattedSearch.substring(0, 5) + '/' + formattedSearch.substring(5, 9);
+        }
+
+        // Filter based on partial or complete date match
         return history.filter(item => {
             if (!item.date) return false;
             
-            // Parse the item date
-            const parseDate = (dateStr) => {
-                if (dateStr.includes('/')) {
-                    const parts = dateStr.split('/');
-                    if (parts.length === 3) {
-                        // DD/MM/YYYY format
-                        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                    }
-                } else if (dateStr.includes('-')) {
-                    const parts = dateStr.split('-');
-                    if (parts.length === 3) {
-                        if (parts[0].length === 4) {
-                            // YYYY-MM-DD format
-                            return dateStr;
-                        } else {
-                            // DD-MM-YYYY format
-                            return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
-                        }
+            // Convert item date to DD/MM/YYYY format for consistent comparison
+            let itemDateFormatted = item.date;
+            
+            // If the item date is in a different format, convert it
+            if (item.date.includes('-')) {
+                const parts = item.date.split('-');
+                if (parts.length === 3) {
+                    if (parts[0].length === 4) {
+                        // YYYY-MM-DD format
+                        itemDateFormatted = `${parts[2].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[0]}`;
+                    } else {
+                        // DD-MM-YYYY format
+                        itemDateFormatted = `${parts[0].padStart(2, '0')}/${parts[1].padStart(2, '0')}/${parts[2]}`;
                     }
                 }
-                return dateStr;
-            };
+            }
             
-            const itemDateFormatted = parseDate(item.date);
-            return itemDateFormatted === targetDate;
+            // Check if the item date starts with the search term
+            return itemDateFormatted.toLowerCase().startsWith(searchTerm.toLowerCase()) ||
+                   itemDateFormatted.replace(/\//g, '').startsWith(searchTerm.replace(/\//g, ''));
         });
     };
 
-    // Handle date selection
-    const handleDateChange = (event) => {
-        const selectedDate = event.target.value;
-        setSelectedDate(selectedDate);
+    // Handle date search input change
+    const handleDateSearchChange = (e) => {
+        let value = e.target.value;
         
-        if (selectedDate) {
-            const filtered = filterBonusHistoryByDate(bonusHistory, selectedDate);
-            setFilteredBonusHistory(filtered);
-        } else {
-            setFilteredBonusHistory(bonusHistory);
+        // Allow only digits and slashes, limit to DD/MM/YYYY format
+        value = value.replace(/[^\d\/]/g, '');
+        
+        // Auto-format as user types
+        if (value.length === 2 && !value.includes('/')) {
+            value = value + '/';
+        } else if (value.length === 5 && value.split('/').length === 2) {
+            value = value + '/';
         }
+        
+        // Limit to DD/MM/YYYY format (10 characters)
+        if (value.length > 10) {
+            value = value.substring(0, 10);
+        }
+        
+        setDateSearch(value);
+        
+        // Filter the bonus history based on the search term
+        const filtered = filterBonusHistoryByDate(bonusHistory, value);
+        setFilteredBonusHistory(filtered);
     };
 
-    // Clear date filter
-    const clearDateFilter = () => {
-        setSelectedDate('');
-        setFilteredBonusHistory(bonusHistory);
-        setShowDatePicker(false);
+    // Clear date search
+    const clearDateSearch = () => {
+        setDateSearch('');
+        setFilteredBonusHistory(bonusHistory.slice(0, 10));
     };
 
     useEffect(() => {
@@ -151,7 +172,7 @@ const FriendsEarnings = () => {
 
                 if (earningsResponse.data.success) {
                     setEarningsData(earningsResponse.data.data);
-                    setShowFullUI(true); // Show full UI with data
+                    setShowFullUI(true);
                 } else {
                     throw new Error(earningsResponse.data.message || 'Failed to fetch earnings data');
                 }
@@ -165,7 +186,8 @@ const FriendsEarnings = () => {
                     // Sort the bonus history by date (newest first)
                     const sortedHistory = sortBonusHistoryByDate(historyResponse.data.data);
                     setBonusHistory(sortedHistory);
-                    setFilteredBonusHistory(sortedHistory); // Initialize filtered history
+                    // Set initial filtered history to show latest 10 entries
+                    setFilteredBonusHistory(sortedHistory.slice(0, 10));
                 } else {
                     console.warn('No bonus history found or error fetching history');
                     setBonusHistory([]);
@@ -175,12 +197,12 @@ const FriendsEarnings = () => {
                 console.log('Error occurred:', err.message);
                 // Check if it's a 404 error or any other API error
                 if (err.response?.status === 404 || err.message.includes('404') || err.message.includes('Failed to fetch')) {
-                    setShowFullUI(true); // Show full UI with N/A values
-                    setEarningsData(null); // Keep earnings data as null to show N/A
-                    setBonusHistory([]); // Empty history
-                    setFilteredBonusHistory([]); // Empty filtered history
+                    setShowFullUI(true);
+                    setEarningsData(null);
+                    setBonusHistory([]);
+                    setFilteredBonusHistory([]);
                 } else {
-                    setError(err.message); // Show error for other types of errors
+                    setError(err.message);
                 }
             } finally {
                 setLoading(false);
@@ -485,91 +507,51 @@ const FriendsEarnings = () => {
                                 color: colors.white,
                                 borderBottom: `1px solid ${colors.secondary}`
                             }}>
-                                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center">
-                                    <h5 className="mb-2 mb-md-0 fw-bold">
-                                        Bonus History (Latest First)
+                                <div className="d-flex justify-content-between align-items-center">
+                                    <h5 className="mb-0 fw-bold">
+                                        Bonus History
                                     </h5>
-                                    
-                                    {/* Calendar Search Controls */}
-                                    <div className="d-flex align-items-center gap-2">
-                                        {/* Calendar Icon Button - Mobile Friendly */}
-                                        <button 
-                                            className="btn btn-sm d-flex align-items-center justify-content-center"
-                                            onClick={() => setShowDatePicker(!showDatePicker)}
-                                            style={{
-                                                backgroundColor: colors.white,
-                                                color: colors.primary,
-                                                border: 'none',
-                                                borderRadius: '8px',
-                                                padding: '8px 12px',
-                                                minWidth: '44px',
-                                                height: '44px',
-                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                                            }}
-                                        >
-                                            <i className="bi bi-calendar3" style={{ fontSize: '18px' }}></i>
-                                            <span className="ms-2 d-none d-sm-inline">Filter by Date</span>
-                                        </button>
-                                        
-                                        {/* Clear Filter Button - Only show when date is selected */}
-                                        {selectedDate && (
-                                            <button 
-                                                className="btn btn-sm d-flex align-items-center justify-content-center"
-                                                onClick={clearDateFilter}
+                                    {/* Date Search Input */}
+                                    <div className="d-flex align-items-center">
+                                        <div className="position-relative me-2">
+                                            <input
+                                                type="text"
+                                                className="form-control"
+                                                placeholder="Search by date (DD/MM/YYYY)"
+                                                value={dateSearch}
+                                                onChange={handleDateSearchChange}
                                                 style={{
-                                                    backgroundColor: colors.accent,
-                                                    color: colors.white,
+                                                    backgroundColor: colors.white,
                                                     border: 'none',
-                                                    borderRadius: '8px',
-                                                    padding: '8px 12px',
-                                                    minWidth: '44px',
-                                                    height: '44px',
-                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                    borderRadius: '25px',
+                                                    paddingLeft: '40px',
+                                                    paddingRight: dateSearch ? '40px' : '15px',
+                                                    width: '250px',
+                                                    fontSize: '14px'
                                                 }}
-                                            >
-                                                <i className="bi bi-x-circle" style={{ fontSize: '18px' }}></i>
-                                                <span className="ms-2 d-none d-sm-inline">Clear</span>
-                                            </button>
-                                        )}
-                                    </div>
-                                </div>
-                                
-                                {/* Date Picker - Collapsible */}
-                                {showDatePicker && (
-                                    <div className="mt-3 pt-3 border-top border-light">
-                                        <div className="row">
-                                            <div className="col-12 col-md-6">
-                                                <div className="d-flex align-items-center">
-                                                    <label className="form-label mb-0 me-3 text-nowrap" style={{ color: colors.white, fontWeight: '500' }}>
-                                                        Select Date:
-                                                    </label>
-                                                    <input
-                                                        type="date"
-                                                        className="form-control"
-                                                        value={selectedDate}
-                                                        onChange={handleDateChange}
-                                                        style={{
-                                                            borderRadius: '8px',
-                                                            border: '1px solid #ddd',
-                                                            padding: '8px 12px',
-                                                            fontSize: '14px',
-                                                            maxWidth: '200px'
-                                                        }}
-                                                    />
-                                                </div>
-                                            </div>
-                                            {selectedDate && (
-                                                <div className="col-12 col-md-6 mt-2 mt-md-0">
-                                                    <div className="d-flex align-items-center justify-content-md-end">
-                                                        <small style={{ color: colors.white, opacity: 0.9 }}>
-                                                            Showing {filteredBonusHistory.length} record(s) for {selectedDate}
-                                                        </small>
-                                                    </div>
-                                                </div>
+                                            />
+                                            <i className="bi bi-calendar3 position-absolute" style={{
+                                                left: '12px',
+                                                top: '50%',
+                                                transform: 'translateY(-50%)',
+                                                color: colors.primary
+                                            }}></i>
+                                            {dateSearch && (
+                                                <button
+                                                    type="button"
+                                                    className="btn-close position-absolute"
+                                                    onClick={clearDateSearch}
+                                                    style={{
+                                                        right: '12px',
+                                                        top: '50%',
+                                                        transform: 'translateY(-50%)',
+                                                        fontSize: '10px'
+                                                    }}
+                                                ></button>
                                             )}
                                         </div>
                                     </div>
-                                )}
+                                </div>
                             </div>
                             <div className="card-body p-0">
                                 <div className="table-responsive">
@@ -642,7 +624,10 @@ const FriendsEarnings = () => {
                                                 <tr>
                                                     <td colSpan="3" className="text-center py-5" style={{ color: colors.text }}>
                                                         <i className="bi bi-info-circle me-2"></i>
-                                                        {selectedDate ? `No bonus history found for ${selectedDate}` : 'No bonus history available'}
+                                                        {dateSearch ? 
+                                                            `No bonus history found for "${dateSearch}"` : 
+                                                            'No bonus history available'
+                                                        }
                                                     </td>
                                                 </tr>
                                             )}
