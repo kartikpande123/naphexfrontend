@@ -34,10 +34,11 @@ html {
   margin-bottom: 20px;
   padding: 0 10px;
   position: relative;
+  color: black;
 }
 
 .date-search-container::before {
-  content: "📅 Select Date to View Results";
+  content: "📅 Select Date to View Results click below";
   display: block;
   text-align: center;
   font-size: 16px;
@@ -60,7 +61,7 @@ html {
   font-size: 18px;
   font-weight: 600;
   border-radius: 8px;
-  color: #1a73e8;
+  color: #000205;
   box-shadow: 0 2px 8px rgba(26, 115, 232, 0.2);
   transition: all 0.3s ease;
 }
@@ -400,7 +401,7 @@ html {
     width: 100%;
     border-width: 3px;
     border-radius: 10px;
-    box-shadow: 0 4px 12px rgba(26, 115, 232, 0.25);
+    box-shadow: 0 4px 12px rgba(0, 9, 20, 0.25);
   }
 
   .date-input::-webkit-calendar-picker-indicator {
@@ -693,3 +694,4 @@ html {
     margin-bottom: 10px;
   }
 }
+

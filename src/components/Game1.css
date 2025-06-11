@@ -49,18 +49,23 @@
 .nav-button {
   background: rgba(79, 70, 229, 0.1);
   border: none;
-  /* Significantly increased padding for larger buttons */
-  padding: 15px 30px;
-  /* Adjusted border-radius for wider buttons */
+  padding: 10px 20px;
   border-radius: 30px;
   color: var(--accent-primary);
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-  /* Increased minimum width */
   min-width: 120px;
-  /* Added font-size for better proportion */
-  font-size: 16px;
+  font-size: 18px;
+  gap: 2px;
+}
+
+.nav-button span{
+  font-size: 15px;
+}
+
+.nav-button .ic{
+  min-width: 18px;
 }
 
 .nav-button:hover {
@@ -69,25 +74,6 @@
   transform: scale(1.1);
 }
 
-.nav-button .tooltip {
-  position: absolute;
-  background: var(--accent-primary);
-  color: white;
-  padding: 5px 10px;
-  border-radius: 5px;
-  font-size: 14px;
-  white-space: nowrap;
-  /* Adjusted tooltip position */
-  top: -35px;
-  left: 50%;
-  transform: translateX(-50%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.nav-button:hover .tooltip {
-  opacity: 1;
-}
 
 /* Common styles for all buttons */
 .back-button,
@@ -107,6 +93,9 @@
   height: 60px; /* Fixed height */
   width: 110px; /* Fixed width for all buttons */
   text-align: center; /* Center text within buttons */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 
@@ -625,6 +614,7 @@
   height: 100%;
   object-fit: cover;
 }
+
 
 .image-item-full.selected-full {
   border-color: var(--accent-primary);

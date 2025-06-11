@@ -7,9 +7,13 @@ const FriendsEarnings = () => {
     const [earningsData, setEarningsData] = useState(null);
     const [userData, setUserData] = useState(null);
     const [bonusHistory, setBonusHistory] = useState([]);
+    const [filteredBonusHistory, setFilteredBonusHistory] = useState([]); // New state for filtered history
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [showFullUI, setShowFullUI] = useState(false); // New state to control UI display
+    const [showFullUI, setShowFullUI] = useState(false);
+    const [totalPlayedAmount, setTotalPlayedAmount] = useState(0);
+    const [selectedDate, setSelectedDate] = useState(''); // New state for selected date
+    const [showDatePicker, setShowDatePicker] = useState(false); // New state to toggle date picker
 
     // Color scheme
     const colors = {
@@ -59,6 +63,61 @@ const FriendsEarnings = () => {
         });
     };
 
+    // Function to filter bonus history by selected date
+    const filterBonusHistoryByDate = (history, targetDate) => {
+        if (!targetDate) return history;
+        
+        return history.filter(item => {
+            if (!item.date) return false;
+            
+            // Parse the item date
+            const parseDate = (dateStr) => {
+                if (dateStr.includes('/')) {
+                    const parts = dateStr.split('/');
+                    if (parts.length === 3) {
+                        // DD/MM/YYYY format
+                        return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                    }
+                } else if (dateStr.includes('-')) {
+                    const parts = dateStr.split('-');
+                    if (parts.length === 3) {
+                        if (parts[0].length === 4) {
+                            // YYYY-MM-DD format
+                            return dateStr;
+                        } else {
+                            // DD-MM-YYYY format
+                            return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+                        }
+                    }
+                }
+                return dateStr;
+            };
+            
+            const itemDateFormatted = parseDate(item.date);
+            return itemDateFormatted === targetDate;
+        });
+    };
+
+    // Handle date selection
+    const handleDateChange = (event) => {
+        const selectedDate = event.target.value;
+        setSelectedDate(selectedDate);
+        
+        if (selectedDate) {
+            const filtered = filterBonusHistoryByDate(bonusHistory, selectedDate);
+            setFilteredBonusHistory(filtered);
+        } else {
+            setFilteredBonusHistory(bonusHistory);
+        }
+    };
+
+    // Clear date filter
+    const clearDateFilter = () => {
+        setSelectedDate('');
+        setFilteredBonusHistory(bonusHistory);
+        setShowDatePicker(false);
+    };
+
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -74,6 +133,10 @@ const FriendsEarnings = () => {
 
                 if (profileData.success) {
                     setUserData(profileData.userData);
+                    
+                    // Extract total played amount from the profile data
+                    const totalPlayed = profileData.userData?.game1?.['total-bet-amount']?.totalAmount || 0;
+                    setTotalPlayedAmount(totalPlayed);
                 }
 
                 const userId = storedUserData?.userids?.myuserid;
@@ -102,9 +165,11 @@ const FriendsEarnings = () => {
                     // Sort the bonus history by date (newest first)
                     const sortedHistory = sortBonusHistoryByDate(historyResponse.data.data);
                     setBonusHistory(sortedHistory);
+                    setFilteredBonusHistory(sortedHistory); // Initialize filtered history
                 } else {
                     console.warn('No bonus history found or error fetching history');
                     setBonusHistory([]);
+                    setFilteredBonusHistory([]);
                 }
             } catch (err) {
                 console.log('Error occurred:', err.message);
@@ -113,6 +178,7 @@ const FriendsEarnings = () => {
                     setShowFullUI(true); // Show full UI with N/A values
                     setEarningsData(null); // Keep earnings data as null to show N/A
                     setBonusHistory([]); // Empty history
+                    setFilteredBonusHistory([]); // Empty filtered history
                 } else {
                     setError(err.message); // Show error for other types of errors
                 }
@@ -373,7 +439,7 @@ const FriendsEarnings = () => {
                                     <div className="row">
                                         <div className="col-md-6 mb-3 mb-md-0">
                                             <div className="d-flex align-items-center justify-content-center justify-content-md-start">
-                                                <span className="fw-bold me-2" style={{ color: colors.text }}>Next Day Carry Forward:</span>
+                                                <span className="fw-bold me-2" style={{ color: colors.text }}>Total played amount:</span>
                                                 <span className="badge px-3 py-2" style={{ 
                                                     fontSize: '16px',
                                                     borderRadius: '6px',
@@ -381,7 +447,7 @@ const FriendsEarnings = () => {
                                                     backgroundColor: colors.secondary,
                                                     color: colors.white
                                                 }}>
-                                                    {earningsData ? `₹${earningsData.carryForwardForNextDay || 0}` : 'N/A'}
+                                                    ₹{totalPlayedAmount}
                                                 </span>
                                             </div>
                                         </div>
@@ -414,14 +480,96 @@ const FriendsEarnings = () => {
                             border: 'none',
                             overflow: 'hidden'
                         }}>
-                            <div className="card-header text-center py-3" style={{
+                            <div className="card-header py-3" style={{
                                 background: colors.primary,
                                 color: colors.white,
                                 borderBottom: `1px solid ${colors.secondary}`
                             }}>
-                                <h5 className="mb-0 fw-bold">
-                                    Bonus History (Latest First)
-                                </h5>
+                                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center">
+                                    <h5 className="mb-2 mb-md-0 fw-bold">
+                                        Bonus History (Latest First)
+                                    </h5>
+                                    
+                                    {/* Calendar Search Controls */}
+                                    <div className="d-flex align-items-center gap-2">
+                                        {/* Calendar Icon Button - Mobile Friendly */}
+                                        <button 
+                                            className="btn btn-sm d-flex align-items-center justify-content-center"
+                                            onClick={() => setShowDatePicker(!showDatePicker)}
+                                            style={{
+                                                backgroundColor: colors.white,
+                                                color: colors.primary,
+                                                border: 'none',
+                                                borderRadius: '8px',
+                                                padding: '8px 12px',
+                                                minWidth: '44px',
+                                                height: '44px',
+                                                boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                            }}
+                                        >
+                                            <i className="bi bi-calendar3" style={{ fontSize: '18px' }}></i>
+                                            <span className="ms-2 d-none d-sm-inline">Filter by Date</span>
+                                        </button>
+                                        
+                                        {/* Clear Filter Button - Only show when date is selected */}
+                                        {selectedDate && (
+                                            <button 
+                                                className="btn btn-sm d-flex align-items-center justify-content-center"
+                                                onClick={clearDateFilter}
+                                                style={{
+                                                    backgroundColor: colors.accent,
+                                                    color: colors.white,
+                                                    border: 'none',
+                                                    borderRadius: '8px',
+                                                    padding: '8px 12px',
+                                                    minWidth: '44px',
+                                                    height: '44px',
+                                                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                                                }}
+                                            >
+                                                <i className="bi bi-x-circle" style={{ fontSize: '18px' }}></i>
+                                                <span className="ms-2 d-none d-sm-inline">Clear</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                {/* Date Picker - Collapsible */}
+                                {showDatePicker && (
+                                    <div className="mt-3 pt-3 border-top border-light">
+                                        <div className="row">
+                                            <div className="col-12 col-md-6">
+                                                <div className="d-flex align-items-center">
+                                                    <label className="form-label mb-0 me-3 text-nowrap" style={{ color: colors.white, fontWeight: '500' }}>
+                                                        Select Date:
+                                                    </label>
+                                                    <input
+                                                        type="date"
+                                                        className="form-control"
+                                                        value={selectedDate}
+                                                        onChange={handleDateChange}
+                                                        style={{
+                                                            borderRadius: '8px',
+                                                            border: '1px solid #ddd',
+                                                            padding: '8px 12px',
+                                                            fontSize: '14px',
+                                                            maxWidth: '200px'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
+                                            {selectedDate && (
+                                                <div className="col-12 col-md-6 mt-2 mt-md-0">
+                                                    <div className="d-flex align-items-center justify-content-md-end">
+                                                        <small style={{ color: colors.white, opacity: 0.9 }}>
+                                                            Showing {filteredBonusHistory.length} record(s) for {selectedDate}
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                             <div className="card-body p-0">
                                 <div className="table-responsive">
@@ -454,8 +602,8 @@ const FriendsEarnings = () => {
                                             </tr>
                                         </thead>
                                         <tbody>
-                                        {bonusHistory && bonusHistory.length > 0 ? (
-                                                bonusHistory.map((item, index) => (
+                                        {filteredBonusHistory && filteredBonusHistory.length > 0 ? (
+                                                filteredBonusHistory.map((item, index) => (
                                                     <tr key={index} style={{
                                                         backgroundColor: index % 2 === 0 ? colors.lightBg : colors.white,
                                                         boxShadow: '0 2px 5px rgba(0,0,0,0.05)',
@@ -494,7 +642,7 @@ const FriendsEarnings = () => {
                                                 <tr>
                                                     <td colSpan="3" className="text-center py-5" style={{ color: colors.text }}>
                                                         <i className="bi bi-info-circle me-2"></i>
-                                                        No bonus history available
+                                                        {selectedDate ? `No bonus history found for ${selectedDate}` : 'No bonus history available'}
                                                     </td>
                                                 </tr>
                                             )}

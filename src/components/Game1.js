@@ -574,18 +574,18 @@ useEffect(() => {
                     className="nav-button back-button"
                     onClick={() => navigate("/home")}
                 >
-                    <FaArrowLeft />
-                    <span className="tooltip">Back</span>
+                    <FaArrowLeft className="ic"/>
+                    <span>Back</span>
                 </button>
                 <h1 className="game-title">Open-Close</h1>
                 <button className="nav-button how-to-play-button">
-                    <FaQuestionCircle />
-                    <span className="tooltip">How to Play</span>
+                    <FaQuestionCircle className="ic"/>
+                    <span>How to Play</span>
                 </button>
                 <button className="nav-button results-button"
                  onClick={() => navigate("/opencloseresult")}>
-                    <FaCrown />
-                    <span className="tooltip">Results</span>
+                    <FaCrown className="ic"/>
+                    <span>Results</span>
                 </button>
                 <div className="top-bar">
                     <div className="current-time">
@@ -652,7 +652,7 @@ useEffect(() => {
                 {images.map((img, index) => (
                     <motion.div
                         key={index}
-                        whileHover={{ scale: 1.05 }}
+                        whileHover={{ scale: 1.18 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => handleImageSelect(img)}
                         className="image-item-full"
