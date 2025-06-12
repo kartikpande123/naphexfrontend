@@ -20,17 +20,17 @@ const AuthPage = () => {
   useEffect(() => {
     const handleKeyPress = (event) => {
       const key = event.key.toUpperCase();
-      
+
       if (key.match(/[A-Z]/)) {
         setSecretCode(prev => {
           const newCode = prev + key;
-          
+
           // Check if the secret code matches "ADMIN"
           if (newCode === 'ADMIN') {
             navigate('/adminlogin');
             return '';
           }
-          
+
           // Keep only last 10 characters to prevent memory issues
           return newCode.slice(-10);
         });
@@ -41,7 +41,7 @@ const AuthPage = () => {
     };
 
     document.addEventListener('keypress', handleKeyPress);
-    
+
     return () => {
       document.removeEventListener('keypress', handleKeyPress);
     };
@@ -53,7 +53,7 @@ const AuthPage = () => {
       const timer = setTimeout(() => {
         setSecretCode('');
       }, 3000);
-      
+
       return () => clearTimeout(timer);
     }
   }, [secretCode]);
@@ -189,7 +189,7 @@ const AuthPage = () => {
 
   return (
     <div className="login-container">
-      <style>{`
+      <style jsx>{`
         * {
           box-sizing: border-box;
           margin: 0;
@@ -290,18 +290,22 @@ const AuthPage = () => {
         }
 
         .ad-section {
-          flex: 2;
-          width: 40%;
+        flex: 2;
+        width: 40%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         }
 
-        .ad-image {
-          width: 80%;
-          height: auto;
-          max-height: 400px;
-          object-fit: cover;
-          border-radius: 20px;
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-        }
+       .ad-image {
+        width: 100%;
+        height: auto;
+        max-height: 400px;
+        object-fit: cover;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        display: block;
+       }
 
         .form-section {
           flex: 1;
@@ -571,7 +575,7 @@ const AuthPage = () => {
           box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
 
-        @media (max-width: 600px) {
+        @media (max-width: 768px) {
           .login-container {
             padding: 15px;
           }
