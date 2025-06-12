@@ -572,7 +572,7 @@ const AuthPage = () => {
 
         /* Changed from max-width: 768px to max-width: 767px */
         /* This ensures screens of 768px and above show the ad image */
-        @media (max-width: 767px) {
+        @media (max-width: 700px) {
           .login-container {
             padding: 15px;
           }
