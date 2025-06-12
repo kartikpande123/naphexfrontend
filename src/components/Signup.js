@@ -861,6 +861,7 @@ const SignupPage = () => {
           <div className="card-header">
             <h1 className="header-title">Create Account</h1>
             <p className="header-subtitle">Join us and start your journey today</p>
+            <h2 className='"header-title"'>NAPHEX</h2>
           </div>
           
           <div className="card-body">

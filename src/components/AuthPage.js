@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+// Import image properly - make sure the path is correct
 import image from "../images/promo1.jpg";
 import { FaQuestionCircle } from "react-icons/fa";
 import API_BASE_URL from './ApiConfig';
@@ -12,8 +13,22 @@ const AuthPage = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [failedAttempts, setFailedAttempts] = useState(0);
   const [secretCode, setSecretCode] = useState('');
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const navigate = useNavigate();
+
+  // Image loading handlers
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+    setImageError(false);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+    setImageLoaded(false);
+    console.error('Failed to load promotional image');
+  };
 
   // Listen for keypress events to capture secret code
   useEffect(() => {
@@ -186,6 +201,37 @@ const AuthPage = () => {
     setPhoneNo(value);
   };
 
+  // Fallback image component
+  const ImageComponent = ({ src, alt, className, isMobile = false }) => {
+    return (
+      <div className={`image-container ${className}`}>
+        {!imageError ? (
+          <>
+            <img
+              src={src}
+              alt={alt}
+              className={`${className} ${imageLoaded ? 'loaded' : 'loading'}`}
+              onLoad={handleImageLoad}
+              onError={handleImageError}
+              loading="lazy"
+            />
+            {!imageLoaded && !imageError && (
+              <div className="image-placeholder">
+                <div className="loading-spinner"></div>
+                <p>Loading image...</p>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="image-fallback">
+            <div className="fallback-icon">🖼️</div>
+            <p>Image not available</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="login-container">
       <style jsx>{`
@@ -216,6 +262,71 @@ const AuthPage = () => {
           display: flex;
           align-items: center;
           position: relative;
+        }
+
+        /* Image loading states */
+        .image-container {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .image-container img {
+          transition: opacity 0.3s ease;
+        }
+
+        .image-container img.loading {
+          opacity: 0;
+        }
+
+        .image-container img.loaded {
+          opacity: 1;
+        }
+
+        .image-placeholder {
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: rgba(0, 0, 0, 0.1);
+          border-radius: 20px;
+        }
+
+        .loading-spinner {
+          width: 40px;
+          height: 40px;
+          border: 4px solid #f3f3f3;
+          border-top: 4px solid #42a5f5;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin-bottom: 10px;
+        }
+
+        .image-fallback {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+          border-radius: 20px;
+          padding: 40px;
+          min-height: 200px;
+        }
+
+        .fallback-icon {
+          font-size: 3rem;
+          margin-bottom: 15px;
+          opacity: 0.7;
+        }
+
+        .image-fallback p {
+          color: #666;
+          font-size: 1rem;
+          text-align: center;
         }
 
         .help-icon-container {
@@ -337,6 +448,11 @@ const AuthPage = () => {
         }
 
         @keyframes shimmer {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
@@ -516,11 +632,6 @@ const AuthPage = () => {
           animation: spin 1s linear infinite;
         }
 
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
         .forgot-password-link {
           display: block;
           text-align: center;
@@ -660,9 +771,13 @@ const AuthPage = () => {
 
       {/* Main Content */}
       <div className="main-content">
-        {/* Advertisement Section */}
+        {/* Advertisement Section - Desktop Only */}
         <div className="ad-section">
-          <img src={image} alt="Promoted Ad" className="ad-image" />
+          <ImageComponent
+            src={image}
+            alt="Promoted Ad"
+            className="ad-image"
+          />
         </div>
 
         {/* Form Section */}
@@ -750,7 +865,12 @@ const AuthPage = () => {
           </div>
 
           {/* Bottom Image for Mobile */}
-          <img src={image} alt="Bottom Promo" className="bottom-image" />
+          <ImageComponent
+            src={image}
+            alt="Bottom Promo"
+            className="bottom-image"
+            isMobile={true}
+          />
         </div>
       </div>
     </div>
