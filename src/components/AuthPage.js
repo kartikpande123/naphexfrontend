@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import image from "../images/promo1.jpg";
-import { FaUserShield, FaQuestionCircle } from "react-icons/fa";
+import image2 from "../images/img2.jpeg";
+import { FaQuestionCircle } from "react-icons/fa";
 import API_BASE_URL from './ApiConfig';
 
 const AuthPage = () => {
@@ -10,12 +11,52 @@ const AuthPage = () => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0); // Counter for failed attempts
-
+  const [failedAttempts, setFailedAttempts] = useState(0);
+  const [secretCode, setSecretCode] = useState('');
 
   const navigate = useNavigate();
 
+  // Listen for keypress events to capture secret code
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      const key = event.key.toUpperCase();
+      
+      if (key.match(/[A-Z]/)) {
+        setSecretCode(prev => {
+          const newCode = prev + key;
+          
+          // Check if the secret code matches "ADMIN"
+          if (newCode === 'ADMIN') {
+            navigate('/adminlogin');
+            return '';
+          }
+          
+          // Keep only last 10 characters to prevent memory issues
+          return newCode.slice(-10);
+        });
+      } else {
+        // Reset secret code on non-letter keys
+        setSecretCode('');
+      }
+    };
 
+    document.addEventListener('keypress', handleKeyPress);
+    
+    return () => {
+      document.removeEventListener('keypress', handleKeyPress);
+    };
+  }, [navigate]);
+
+  // Reset secret code after 3 seconds of inactivity
+  useEffect(() => {
+    if (secretCode) {
+      const timer = setTimeout(() => {
+        setSecretCode('');
+      }, 3000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [secretCode]);
 
   const validateInputs = () => {
     setError('');
@@ -36,21 +77,18 @@ const AuthPage = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Check if the user has exceeded the maximum number of failed attempts
     if (failedAttempts >= 10) {
       setError('You have exceeded the maximum number of login attempts. Please reset your password.');
       navigate('/forgotpassword');
       return;
     }
 
-    // Input validation
     if (!validateInputs()) return;
 
     setLoading(true);
     setError('');
 
     try {
-      // Password test request
       const testResponse = await fetch(`${API_BASE_URL}/test-password`, {
         method: 'POST',
         headers: {
@@ -62,7 +100,6 @@ const AuthPage = () => {
         }),
       });
 
-      // Handle network or server errors during password test
       if (!testResponse.ok) {
         const errorText = await testResponse.text();
         if (testResponse.status === 404 || errorText.includes("User not found")) {
@@ -75,7 +112,6 @@ const AuthPage = () => {
       const testData = await testResponse.json();
       console.log('Password test response:', testData);
 
-      // Strict password validation
       if (!testData.success || !testData.passwordMatches) {
         setFailedAttempts(failedAttempts + 1);
         setError(`Invalid phone number or password. Attempts remaining: ${10 - failedAttempts}`);
@@ -83,7 +119,6 @@ const AuthPage = () => {
         return;
       }
 
-      // Login request
       const loginResponse = await fetch(`${API_BASE_URL}/login`, {
         method: 'POST',
         headers: {
@@ -95,7 +130,6 @@ const AuthPage = () => {
         }),
       });
 
-      // Handle network or server errors during login
       if (!loginResponse.ok) {
         const errorText = await loginResponse.text();
         throw new Error(`Login Failed: ${errorText || loginResponse.statusText}`);
@@ -104,15 +138,10 @@ const AuthPage = () => {
       const loginData = await loginResponse.json();
       console.log('Login response:', loginData);
 
-      // Comprehensive login success handling
       if (loginData.success) {
-        // Reset failed attempts counter on successful login
         setFailedAttempts(0);
-
-        // Secure token storage
         localStorage.setItem('authToken', loginData.customToken);
 
-        // Enhanced user data storage with timestamp and proper userIds
         const userDataWithTimestamp = {
           ...loginData.userData,
           loginTimestamp: new Date().toISOString(),
@@ -123,11 +152,9 @@ const AuthPage = () => {
         };
         localStorage.setItem('userData', JSON.stringify(userDataWithTimestamp));
 
-        // Form and state reset
         setPhoneNo('');
         setPassword('');
 
-        // Navigation with optional state passing
         navigate("/home", {
           state: {
             welcomeMessage: `Welcome back, ${loginData.userData.name}!`
@@ -150,10 +177,6 @@ const AuthPage = () => {
       setLoading(false);
     }
   };
-  
-  const goToAdminLogin = () => {
-    navigate("/adminlogin");
-  };
 
   const goToHelp = () => {
     navigate("/help");
@@ -164,224 +187,493 @@ const AuthPage = () => {
     setPhoneNo(value);
   };
 
-  const inputStyle = {
-    backgroundColor: '#1a2a44',
-    color: '#ecf0f1',
-  };
-
   return (
-    <div className="container mt-5">
-      <style>
-        {`
-          body, html {
-            height: 110%;
-            margin: 0;
+    <div className="login-container">
+      <style>{`
+        * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+
+        body, html {
+          height: 100%;
+          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          background: linear-gradient(180deg, #f5f7fa 0%, #c3cfe2 100%);
+          background-attachment: fixed;
+          background-repeat: no-repeat;
+        }
+
+        body {
+          min-height: 100vh;
+          padding: 20px 0;
+        }
+
+        .login-container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 20px;
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          position: relative;
+        }
+
+        .help-icon-container {
+          position: fixed;
+          bottom: 30px;
+          right: 10px;
+          z-index: 1000;
+        }
+
+        .help-icon {
+          background: linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ffcc02 100%);
+          border: 3px solid #ffffff;
+          border-radius: 50px;
+          padding: 14px 22px;
+          cursor: pointer;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 10px;
+          transition: all 0.3s ease;
+          box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4), 0 0 20px rgba(255, 204, 2, 0.3);
+          font-size: 15px;
+          font-weight: 700;
+          white-space: nowrap;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4), 0 0 20px rgba(255, 204, 2, 0.3);
+          }
+          50% {
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.6), 0 0 30px rgba(255, 204, 2, 0.5);
+          }
+          100% {
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4), 0 0 20px rgba(255, 204, 2, 0.3);
+          }
+        }
+
+        .help-icon:hover {
+          transform: translateY(-3px) scale(1.08);
+          box-shadow: 0 12px 35px rgba(255, 107, 53, 0.5), 0 0 35px rgba(255, 204, 2, 0.4);
+          background: linear-gradient(135deg, #e55a2b 0%, #e8851a 50%, #f0b90b 100%);
+          animation: none;
+        }
+
+        .help-icon:focus {
+          outline: none;
+          box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.3), 0 8px 25px rgba(255, 107, 53, 0.4);
+        }
+
+        .help-icon-text {
+          font-size: 15px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .help-icon svg {
+          font-size: 20px;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+        }
+
+        .main-content {
+          display: flex;
+          width: 100%;
+          gap: 20px;
+          align-items: center;
+        }
+
+        .ad-section {
+          flex: 2;
+          width: 40%;
+        }
+
+        .ad-image {
+          width: 80%;
+          height: auto;
+          max-height: 400px;
+          object-fit: cover;
+          border-radius: 20px;
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
+
+        .form-section {
+          flex: 1;
+          width: 40%;
+          max-width: 420px;
+        }
+
+        .login-card {
+          background: rgba(26, 42, 68, 0.95);
+          backdrop-filter: blur(10px);
+          border-radius: 20px;
+          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+          overflow: hidden;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-header {
+          background: linear-gradient(135deg, #42a5f5 0%, #2a5298 100%);
+          padding: 20px 30px;
+          text-align: center;
+          position: relative;
+          overflow: hidden;
+        }
+
+        .card-header::before {
+          content: '';
+          position: absolute;
+          top: -50%;
+          left: -50%;
+          width: 200%;
+          height: 200%;
+          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+          animation: shimmer 3s infinite;
+        }
+
+        @keyframes shimmer {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .header-title {
+          color: #ffffff;
+          font-size: 1.75rem;
+          font-weight: 700;
+          margin: 0;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+          position: relative;
+          z-index: 1;
+        }
+
+        .header-subtitle {
+          color: rgba(255, 255, 255, 0.9);
+          font-size: 0.9rem;
+          margin-top: 6px;
+          position: relative;
+          z-index: 1;
+        }
+
+        .card-body {
+          padding: 25px 30px;
+          background: #1a2a44;
+        }
+
+        .form-group {
+          margin-bottom: 20px;
+          position: relative;
+        }
+
+        .form-label {
+          color: #ecf0f1;
+          font-weight: 500;
+          margin-bottom: 6px;
+          display: block;
+          font-size: 0.9rem;
+        }
+
+        .form-control {
+          width: 100%;
+          padding: 14px 16px;
+          background: rgba(52, 73, 94, 0.8);
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          color: #ffffff;
+          font-size: 1rem;
+          transition: all 0.3s ease;
+          backdrop-filter: blur(5px);
+        }
+
+        .form-control:focus {
+          outline: none;
+          border-color: #42a5f5;
+          box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
+          background: rgba(52, 73, 94, 1);
+          color:#fff;
+        }
+
+        .form-control::placeholder {
+          color: rgba(255, 255, 255, 0.7);
+          opacity: 1;
+        }
+
+        .form-control:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          background: rgba(52, 73, 94, 0.5);
+        }
+
+        .password-input-container {
+          position: relative;
+        }
+
+        .password-toggle {
+          position: absolute;
+          top: 50%;
+          right: 15px;
+          transform: translateY(-50%);
+          background: rgba(248, 249, 250, 0.9);
+          border: none;
+          border-radius: 6px;
+          width: 40px;
+          height: 32px;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.3s ease;
+        }
+
+        .password-toggle:hover {
+          background: rgba(233, 236, 239, 1);
+        }
+
+        .password-toggle:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(66, 165, 245, 0.3);
+        }
+
+        .password-toggle i {
+          font-size: 1.1rem;
+          color: #6c757d;
+        }
+
+        .alert {
+          padding: 12px 16px;
+          border-radius: 10px;
+          margin-bottom: 15px;
+          border: none;
+          font-size: 0.85rem;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .alert-danger {
+          background: rgba(231, 76, 60, 0.1);
+          border: 1px solid rgba(231, 76, 60, 0.3);
+          color: #e74c3c;
+        }
+
+        .alert-danger::before {
+          content: '⚠';
+          font-size: 1rem;
+        }
+
+        .btn-primary {
+          width: 100%;
+          padding: 14px;
+          background: linear-gradient(135deg, #42a5f5 0%, #2a5298 100%);
+          border: none;
+          border-radius: 12px;
+          color: white;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          box-shadow: 0 6px 20px rgba(66, 165, 245, 0.3);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .btn-primary::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+          left: 100%;
+        }
+
+        .btn-primary:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(66, 165, 245, 0.4);
+        }
+
+        .btn-primary:disabled {
+          background: rgba(108, 117, 125, 0.6);
+          cursor: not-allowed;
+          transform: none;
+          box-shadow: none;
+          opacity: 0.7;
+        }
+
+        .spinner-border {
+          width: 1rem;
+          height: 1rem;
+          margin-right: 8px;
+          animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
+        .forgot-password-link {
+          display: block;
+          text-align: center;
+          margin-top: 15px;
+          color: #42a5f5;
+          text-decoration: none;
+          font-size: 0.85rem;
+          font-weight: 500;
+          transition: color 0.3s ease;
+        }
+
+        .forgot-password-link:hover {
+          color: #add8e6;
+          text-decoration: underline;
+        }
+
+        .card-footer {
+          background: rgba(42, 82, 152, 0.3);
+          padding: 18px 30px;
+          text-align: center;
+          border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-footer p {
+          margin: 0;
+          color: #bdc3c7;
+          font-size: 0.9rem;
+        }
+
+        .card-footer a {
+          color: #42a5f5;
+          text-decoration: none;
+          font-weight: 500;
+          transition: color 0.3s ease;
+        }
+
+        .card-footer a:hover {
+          color: #add8e6;
+          text-decoration: underline;
+        }
+
+        .bottom-image {
+          display: none;
+          width: 100%;
+          margin-top: 20px;
+          border-radius: 15px;
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        @media (max-width: 768px) {
+          .login-container {
+            padding: 15px;
           }
 
-          body {
-            background: linear-gradient(180deg, #f5f7fa 0%, #c3cfe2 100%);
-            height: 100vh;
-            display: flex;
+          .help-icon-container {
+            bottom: 20px;
+            right: 20px;
+          }
+
+          .help-icon {
+            padding: 12px 18px;
+            font-size: 14px;
+          }
+
+          .help-icon svg {
+            font-size: 18px;
+          }
+
+          .main-content {
             flex-direction: column;
-          }
-
-          input::placeholder {
-            color: rgba(255, 255, 255, 0.7) !important;
-          }
-
-          .error-message {
-            color: #e74c3c;
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-          }
-
-          .ad-container {
-            width: 60%;
-          }
-
-          .ad-image {
-            width: 90%;
-            height: 50%;
-            object-fit: cover;
-            border-radius: 8px;
-          }
-
-          .form-container {
-            flex: 1;
-            max-width: 420px;
-            margin: 0 auto;
-          }
-
-          .data-safety {
-            background-color: rgba(26, 42, 68, 0.9);
-            border-radius: 8px;
-            padding: 2rem;
-            height: fit-content;
-          }
-
-          .card {
-            background-color: #1a2a44;
-            color: #ecf0f1;
-            border: 2px solid #3a506b;
-          }
-
-          .card-header, .card-footer {
-            background-color: #2a5298;
-            color: #fff;
-          }
-
-          .btn {
-            width: 100%;
-            background-color: #0d6efd;
-            color: #fff;
-            border: none;
-            transition: background-color 0.3s ease;
-          }
-
-          .btn:hover {
-            background-color: #0b5ed7;
-          }
-
-          .btn:focus {
-            outline: none;
-            box-shadow: 0 0 8px #3a506b;
-          }
-
-          .btn:disabled {
-            background-color: #6c757d;
-            cursor: not-allowed;
-          }
-
-          .loading-spinner {
-            width: 1rem;
-            height: 1rem;
-            margin-right: 0.5rem;
-            animation: spin 1s linear infinite;
-          }
-          .form-label{
-            color:#fff
-          }
-
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-
-          .row {
-            display: flex;
             gap: 20px;
           }
 
-          .text-white:hover {
-            color: #add8e6 !important;
+          .ad-section {
+            display: none;
           }
 
           .bottom-image {
-            display: none;
+            display: block;
+          }
+
+          .form-section {
+            max-width: 100%;
             width: 100%;
-            margin-top: 20px;
-            border-radius: 8px;
           }
 
-          .action-icons-container {
-            display: flex;
-            justify-content: flex-start;
-            gap: 20px;
-            margin-top: 20px;
+          .card-body {
+            padding: 20px 20px;
           }
 
-          .action-icon {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 44px;
-            color: #007bff;
-            transition: color 0.3s ease, transform 0.2s ease;
+          .card-header {
+            padding: 18px 20px;
           }
 
-          .action-icon:hover {
-            color: #0056b3;
-            transform: scale(1.1);
+          .header-title {
+            font-size: 1.6rem;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .help-icon {
+            padding: 10px 14px;
+            font-size: 13px;
+            gap: 8px;
           }
 
-          .action-icon:focus {
-            outline: 2px solid #007bff;
-            outline-offset: 2px;
-            border-radius: 4px;
+          .help-icon svg {
+            font-size: 16px;
           }
 
-          @media (max-width: 576px) {
-            .bottom-image {
-              display: block;
-            }
-
-            .ad-container {
-              display: none;
-            }
-
-            .action-icons-container {
-              justify-content: center;
-              gap: 30px;
-              margin-top: 15px;
-            }
-
-            .action-icon {
-              font-size: 36px;
-            }
-
-            .form-container {
-              flex: 1;
-              max-width: 100%;
-            }
-
-            .card {
-              padding: 1rem;
-            }
-
-            .card-header h3 {
-              font-size: 1.5rem;
-            }
-
-            .card-body {
-              padding: 1rem;
-            }
-
-            .btn {
-              font-size: 1rem;
-            }
-            .adminic{
-              display:none
-            }
-            .helpic{
-              margin-left:300px
-            }
-            
+          .card-body {
+            padding: 18px 15px;
           }
 
-          @media (max-width: 480px) {
-            .action-icon {
-              font-size: 32px;
-            }
-            
-            .action-icons-container {
-              gap: 25px;
-            }
-            .adminic{
-              display:none
-            }
+          .form-control {
+            padding: 12px 14px;
           }
-        `}
-      </style>
-      <div className="row align-items-start flex align-items-center">
-        <div className="col-lg-4 ad-container">
-          <img src={image} alt="Promoted Ad" className="ad-image" />
+
+          .header-title {
+            font-size: 1.4rem;
+          }
+        }
+      `}</style>
+
+      {/* Help Icon - Fixed Position Bottom Right */}
+      <div className="help-icon-container">
+        <button
+          onClick={goToHelp}
+          className="help-icon"
+          aria-label="Go to Help Section"
+          title="Help & Support"
+        >
+          <FaQuestionCircle />
+          <span className="help-icon-text">Help</span>
+        </button>
+      </div>
+
+      {/* Main Content */}
+      <div className="main-content">
+        {/* Advertisement Section */}
+        <div className="ad-section">
+          <img src={image2} alt="Promoted Ad" className="ad-image" />
         </div>
-        <div className="col-lg-8 form-container">
-          <div className="card shadow-lg border-0 rounded-lg">
-            <div className="card-header text-center">
-              <h3>Welcome Back!</h3>
-              <p className="text-white-50">Please log in to your account</p>
+
+        {/* Form Section */}
+        <div className="form-section">
+          <div className="login-card">
+            <div className="card-header">
+              <h1 className="header-title">Welcome Back!</h1>
+              <p className="header-subtitle">Please log in to your account</p>
             </div>
+
             <div className="card-body">
               <form onSubmit={handleSubmit}>
                 {error && (
@@ -389,7 +681,8 @@ const AuthPage = () => {
                     {error}
                   </div>
                 )}
-                <div className="mb-3">
+
+                <div className="form-group">
                   <label htmlFor="phoneNo" className="form-label">
                     Phone Number
                   </label>
@@ -401,90 +694,65 @@ const AuthPage = () => {
                     onChange={handlePhoneNoChange}
                     required
                     placeholder="Enter your 10-digit phone number"
-                    style={inputStyle}
                     disabled={loading}
                     maxLength={10}
                   />
                 </div>
-                <div className="mb-3 position-relative">
+
+                <div className="form-group">
                   <label htmlFor="password" className="form-label">Password</label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    className="form-control"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    placeholder="Enter your password"
-                    style={inputStyle}
-                    disabled={loading}
-                    minLength={6}
-                  />
-                  <span
-                    className="position-absolute"
-                    style={{
-                      top: "72%",
-                      right: "2px",
-                      transform: "translateY(-50%)",
-                      cursor: "pointer",
-                      fontSize: "1.3rem",
-                      color: "black",
-                      backgroundColor: "#fff",
-                      width: "40px",
-                      textAlign: "center"
-                    }}
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <i className="bi-eye-slash"></i> : <i className="bi-eye"></i>}
-                  </span>
+                  <div className="password-input-container">
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      className="form-control"
+                      id="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      required
+                      placeholder="Enter your password"
+                      disabled={loading}
+                      minLength={6}
+                    />
+                    <button
+                      type="button"
+                      className="password-toggle"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? <i className="bi-eye-slash"></i> : <i className="bi-eye"></i>}
+                    </button>
+                  </div>
                 </div>
 
                 <button
                   type="submit"
-                  className="btn"
+                  className="btn-primary"
                   disabled={loading || !phoneNo || !password}
                 >
                   {loading ? (
                     <>
-                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                      <span className="spinner-border" role="status" aria-hidden="true"></span>
                       Logging in...
                     </>
                   ) : (
                     'Login'
                   )}
                 </button>
-                <div className="mt-3 text-center">
-                  <Link to="/forgotpassword" className="text-white">Forgot Password?</Link>
-                </div>
+
+                <Link to="/forgotpassword" className="forgot-password-link">
+                  Forgot Password?
+                </Link>
               </form>
             </div>
-            <div className="card-footer text-center">
-              <p className="mb-0">Don't have an account? <Link to="/signup" className="text-white">Sign Up</Link></p>
+
+            <div className="card-footer">
+              <p>Don't have an account? <Link to="/signup">Sign Up</Link></p>
             </div>
           </div>
+
+          {/* Bottom Image for Mobile */}
           <img src={image} alt="Bottom Promo" className="bottom-image" />
         </div>
-      </div>
-      
-      {/* Action Icons Container */}
-      <div className="action-icons-container">
-        <button
-          onClick={goToAdminLogin}
-          className="action-icon adminic"
-          aria-label="Go to Admin Dashboard"
-          title="Admin Login"
-        >
-          <FaUserShield />
-        </button>
-        <button
-          onClick={goToHelp}
-          className="action-icon helpic"
-          aria-label="Go to Help Section"
-          title="Help & Support"
-        >
-          <FaQuestionCircle />
-        </button>
       </div>
     </div>
   );
