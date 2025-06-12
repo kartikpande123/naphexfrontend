@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import image from "../images/promo1.jpg";
-import image2 from "../images/img2.jpeg";
 import { FaQuestionCircle } from "react-icons/fa";
 import API_BASE_URL from './ApiConfig';
 
@@ -20,17 +19,17 @@ const AuthPage = () => {
   useEffect(() => {
     const handleKeyPress = (event) => {
       const key = event.key.toUpperCase();
-
+      
       if (key.match(/[A-Z]/)) {
         setSecretCode(prev => {
           const newCode = prev + key;
-
+          
           // Check if the secret code matches "ADMIN"
           if (newCode === 'ADMIN') {
             navigate('/adminlogin');
             return '';
           }
-
+          
           // Keep only last 10 characters to prevent memory issues
           return newCode.slice(-10);
         });
@@ -41,7 +40,7 @@ const AuthPage = () => {
     };
 
     document.addEventListener('keypress', handleKeyPress);
-
+    
     return () => {
       document.removeEventListener('keypress', handleKeyPress);
     };
@@ -53,7 +52,7 @@ const AuthPage = () => {
       const timer = setTimeout(() => {
         setSecretCode('');
       }, 3000);
-
+      
       return () => clearTimeout(timer);
     }
   }, [secretCode]);
@@ -285,27 +284,23 @@ const AuthPage = () => {
         .main-content {
           display: flex;
           width: 100%;
-          gap: 20px;
+          gap: 40px;
           align-items: center;
         }
 
         .ad-section {
-        flex: 2;
-        width: 40%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+          flex: 2;
+          width: 40%;
         }
 
-       .ad-image {
-        width: 100%;
-        height: auto;
-        max-height: 400px;
-        object-fit: cover;
-        border-radius: 20px;
-        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-        display: block;
-       }
+        .ad-image {
+          width: 80%;
+          height: auto;
+          max-height: 400px;
+          object-fit: cover;
+          border-radius: 20px;
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+        }
 
         .form-section {
           flex: 1;
@@ -575,7 +570,7 @@ const AuthPage = () => {
           box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
 
-        @media (max-width: 768px) {
+        @media (max-width: 766px) {
           .login-container {
             padding: 15px;
           }
@@ -667,7 +662,7 @@ const AuthPage = () => {
       <div className="main-content">
         {/* Advertisement Section */}
         <div className="ad-section">
-          <img src={image2} alt="Promoted Ad" className="ad-image" />
+          <img src={image} alt="Promoted Ad" className="ad-image" />
         </div>
 
         {/* Form Section */}
