@@ -340,10 +340,6 @@ const AdminBinaryTree = () => {
               <span className="financial-value">₹{node.totalRightBusiness || 0}</span>
             </div>
             <div className="financial-item">
-              <span className="financial-label">Bonus:</span>
-              <span className="financial-value">₹{node.bonusReceived || 0}</span>
-            </div>
-            <div className="financial-item">
               <span className="financial-label">Y.Bonus@Tax:</span>
               <span className="financial-value">₹{node.yesterdayBonusAfterTax || 0}</span>
             </div>

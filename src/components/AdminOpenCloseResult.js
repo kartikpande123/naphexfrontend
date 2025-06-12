@@ -314,7 +314,7 @@ const ResultsDashboard = () => {
                 <input
                     type="text"
                     className="form-control date-input"
-                    placeholder="Search by Date (dd/mm/yyyy or dd/mm or dd)"
+                    placeholder="Search by Date (dd/mm/yyyy)"
                     value={searchDate}
                     onChange={handleDateSearch}
                     style={{

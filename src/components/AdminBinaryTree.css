@@ -63,6 +63,31 @@
   background-color: #fff;
 }
 
+.binary-table-button {
+  background-color: #007bff; /* Bootstrap blue */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  position: relative; /* Fix overlap issue if needed */
+  z-index: 1;
+  margin-bottom: 10px; /* Add spacing below */
+  box-shadow: 0 2px 6px rgba(0, 123, 255, 0.3);
+  transition: background-color 0.3s ease;
+}
+
+.binary-table-button:hover {
+  background-color: #0056b3;
+}
+.binary-table-button {
+  display: inline-block;
+  margin-right: 12px; /* Add some space if beside search */
+  vertical-align: middle;
+}
+
+
 .admin-tree .search-button {
   position: absolute;
   right: 0;
