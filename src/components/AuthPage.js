@@ -570,7 +570,9 @@ const AuthPage = () => {
           box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
 
-        @media (max-width: 766px) {
+        /* Changed from max-width: 768px to max-width: 767px */
+        /* This ensures screens of 768px and above show the ad image */
+        @media (max-width: 767px) {
           .login-container {
             padding: 15px;
           }
