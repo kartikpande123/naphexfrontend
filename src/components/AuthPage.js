@@ -221,62 +221,80 @@ const AuthPage = () => {
         .help-icon-container {
           position: fixed;
           bottom: 30px;
-          right: 30px;
+          right: 10px;
           z-index: 1000;
         }
 
         .help-icon {
-          background: linear-gradient(135deg, #42a5f5 0%, #2a5298 100%);
-          border: none;
+          background: linear-gradient(135deg, #ff6b35 0%, #f7931e 50%, #ffcc02 100%);
+          border: 3px solid #ffffff;
           border-radius: 50px;
-          padding: 12px 20px;
+          padding: 14px 22px;
           cursor: pointer;
           color: white;
           display: flex;
           align-items: center;
           justify-content: center;
-          gap: 8px;
+          gap: 10px;
           transition: all 0.3s ease;
-          box-shadow: 0 4px 20px rgba(66, 165, 245, 0.3);
-          font-size: 14px;
-          font-weight: 600;
+          box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4), 0 0 20px rgba(255, 204, 2, 0.3);
+          font-size: 15px;
+          font-weight: 700;
           white-space: nowrap;
+          text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+          animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+          0% {
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4), 0 0 20px rgba(255, 204, 2, 0.3);
+          }
+          50% {
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.6), 0 0 30px rgba(255, 204, 2, 0.5);
+          }
+          100% {
+            box-shadow: 0 8px 25px rgba(255, 107, 53, 0.4), 0 0 20px rgba(255, 204, 2, 0.3);
+          }
         }
 
         .help-icon:hover {
-          transform: translateY(-2px) scale(1.05);
-          box-shadow: 0 6px 25px rgba(66, 165, 245, 0.4);
-          background: linear-gradient(135deg, #1e88e5 0%, #1976d2 100%);
+          transform: translateY(-3px) scale(1.08);
+          box-shadow: 0 12px 35px rgba(255, 107, 53, 0.5), 0 0 35px rgba(255, 204, 2, 0.4);
+          background: linear-gradient(135deg, #e55a2b 0%, #e8851a 50%, #f0b90b 100%);
+          animation: none;
         }
 
         .help-icon:focus {
           outline: none;
-          box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.3);
+          box-shadow: 0 0 0 4px rgba(255, 107, 53, 0.3), 0 8px 25px rgba(255, 107, 53, 0.4);
         }
 
         .help-icon-text {
-          font-size: 14px;
-          font-weight: 600;
+          font-size: 15px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
         }
 
         .help-icon svg {
-          font-size: 18px;
+          font-size: 20px;
+          filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
         }
 
         .main-content {
           display: flex;
           width: 100%;
-          gap: 40px;
+          gap: 20px;
           align-items: center;
         }
 
         .ad-section {
-          flex: 1;
-          width: 50%;
+          flex: 2;
+          width: 40%;
         }
 
         .ad-image {
-          width: 100%;
+          width: 80%;
           height: auto;
           max-height: 400px;
           object-fit: cover;
@@ -286,7 +304,8 @@ const AuthPage = () => {
 
         .form-section {
           flex: 1;
-          width: 50%;
+          width: 40%;
+          max-width: 420px;
         }
 
         .login-card {
@@ -562,12 +581,12 @@ const AuthPage = () => {
           }
 
           .help-icon {
-            padding: 10px 16px;
-            font-size: 12px;
+            padding: 12px 18px;
+            font-size: 14px;
           }
 
           .help-icon svg {
-            font-size: 16px;
+            font-size: 18px;
           }
 
           .main-content {
@@ -603,13 +622,13 @@ const AuthPage = () => {
 
         @media (max-width: 480px) {
           .help-icon {
-            padding: 8px 12px;
-            font-size: 11px;
-            gap: 6px;
+            padding: 10px 14px;
+            font-size: 13px;
+            gap: 8px;
           }
 
           .help-icon svg {
-            font-size: 14px;
+            font-size: 16px;
           }
 
           .card-body {
