@@ -425,6 +425,32 @@ const SignupPage = () => {
           padding: 0 20px;
         }
 
+        .header {
+          font-size: 2.5rem;
+          font-weight: 800;
+          text-align: center;
+          letter-spacing: 2px;
+          background: linear-gradient(to right, #ffffff, #e0f7fa);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          margin-bottom: 20px;
+          animation: fadeIn 0.8s ease-out;
+        }
+
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+
         .signup-card {
           background: rgba(26, 42, 68, 0.95);
           backdrop-filter: blur(10px);
@@ -861,7 +887,7 @@ const SignupPage = () => {
           <div className="card-header">
             <h1 className="header-title">Create Account</h1>
             <p className="header-subtitle">Join us and start your journey today</p>
-            <h2 className='"header-title"'>NAPHEX</h2>
+            <h2 className='header'>NAPHEX</h2>
           </div>
           
           <div className="card-body">

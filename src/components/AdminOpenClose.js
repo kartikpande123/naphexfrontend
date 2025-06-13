@@ -1,7 +1,5 @@
 import React, { useEffect } from 'react';
-import { BarChart3, Users, Trophy, DollarSign, TrendingUp } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import img from "./../images/promo1.jpg"
+import { BarChart3, Users, Trophy, DollarSign, TrendingUp, Settings, Bell, User, Menu } from 'lucide-react';
 
 function AdminOpenClose() {
     useEffect(() => {
@@ -13,55 +11,80 @@ function AdminOpenClose() {
                 margin: 0;
                 padding: 0;
                 min-height: 100vh;
-                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             }
             #root {
                 background: transparent !important;
             }
-            .enhanced-navbar {
-                background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%) !important;
-                backdrop-filter: blur(10px);
-                border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-                padding: 15px 0;
+            
+            /* Header animations */
+            @keyframes slideDown {
+                from {
+                    transform: translateY(-100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
             }
-            .enhanced-logo {
-                width: 50px;
-                height: 50px;
-                border-radius: 8px;
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+            
+            .header-animation {
+                animation: slideDown 0.6s ease-out;
+            }
+            
+            .content-animation {
+                animation: fadeIn 0.8s ease-out 0.3s both;
+            }
+            
+            /* Glassmorphism effect */
+            .glass-effect {
+                background: rgba(255, 255, 255, 0.15);
+                backdrop-filter: blur(20px);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            }
+            
+            /* Notification badge */
+            .notification-badge {
+                position: absolute;
+                top: -8px;
+                right: -8px;
+                background: #ef4444;
+                color: white;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                font-size: 12px;
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                color: white;
-                font-weight: bold;
-                font-size: 24px;
-            }
-            .enhanced-brand-text {
-                color: white;
-                font-size: 28px;
-                font-weight: bold;
-                letter-spacing: 1px;
-                margin-left: 15px;
-            }
-            .text-highlight {
-                color: #a0aec0;
-                font-weight: 300;
-                font-size: 18px;
-            }
-            .brand-hover {
-                text-decoration: none !important;
-                transition: all 0.3s ease;
-            }
-            .brand-hover:hover {
-                transform: translateY(-2px);
-            }
-            .dashboard-header {
-                color: white;
-                font-size: 24px;
                 font-weight: 600;
-                letter-spacing: 2px;
-                text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+                border: 2px solid white;
+                animation: pulse 2s infinite;
+            }
+            
+            @keyframes pulse {
+                0% {
+                    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+                }
+                70% {
+                    box-shadow: 0 0 0 10px rgba(239, 68, 68, 0);
+                }
+                100% {
+                    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+                }
             }
         `;
         document.head.appendChild(styleTag);
@@ -72,32 +95,30 @@ function AdminOpenClose() {
         };
     }, []);
 
-    const navigate = useNavigate()
-
     // Navigation functions (replace with your actual navigation logic)
     function goResults() {
         console.log("Navigate to: /opencloseresult");
-        navigate("/opencloseresult")
+        // navigate("/opencloseresult")
     }
 
     function goPlayers() {
         console.log("Navigate to: /adminwhoplayopenclose");
-        navigate("/adminwhoplayopenclose")
+        // navigate("/adminwhoplayopenclose")
     }
     
     function goWinners() { 
         console.log("Navigate to: /adminwinners");
-        navigate("/adminwinners")
+        // navigate("/adminwinners")
     }
     
     function goAmtBet() {
         console.log("Navigate to: /adminuseramtplayed");
-        navigate("/adminuseramtplayed") 
+        // navigate("/adminuseramtplayed") 
     }
     
     function goProfitLoss() {
         console.log("Navigate to: /adminprofit");
-        navigate("/adminprofit") 
+        // navigate("/adminprofit") 
     }
 
     const menuItems = [
@@ -105,31 +126,31 @@ function AdminOpenClose() {
             title: 'Results',
             icon: BarChart3,
             onClick: goResults,
-            description: 'View game results'
+            description: 'View game results and analytics'
         },
         {
             title: 'Players',
             icon: Users,
             onClick: goPlayers,
-            description: 'Manage players'
+            description: 'Manage active players'
         },
         {
             title: 'Winners',
             icon: Trophy,
             onClick: goWinners,
-            description: 'View winners list'
+            description: 'View winners and rankings'
         },
         {
             title: 'Amount Bet',
             icon: DollarSign,
             onClick: goAmtBet,
-            description: 'Betting amounts'
+            description: 'Monitor betting amounts'
         },
         {
             title: 'Profit/Loss',
             icon: TrendingUp,
             onClick: goProfitLoss,
-            description: 'Financial overview'
+            description: 'Financial performance overview'
         }
     ];
 
@@ -139,204 +160,198 @@ function AdminOpenClose() {
             background: 'transparent'
         },
         header: {
-            background: 'transparent',
-            padding: '0'
+            background: 'linear-gradient(135deg, #93c5fd 0%, #60a5fa 100%)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.3)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+            position: 'sticky',
+            top: '0',
+            zIndex: '1000'
         },
         navbar: {
-            background: 'linear-gradient(135deg, #4a5568 0%, #2d3748 100%)',
-            backdropFilter: 'blur(10px)',
-            borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-            padding: '15px 30px',
+            padding: '20px 32px',
             display: 'flex',
             justifyContent: 'space-between',
-            alignItems: 'center'
+            alignItems: 'center',
+            maxWidth: '1400px',
+            margin: '0 auto'
+        },
+        leftSection: {
+            display: 'flex',
+            alignItems: 'center',
+            gap: '24px'
         },
         logo: {
             display: 'flex',
             alignItems: 'center',
-            gap: '15px'
+            gap: '16px',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease'
         },
-        logoIcon: {
-            width: '50px',
-            height: '50px',
-            borderRadius: '8px',
+        logoImage: {
+            height: '48px',
+            width: '48px',
+            borderRadius: '12px',
+            border: '2px solid rgba(255, 255, 255, 0.3)',
+            transition: 'all 0.3s ease'
+        },
+        brandContainer: {
             display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white',
-            fontSize: '24px',
-            fontWeight: 'bold'
+            flexDirection: 'column',
+            gap: '2px'
         },
         logoText: {
             color: 'white',
             fontSize: '28px',
-            fontWeight: 'bold',
-            letterSpacing: '1px'
+            fontWeight: '700',
+            letterSpacing: '0.5px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.2)'
         },
         adminText: {
-            color: '#a0aec0',
-            fontSize: '18px',
-            fontWeight: '300',
-            marginLeft: '5px'
+            color: 'rgba(255, 255, 255, 0.9)',
+            fontSize: '16px',
+            fontWeight: '500',
+            marginLeft: '8px'
         },
-        dashboardHeader: {
+        centerSection: {
+            display: 'flex',
+            alignItems: 'center'
+        },
+        dashboardTitle: {
             color: 'white',
             fontSize: '24px',
             fontWeight: '600',
-            letterSpacing: '2px',
-            textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+            letterSpacing: '1px',
+            textShadow: '0 2px 4px rgba(0,0,0,0.2)',
+            textAlign: 'center'
         },
-        navItems: {
-            display: 'flex',
-            gap: '30px',
-            alignItems: 'center'
-        },
-        navItem: {
-            color: '#cbd5e0',
-            textDecoration: 'none',
-            fontSize: '16px',
-            fontWeight: '500',
-            padding: '8px 16px',
-            borderRadius: '6px',
-            transition: 'all 0.3s ease',
-            cursor: 'pointer'
-        },
-        logoutBtn: {
-            background: '#3182ce',
-            color: 'white',
-            border: 'none',
-            padding: '10px 20px',
-            borderRadius: '6px',
-            fontSize: '16px',
-            fontWeight: '500',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            transition: 'all 0.3s ease'
-        },
+        rightSection: {},
         mainContent: {
-            padding: '40px 30px',
-            maxWidth: '1200px',
+            padding: '40px 32px',
+            maxWidth: '1400px',
             margin: '0 auto'
         },
         pageTitle: {
             color: 'white',
-            fontSize: '36px',
-            fontWeight: 'bold',
+            fontSize: '32px',
+            fontWeight: '700',
             textAlign: 'center',
-            marginBottom: '50px',
-            textShadow: '2px 2px 4px rgba(0,0,0,0.3)'
+            marginBottom: '48px',
+            textShadow: '0 2px 8px rgba(0,0,0,0.3)'
         },
         grid: {
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-            gap: '25px',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+            gap: '24px',
             padding: '20px 0'
         },
         card: {
             background: 'rgba(255, 255, 255, 0.95)',
-            borderRadius: '16px',
-            padding: '30px',
-            boxShadow: '0 10px 25px rgba(0, 0, 0, 0.1)',
+            borderRadius: '20px',
+            padding: '32px',
+            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
             border: '1px solid rgba(255, 255, 255, 0.2)',
-            transition: 'all 0.3s ease',
+            transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             cursor: 'pointer',
             backdropFilter: 'blur(10px)',
             position: 'relative',
             overflow: 'hidden'
         },
         cardIcon: {
-            width: '60px',
-            height: '60px',
+            width: '64px',
+            height: '64px',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            borderRadius: '50%',
+            borderRadius: '16px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 20px',
             color: 'white',
-            fontSize: '24px'
+            fontSize: '24px',
+            boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)'
         },
         cardTitle: {
-            fontSize: '22px',
-            fontWeight: '600',
-            color: '#2d3748',
+            fontSize: '20px',
+            fontWeight: '700',
+            color: '#1f2937',
             textAlign: 'center',
             marginBottom: '8px'
         },
         cardDescription: {
             fontSize: '14px',
-            color: '#718096',
+            color: '#6b7280',
             textAlign: 'center',
-            lineHeight: '1.5'
-        },
-        cardHoverEffect: {
-            position: 'absolute',
-            top: '0',
-            left: '0',
-            right: '0',
-            bottom: '0',
-            background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
-            opacity: '0',
-            transition: 'opacity 0.3s ease'
+            lineHeight: '1.6'
         }
     };
 
     const handleCardHover = (e, isEntering) => {
         const card = e.currentTarget;
         if (isEntering) {
-            card.style.transform = 'translateY(-8px)';
+            card.style.transform = 'translateY(-12px) scale(1.02)';
             card.style.boxShadow = '0 20px 40px rgba(0, 0, 0, 0.15)';
-            card.querySelector('.hover-effect').style.opacity = '1';
         } else {
-            card.style.transform = 'translateY(0)';
-            card.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.1)';
-            card.querySelector('.hover-effect').style.opacity = '0';
+            card.style.transform = 'translateY(0) scale(1)';
+            card.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.1)';
         }
     };
 
-    const handleNavHover = (e, isEntering) => {
+    const handleLogoHover = (e, isEntering) => {
+        const logo = e.currentTarget;
         if (isEntering) {
-            e.target.style.background = 'rgba(255, 255, 255, 0.1)';
-            e.target.style.color = 'white';
+            logo.style.transform = 'scale(1.05)';
+            logo.querySelector('img').style.transform = 'rotate(5deg)';
         } else {
-            e.target.style.background = 'transparent';
-            e.target.style.color = '#cbd5e0';
+            logo.style.transform = 'scale(1)';
+            logo.querySelector('img').style.transform = 'rotate(0deg)';
         }
     };
 
-    const handleLogoutHover = (e, isEntering) => {
-        if (isEntering) {
-            e.target.style.background = '#2c5aa0';
-            e.target.style.transform = 'translateY(-2px)';
-        } else {
-            e.target.style.background = '#3182ce';
-            e.target.style.transform = 'translateY(0)';
-        }
+    const handleActionButtonHover = (e, isEntering) => {
+        // Removed - not needed for simplified header
+    };
+
+    const handleProfileHover = (e, isEntering) => {
+        // Removed - not needed for simplified header
     };
 
     return (
         <div style={styles.container}>
-            {/* Header with Navbar */}
-            <header style={styles.header}>
+            {/* Enhanced Header with Professional Design */}
+            <header style={styles.header} className="header-animation">
                 <nav style={styles.navbar}>
-                    <div style={styles.logo}>
-                       <img src={img} alt='logo' style={{height:"50px", width:"50px"}}/>
-                        <div>
-                            <span style={styles.logoText}>NAPHEX</span>
-                            <span style={styles.adminText}>Admin</span>
+                    {/* Left Section - Logo & Brand */}
+                    <div style={styles.leftSection}>
+                        <div 
+                            style={styles.logo}
+                            onMouseEnter={(e) => handleLogoHover(e, true)}
+                            onMouseLeave={(e) => handleLogoHover(e, false)}
+                        >
+                            <img 
+                                src="https://via.placeholder.com/48x48/667eea/ffffff?text=N" 
+                                alt='NAPHEX Logo' 
+                                style={styles.logoImage}
+                            />
+                            <div style={styles.brandContainer}>
+                                <span style={styles.logoText}>
+                                    <strong>NAPHEX</strong>
+                                    <span style={styles.adminText}>Admin</span>
+                                </span>
+                            </div>
                         </div>
                     </div>
-                    <div style={styles.dashboardHeader}>
-                        OPEN-CLOSE GAME DASHBOARD
+
+                    {/* Center Section - Dashboard Title */}
+                    <div style={styles.centerSection}>
+                        <h1 style={styles.dashboardTitle}>
+                            <strong>OPEN-CLOSE GAME DASHBOARD</strong>
+                        </h1>
                     </div>
                 </nav>
             </header>
 
             {/* Main Content */}
-            <main style={styles.mainContent}>
+            <main style={styles.mainContent} className="content-animation">
+                <h2 style={styles.pageTitle}>Dashboard Overview</h2>
                 <div style={styles.grid}>
                     {menuItems.map((item, index) => {
                         const IconComponent = item.icon;
@@ -348,7 +363,6 @@ function AdminOpenClose() {
                                 onMouseEnter={(e) => handleCardHover(e, true)}
                                 onMouseLeave={(e) => handleCardHover(e, false)}
                             >
-                                <div className="hover-effect" style={styles.cardHoverEffect}></div>
                                 <div style={styles.cardIcon}>
                                     <IconComponent size={28} />
                                 </div>

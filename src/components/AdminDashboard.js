@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import image from "../images/promo1.jpg";
+import image from "../images/Banner-7.png";
+import logo from "../images/logo-1.png";
 import "./Home.css";
 
 const Home = () => {
@@ -29,6 +30,13 @@ const Home = () => {
       navigate("/binary");
     } else {
       setAdminKeyError("Invalid Super Admin Key");
+    }
+  };
+
+  // Handle Enter key press for admin key submission
+  const handleAdminKeyEnter = (e) => {
+    if (e.key === "Enter") {
+      handleAdminKeySubmit();
     }
   };
 
@@ -77,7 +85,7 @@ const Home = () => {
       <nav className="navbar navbar-expand-lg enhanced-navbar">
         <div className="container">
           <Link className="navbar-brand d-flex align-items-center brand-hover" to="/">
-            <img src={image} alt="GameZone" className="enhanced-logo" />
+            <img src={logo} alt="GameZone" className="enhanced-logo" />
             <span className="enhanced-brand-text">
               NAPHEX <span className="text-highlight">Admin</span>
             </span>
@@ -185,6 +193,8 @@ const Home = () => {
                         placeholder="Enter Super Admin Key"
                         value={adminKey}
                         onChange={(e) => setAdminKey(e.target.value)}
+                        onKeyPress={handleAdminKeyEnter}
+                        autoFocus
                       />
                       {adminKeyError && <div className="text-danger mt-2">{adminKeyError}</div>}
                     </div>

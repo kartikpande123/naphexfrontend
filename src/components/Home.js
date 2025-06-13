@@ -2,7 +2,8 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios"; // For making API calls
 import "bootstrap-icons/font/bootstrap-icons.css";
-import image from "../images/promo1.jpg";
+import image from "../images/Banner-7.png";
+import logo from "../images/logo-1.png";
 import "./Home.css";
 import API_BASE_URL from "./ApiConfig";
 
@@ -292,7 +293,7 @@ const closeWinnerPopup = async () => {
       <nav className="navbar navbar-expand-lg enhanced-navbar">
         <div className="container">
           <Link className="navbar-brand d-flex align-items-center brand-hover" to="/">
-            <img src={image} alt="GameZone" className="enhanced-logo" />
+            <img src={logo} alt="GameZone" className="enhanced-logo" />
             <span className="enhanced-brand-text">
               NAPHEX <span className="text-highlight">GameZone</span>
             </span>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import image from "../images/promo1.jpg";
+import image from "../images/Banner-3.png";
 import { FaQuestionCircle } from "react-icons/fa";
 import API_BASE_URL from './ApiConfig';
 
@@ -284,7 +284,6 @@ const AuthPage = () => {
         .main-content {
           display: flex;
           width: 100%;
-          gap: 40px;
           align-items: center;
         }
 
@@ -509,6 +508,33 @@ const AuthPage = () => {
           opacity: 0.7;
         }
 
+        .header {
+          font-size: 2.5rem;
+          font-weight: 800;
+          text-align: center;
+          letter-spacing: 2px;
+          background: linear-gradient(to right, #ffffff, #e0f7fa);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+          margin-bottom: 20px;
+          animation: fadeIn 0.8s ease-out;
+        }
+
+
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+            transform: translateY(-10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+  
+
         .spinner-border {
           width: 1rem;
           height: 1rem;
@@ -570,9 +596,7 @@ const AuthPage = () => {
           box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
         }
 
-        /* Changed from max-width: 768px to max-width: 767px */
-        /* This ensures screens of 768px and above show the ad image */
-        @media (max-width: 700px) {
+        @media (max-width: 768px) {
           .login-container {
             padding: 15px;
           }
@@ -673,6 +697,7 @@ const AuthPage = () => {
             <div className="card-header">
               <h1 className="header-title">Welcome Back!</h1>
               <p className="header-subtitle">Please log in to your account</p>
+              <h2 className="header">NAPHEX</h2>
             </div>
 
             <div className="card-body">
@@ -683,7 +708,7 @@ const AuthPage = () => {
                   </div>
                 )}
 
-                <div className="form-group">
+              <div className="form-group">
                   <label htmlFor="phoneNo" className="form-label">
                     Phone Number
                   </label>
