@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import image from "../images/Banner-3.png";
+import logo from "../images/logo-2.jpg"; // Add your logo import here
 import { FaQuestionCircle } from "react-icons/fa";
 import API_BASE_URL from './ApiConfig';
 
@@ -216,6 +217,33 @@ const AuthPage = () => {
           display: flex;
           align-items: center;
           position: relative;
+        }
+
+        /* Logo Styles - Top Left Corner */
+        .logo-container {
+          position: fixed;
+          top: 20px;
+          left: 20px;
+          z-index: 1000;
+        }
+
+        .logo {
+          width: 120px;
+          height: auto;
+          max-height: 60px;
+          object-fit: contain;
+          border-radius: 12px;
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+          background: rgba(255, 255, 255, 0.95);
+          padding: 8px;
+          backdrop-filter: blur(10px);
+          border: 1px solid rgba(255, 255, 255, 0.3);
+          transition: all 0.3s ease;
+        }
+
+        .logo:hover {
+          transform: scale(1.05);
+          box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
         }
 
         .help-icon-container {
@@ -521,7 +549,6 @@ const AuthPage = () => {
           animation: fadeIn 0.8s ease-out;
         }
 
-
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -532,8 +559,6 @@ const AuthPage = () => {
             transform: translateY(0);
           }
         }
-
-  
 
         .spinner-border {
           width: 1rem;
@@ -601,6 +626,18 @@ const AuthPage = () => {
             padding: 15px;
           }
 
+          /* Logo adjustments for mobile */
+          .logo-container {
+            top: 15px;
+            left: 15px;
+          }
+
+          .logo {
+            width: 100px;
+            max-height: 50px;
+            padding: 6px;
+          }
+
           .help-icon-container {
             bottom: 20px;
             right: 20px;
@@ -647,6 +684,18 @@ const AuthPage = () => {
         }
 
         @media (max-width: 480px) {
+          /* Logo adjustments for small mobile */
+          .logo-container {
+            top: 10px;
+            left: 10px;
+          }
+
+          .logo {
+            width: 80px;
+            max-height: 40px;
+            padding: 4px;
+          }
+
           .help-icon {
             padding: 10px 14px;
             font-size: 13px;
@@ -670,6 +719,17 @@ const AuthPage = () => {
           }
         }
       `}</style>
+
+      {/* Logo - Fixed Position Top Left */}
+      <div className="logo-container">
+        <img 
+          src={logo} 
+          alt="Company Logo" 
+          className="logo" 
+          onClick={() => navigate('/')} // Optional: Make logo clickable to go to home
+          style={{ cursor: 'pointer' }}
+        />
+      </div>
 
       {/* Help Icon - Fixed Position Bottom Right */}
       <div className="help-icon-container">

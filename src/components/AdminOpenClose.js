@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { BarChart3, Users, Trophy, DollarSign, TrendingUp, Settings, Bell, User, Menu } from 'lucide-react';
+import logo from "../images/logo-1.png";
 
 function AdminOpenClose() {
     useEffect(() => {
@@ -188,8 +189,8 @@ function AdminOpenClose() {
             transition: 'all 0.3s ease'
         },
         logoImage: {
-            height: '48px',
-            width: '48px',
+            height: '60px',
+            width: '60px',
             borderRadius: '12px',
             border: '2px solid rgba(255, 255, 255, 0.3)',
             transition: 'all 0.3s ease'
@@ -327,7 +328,7 @@ function AdminOpenClose() {
                             onMouseLeave={(e) => handleLogoHover(e, false)}
                         >
                             <img 
-                                src="https://via.placeholder.com/48x48/667eea/ffffff?text=N" 
+                                src={logo} 
                                 alt='NAPHEX Logo' 
                                 style={styles.logoImage}
                             />
