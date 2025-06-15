@@ -26,6 +26,12 @@ import UserBinaryTree from './components/UerBinary';
 import AdminBinaryTree from './components/AdminBinary';
 import FriendsEarning from './components/FriendsEarning';
 import BinaryDataTable from './components/AdminBinaryTable';
+import PrivacyPolicy from './components/PrivacyPolicy';
+import TermsConditions from './components/TermsConditions';
+import Kycpolicy from './components/Kycpolicy';
+import RulesAndRegulations from './components/GameRules';
+import ResponsibleGaming from './components/Faqs';
+import NaphexAbout from './components/AboutUs';
 
 function App() {
   return (
@@ -59,6 +65,12 @@ function App() {
           <Route path="/adminbinarytree" element={<AdminBinaryTree />} />
           <Route path="/earnings" element={<FriendsEarning />} />
           <Route path="/binarytable" element={<BinaryDataTable />} />
+          <Route path="/privacypolicy" element={<PrivacyPolicy />} />
+          <Route path="/terms&conditions" element={<TermsConditions />} />
+          <Route path="/kycpolicy" element={<Kycpolicy />} />
+          <Route path="/rules" element={<RulesAndRegulations />} />
+          <Route path="/FAQs" element={<ResponsibleGaming />} />
+          <Route path="/about" element={<NaphexAbout />} />
         </Routes>
       </div>
     </Router>

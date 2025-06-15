@@ -405,7 +405,7 @@ const MyAccount = () => {
                         <i className="bi bi-question-circle" style={styles.supportIcon}></i>
                         <h5>FAQs</h5>
                         <p>Find answers to commonly asked questions about our platform.</p>
-                        <button className="btn btn-outline-primary">View FAQs</button>
+                        <button className="btn btn-outline-primary" onClick={()=>navigate("/FAQs")}>View FAQs</button>
                       </Card.Body>
                     </Card>
                     
@@ -417,7 +417,7 @@ const MyAccount = () => {
                         <i className="bi bi-book" style={styles.supportIcon}></i>
                         <h5>Game Rules</h5>
                         <p>Learn about the rules and how to play our games.</p>
-                        <button className="btn btn-outline-primary">Read Game Rules</button>
+                        <button className="btn btn-outline-primary" onClick={()=>navigate("/rules")}>Read Game Rules</button>
                       </Card.Body>
                     </Card>
                   </div>

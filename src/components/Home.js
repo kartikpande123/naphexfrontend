@@ -6,6 +6,7 @@ import image from "../images/Banner-7.png";
 import logo from "../images/logo-1.png";
 import "./Home.css";
 import API_BASE_URL from "./ApiConfig";
+import WelcomePopup from "./WelcomePopup";
 
 const Home = () => {
   const [isHovered, setIsHovered] = useState(null);
@@ -15,12 +16,24 @@ const Home = () => {
   const [winnerDetails, setWinnerDetails] = useState([]);
   const [currentWinnerIndex, setCurrentWinnerIndex] = useState(0);
   const [processedWinnerIds, setProcessedWinnerIds] = useState(new Set());
-
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false); // Initialize as false
 
   const navigate = useNavigate();
 
+  // Check if welcome popup should be shown on component mount
+  useEffect(() => {
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    const welcomePopupShown = localStorage.getItem('welcomePopupShown');
+    
+    // Show welcome popup only if user is logged in and hasn't seen it before
+    if (userData && !welcomePopupShown) {
+      setShowWelcomePopup(true);
+    }
+  }, []); // Run only once on component mount
+
   const handleLogout = () => {
     localStorage.removeItem("userData");
+    localStorage.removeItem('welcomePopupShown'); // Clear welcome popup flag on logout
     navigate("/login"); // Redirect to login after logout
   };
 
@@ -30,175 +43,181 @@ const Home = () => {
 
   // Fetch user tokens and check for winners
   useEffect(() => {
-  let pollingInterval = null;
-  const userData = JSON.parse(localStorage.getItem("userData"));
+    let pollingInterval = null;
+    const userData = JSON.parse(localStorage.getItem("userData"));
 
-  // Function to check for winners with improved logic
-  const checkForWinners = async () => {
-    try {
-      if (!userData || !userData.phoneNo) return;
+    // Function to check for winners with improved logic
+    const checkForWinners = async () => {
+      try {
+        if (!userData || !userData.phoneNo) return;
 
-      // Use the specific user endpoint for better performance
-      const response = await axios.get(`${API_BASE_URL}/get-user-winners/${userData.phoneNo}`);
-      const unshownWinners = response.data;
+        // Use the specific user endpoint for better performance
+        const response = await axios.get(`${API_BASE_URL}/get-user-winners/${userData.phoneNo}`);
+        const unshownWinners = response.data;
 
-      if (unshownWinners.length > 0) {
-        console.log(`Found ${unshownWinners.length} unshown winners`);
-        
-        // Filter out already processed winners (in case of timing issues)
-        const newWinners = unshownWinners.filter(winner => 
-          !processedWinnerIds.has(winner.id)
-        );
-        
-        if (newWinners.length > 0) {
-          // Add to processed set
-          setProcessedWinnerIds(prev => {
-            const newSet = new Set(prev);
-            newWinners.forEach(winner => newSet.add(winner.id));
-            return newSet;
-          });
-          
-          // Sort winners by timestamp if available (oldest first)
-          const sortedWinners = newWinners.sort((a, b) => {
-            return (a.timestamp || 0) - (b.timestamp || 0);
-          });
-          
-          setWinnerDetails(sortedWinners);
-          setCurrentWinnerIndex(0);
-          setShowWinnerPopup(true);
-        }
-      }
-    } catch (error) {
-      console.error('Error checking winners:', error);
-    }
-  };
+        if (unshownWinners.length > 0) {
+          console.log(`Found ${unshownWinners.length} unshown winners`);
 
-  // Function to fetch user tokens (keep existing logic)
-  const fetchUserTokens = async () => {
-    try {
-      if (!userData || !userData.phoneNo) {
-        const storedUserData = JSON.parse(localStorage.getItem("userData"));
-        if (storedUserData && storedUserData.tokens) {
-          setTokenCount(storedUserData.tokens);
-        }
-        return;
-      }
+          // Filter out already processed winners (in case of timing issues)
+          const newWinners = unshownWinners.filter(winner =>
+            !processedWinnerIds.has(winner.id)
+          );
 
-      console.log("Fetching tokens for:", userData.phoneNo);
+          if (newWinners.length > 0) {
+            // Add to processed set
+            setProcessedWinnerIds(prev => {
+              const newSet = new Set(prev);
+              newWinners.forEach(winner => newSet.add(winner.id));
+              return newSet;
+            });
 
-      const response = await fetch(`${API_BASE_URL}/user-profile/${userData.phoneNo}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'text/event-stream',
-          'Cache-Control': 'no-cache'
-        }
-      });
+            // Sort winners by timestamp if available (oldest first)
+            const sortedWinners = newWinners.sort((a, b) => {
+              return (a.timestamp || 0) - (b.timestamp || 0);
+            });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const responseText = await response.text();
-      console.log("Raw response:", responseText);
-
-      const lines = responseText.split('\n');
-      let jsonData = null;
-
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          const dataString = line.substring(6);
-          try {
-            jsonData = JSON.parse(dataString);
-            break;
-          } catch (parseError) {
-            console.error("Error parsing JSON from SSE:", parseError);
+            setWinnerDetails(sortedWinners);
+            setCurrentWinnerIndex(0);
+            setShowWinnerPopup(true);
           }
         }
+      } catch (error) {
+        console.error('Error checking winners:', error);
       }
+    };
 
-      if (jsonData && jsonData.success) {
-        console.log("Received token update:", jsonData.tokens);
-        setTokenCount(jsonData.tokens);
+    // Function to fetch user tokens (keep existing logic)
+    const fetchUserTokens = async () => {
+      try {
+        if (!userData || !userData.phoneNo) {
+          const storedUserData = JSON.parse(localStorage.getItem("userData"));
+          if (storedUserData && storedUserData.tokens) {
+            setTokenCount(storedUserData.tokens);
+          }
+          return;
+        }
 
-        const currentUserData = JSON.parse(localStorage.getItem("userData"));
-        localStorage.setItem("userData", JSON.stringify({
-          ...currentUserData,
-          tokens: jsonData.tokens,
-          ...jsonData.userData
-        }));
-      } else {
-        console.error("Error in token fetch:", jsonData?.message || "No valid data received");
+        console.log("Fetching tokens for:", userData.phoneNo);
+
+        const response = await fetch(`${API_BASE_URL}/user-profile/${userData.phoneNo}`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'text/event-stream',
+            'Cache-Control': 'no-cache'
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const responseText = await response.text();
+        console.log("Raw response:", responseText);
+
+        const lines = responseText.split('\n');
+        let jsonData = null;
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const dataString = line.substring(6);
+            try {
+              jsonData = JSON.parse(dataString);
+              break;
+            } catch (parseError) {
+              console.error("Error parsing JSON from SSE:", parseError);
+            }
+          }
+        }
+
+        if (jsonData && jsonData.success) {
+          console.log("Received token update:", jsonData.tokens);
+          setTokenCount(jsonData.tokens);
+
+          const currentUserData = JSON.parse(localStorage.getItem("userData"));
+          localStorage.setItem("userData", JSON.stringify({
+            ...currentUserData,
+            tokens: jsonData.tokens,
+            ...jsonData.userData
+          }));
+        } else {
+          console.error("Error in token fetch:", jsonData?.message || "No valid data received");
+          const storedUserData = JSON.parse(localStorage.getItem("userData"));
+          if (storedUserData && storedUserData.tokens) {
+            setTokenCount(storedUserData.tokens);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching tokens:", error.message || error);
         const storedUserData = JSON.parse(localStorage.getItem("userData"));
         if (storedUserData && storedUserData.tokens) {
           setTokenCount(storedUserData.tokens);
         }
       }
+    };
+
+    // Initial fetch
+    fetchUserTokens();
+    checkForWinners();
+
+    // Set up polling for real-time updates (every 30 seconds)
+    pollingInterval = setInterval(() => {
+      fetchUserTokens();
+      checkForWinners();
+    }, 30000);
+
+    // Cleanup on component unmount
+    return () => {
+      if (pollingInterval) {
+        console.log("Clearing token polling interval");
+        clearInterval(pollingInterval);
+      }
+    };
+  }, []); // Empty dependency array for initial setup only
+
+  // Improved close winner popup function
+  const closeWinnerPopup = async () => {
+    try {
+      // Mark current winner as claimed using the winner ID
+      const currentWinner = winnerDetails[currentWinnerIndex];
+
+      if (currentWinner && currentWinner.id) {
+        console.log(`Marking winner ${currentWinner.id} as claimed`);
+        await axios.post(`${API_BASE_URL}/mark-winner-claimed/${currentWinner.id}`);
+      }
+
+      // If there are more winners, show the next one
+      if (currentWinnerIndex < winnerDetails.length - 1) {
+        setCurrentWinnerIndex(prevIndex => prevIndex + 1);
+      } else {
+        // If no more winners, close the popup completely
+        setShowWinnerPopup(false);
+        setCurrentWinnerIndex(0);
+        setWinnerDetails([]);
+
+        // Optional: Clear processed winners set after some time to allow new checks
+        setTimeout(() => {
+          setProcessedWinnerIds(new Set());
+        }, 60000); // Clear after 1 minute
+      }
     } catch (error) {
-      console.error("Error fetching tokens:", error.message || error);
-      const storedUserData = JSON.parse(localStorage.getItem("userData"));
-      if (storedUserData && storedUserData.tokens) {
-        setTokenCount(storedUserData.tokens);
+      console.error('Error marking winner as claimed:', error);
+
+      // Still proceed with popup navigation even if API call fails
+      if (currentWinnerIndex < winnerDetails.length - 1) {
+        setCurrentWinnerIndex(prevIndex => prevIndex + 1);
+      } else {
+        setShowWinnerPopup(false);
+        setCurrentWinnerIndex(0);
+        setWinnerDetails([]);
       }
     }
   };
 
-  // Initial fetch
-  fetchUserTokens();
-  checkForWinners();
-
-  // Set up polling for real-time updates (every 30 seconds)
-  pollingInterval = setInterval(() => {
-    fetchUserTokens();
-    checkForWinners();
-  }, 30000);
-
-  // Cleanup on component unmount
-  return () => {
-    if (pollingInterval) {
-      console.log("Clearing token polling interval");
-      clearInterval(pollingInterval);
-    }
+  // Updated handler to set the flag properly
+  const handleCloseWelcomePopup = () => {
+    setShowWelcomePopup(false);
+    localStorage.setItem('welcomePopupShown', 'true');
   };
-}, []); // Empty dependency array for initial setup only
-
-// Improved close winner popup function
-const closeWinnerPopup = async () => {
-  try {
-    // Mark current winner as claimed using the winner ID
-    const currentWinner = winnerDetails[currentWinnerIndex];
-    
-    if (currentWinner && currentWinner.id) {
-      console.log(`Marking winner ${currentWinner.id} as claimed`);
-      await axios.post(`${API_BASE_URL}/mark-winner-claimed/${currentWinner.id}`);
-    }
-
-    // If there are more winners, show the next one
-    if (currentWinnerIndex < winnerDetails.length - 1) {
-      setCurrentWinnerIndex(prevIndex => prevIndex + 1);
-    } else {
-      // If no more winners, close the popup completely
-      setShowWinnerPopup(false);
-      setCurrentWinnerIndex(0);
-      setWinnerDetails([]);
-      
-      // Optional: Clear processed winners set after some time to allow new checks
-      setTimeout(() => {
-        setProcessedWinnerIds(new Set());
-      }, 60000); // Clear after 1 minute
-    }
-  } catch (error) {
-    console.error('Error marking winner as claimed:', error);
-    
-    // Still proceed with popup navigation even if API call fails
-    if (currentWinnerIndex < winnerDetails.length - 1) {
-      setCurrentWinnerIndex(prevIndex => prevIndex + 1);
-    } else {
-      setShowWinnerPopup(false);
-      setCurrentWinnerIndex(0);
-      setWinnerDetails([]);
-    }
-  }
-};
 
   const handleClickGame1 = () => {
     navigate("/game1");
@@ -262,6 +281,10 @@ const closeWinnerPopup = async () => {
 
   return (
     <div className="enhanced-layout">
+      <WelcomePopup
+        isVisible={showWelcomePopup}
+        onClose={handleCloseWelcomePopup}
+      />
       {/* Winner Popup */}
       {showWinnerPopup && winnerDetails.length > 0 && (
         <div className="winner-popup-overlay">
@@ -367,7 +390,7 @@ const closeWinnerPopup = async () => {
               <li className="nav-item">
                 <Link
                   className="nav-link enhanced-nav-link"
-                  to="/about-us"
+                  to="/about"
                   onMouseEnter={() => setIsHovered("about")}
                   onMouseLeave={() => setIsHovered(null)}
                 >
@@ -429,13 +452,37 @@ const closeWinnerPopup = async () => {
           </div>
         </div>
 
-        <div className="enhanced-bottom-message">
-          <div className="message-content">
-            <i className="bi bi-controller message-icon"></i>
-            <span>More Exciting Games Coming Soon!</span>
-            <div className="pulse-animation"></div>
+        {/* Footer */}
+        <footer className="enhanced-footer">
+          <div className="footer-content">
+            <div className="copyright-section">
+              <p className="copyright-text">
+                © 2025/2026 NAPHEX. All rights reserved.
+              </p>
+            </div>
+            <div className="footer-links">
+              <Link to="/terms&conditions" className="footer-link">
+                Terms & Conditions
+              </Link>
+              <span className="footer-separator">|</span>
+              <Link to="/kycpolicy" className="footer-link">
+                KYC Policy
+              </Link>
+              <span className="footer-separator">|</span>
+              <Link to="/privacypolicy" className="footer-link">
+                Privacy Policy
+              </Link>
+              <span className="footer-separator">|</span>
+              <Link to="/rules" className="footer-link">
+                Game Rules
+              </Link>
+              <span className="footer-separator">|</span>
+              <Link to="/FAQs" className="footer-link">
+                FAQs
+              </Link>
+            </div>
           </div>
-        </div>
+        </footer>
       </div>
     </div>
   );
