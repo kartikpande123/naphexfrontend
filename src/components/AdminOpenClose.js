@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BarChart3, Users, Trophy, DollarSign, TrendingUp, Settings, Bell, User, Menu } from 'lucide-react';
 import logo from "../images/logo-1.png";
+import { useNavigate } from 'react-router-dom';
 
 function AdminOpenClose() {
     useEffect(() => {
@@ -96,30 +97,32 @@ function AdminOpenClose() {
         };
     }, []);
 
+    const navigate = useNavigate();
+
     // Navigation functions (replace with your actual navigation logic)
     function goResults() {
         console.log("Navigate to: /opencloseresult");
-        // navigate("/opencloseresult")
+        navigate("/opencloseresult")
     }
 
     function goPlayers() {
         console.log("Navigate to: /adminwhoplayopenclose");
-        // navigate("/adminwhoplayopenclose")
+        navigate("/adminwhoplayopenclose")
     }
     
     function goWinners() { 
         console.log("Navigate to: /adminwinners");
-        // navigate("/adminwinners")
+        navigate("/adminwinners")
     }
     
     function goAmtBet() {
         console.log("Navigate to: /adminuseramtplayed");
-        // navigate("/adminuseramtplayed") 
+        navigate("/adminuseramtplayed") 
     }
     
     function goProfitLoss() {
         console.log("Navigate to: /adminprofit");
-        // navigate("/adminprofit") 
+        navigate("/adminprofit") 
     }
 
     const menuItems = [
