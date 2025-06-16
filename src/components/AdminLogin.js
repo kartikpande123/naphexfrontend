@@ -9,7 +9,7 @@ const AdminLogin = () => {
     // Hardcoded admin credentials
     const ADMIN_CREDENTIALS = [
         { phone: '7022852377', password: 'naphex123#' },
-        { phone: '9148180021', password: 'admin2024!' },
+        { phone: '9019842426', password: 'naphex123#' },
         { phone: '7899527911', password: 'admin2000@' }
     ];
 

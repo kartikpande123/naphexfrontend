@@ -70,7 +70,7 @@ const UserBinaryTree = () => {
         calculateEmptySlots(response.data);
       } catch (err) {
         console.error("Error fetching tree data:", err);
-        setError("Failed to load data");
+        setError("No Binary Tree Found!!");
       } finally {
         setLoading(false);
       }

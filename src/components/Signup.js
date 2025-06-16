@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import "./SignupPage.css";
-import API_BASE_URL from './ApiConfig';
 
 const SignupPage = () => {
   const [email, setEmail] = useState('');
@@ -11,8 +10,6 @@ const SignupPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [referralId, setReferralId] = useState('');
-  const [otp, setOtp] = useState('');
-  const [otpSent, setOtpSent] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -22,11 +19,6 @@ const SignupPage = () => {
   const [city, setCity] = useState('');
   const [state, setState] = useState('');
 
-  // New state for OTP timer
-  const [otpTimer, setOtpTimer] = useState(60);
-  const [canResendOtp, setCanResendOtp] = useState(false);
-
-  // List of all Indian states
   const INDIAN_STATES = [
     'Bihar', 'Chhattisgarh',
     'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
@@ -47,14 +39,6 @@ const SignupPage = () => {
     hasSpecialChar: false,
   });
 
-  const [referralStatus, setReferralStatus] = useState({
-    isValid: false,
-    message: '',
-    referrerName: '',
-    isChecking: false
-  });
-
-  // Load data from localStorage
   useEffect(() => {
     const storedData = JSON.parse(localStorage.getItem('signupData'));
     if (storedData) {
@@ -67,23 +51,6 @@ const SignupPage = () => {
     }
   }, []);
 
-  // OTP Timer Effect
-  useEffect(() => {
-    let timer;
-    if (otpSent && otpTimer > 0) {
-      timer = setInterval(() => {
-        setOtpTimer((prevTimer) => prevTimer - 1);
-      }, 1000);
-    } else if (otpTimer === 0) {
-      setCanResendOtp(true);
-    }
-
-    return () => {
-      if (timer) clearInterval(timer);
-    };
-  }, [otpSent, otpTimer]);
-
-  // Validate password
   const validatePassword = (password) => {
     const errors = [];
     const newRequirements = {
@@ -107,90 +74,21 @@ const SignupPage = () => {
     return errors;
   };
 
-  // Validate phone number
   const validatePhoneNumber = (phoneNumber) => {
     return /^\d{10}$/.test(phoneNumber);
   };
 
-  // Handle password change
   const handlePasswordChange = (e) => {
     const newPassword = e.target.value;
     setPassword(newPassword);
     validatePassword(newPassword);
   };
 
-  // Debounce function
-  const debounce = (func, wait) => {
-    let timeout;
-    return (...args) => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => func(...args), wait);
-    };
-  };
-
-  // Check referral ID
-  const checkReferralId = async (id) => {
-    if (!id.trim()) {
-      setReferralStatus({
-        isValid: false,
-        message: 'Referral ID is required',
-        referrerName: '',
-        isChecking: false
-      });
-      return;
-    }
-
-    setReferralStatus(prev => ({ ...prev, isChecking: true }));
-
-    try {
-      const response = await axios.get(`${API_BASE_URL}/checkReferralSlots/${id}`);
-      
-      if (response.data.success) {
-        if (response.data.slotsAvailable) {
-          setReferralStatus({
-            isValid: true,
-            message: response.data.message,
-            referrerName: response.data.referrerName,
-            isChecking: false
-          });
-        } else {
-          setReferralStatus({
-            isValid: false,
-            message: 'Both slots are occupied. Please use a different referral ID.',
-            referrerName: '',
-            isChecking: false
-          });
-        }
-      }
-    } catch (error) {
-      setReferralStatus({
-        isValid: false,
-        message: error.response?.data?.error || 'Invalid referral ID',
-        referrerName: '',
-        isChecking: false
-      });
-    }
-  };
-
-  // Debounced version of checkReferralId
-  const debouncedCheckReferral = debounce(checkReferralId, 500);
-
-  // Handle Send OTP
-  const handleSendOtp = async (e) => {
+  const handleNext = async (e) => {
     e.preventDefault();
     setErrors({});
     setIsLoading(true);
 
-    if (!referralStatus.isValid) {
-      setErrors(prev => ({
-        ...prev,
-        referralId: "Please enter a valid referral ID with available slots"
-      }));
-      setIsLoading(false);
-      return;
-    }
-
-    // Validate phone number
     if (!validatePhoneNumber(phone)) {
       setErrors((prev) => ({
         ...prev,
@@ -200,7 +98,6 @@ const SignupPage = () => {
       return;
     }
 
-    // Validate city
     if (!city.trim()) {
       setErrors((prev) => ({
         ...prev,
@@ -210,7 +107,6 @@ const SignupPage = () => {
       return;
     }
 
-    // Validate state
     if (!state) {
       setErrors((prev) => ({
         ...prev,
@@ -250,668 +146,129 @@ const SignupPage = () => {
     }
 
     try {
-      // Check phone availability
-      const checkPhoneResponse = await axios.post(`${API_BASE_URL}/check-phone`, {
+      const signupData = {
+        name: displayName,
         phoneNo: phone,
-      });
+        email,
+        password,
+        city,
+        state,
+        referralId: referralId
+      };
 
-      if (!checkPhoneResponse.data.success) {
-        setErrors((prev) => ({
-          ...prev,
-          phone: "Phone number already registered. Please log in.",
-        }));
-        setIsLoading(false);
-        return;
-      }
+      localStorage.setItem('signupData', JSON.stringify(signupData));
 
-      // Send OTP
-      const sendOtpResponse = await axios.post(`${API_BASE_URL}/send-otp`, {
-        phoneNo: phone,
-      });
-
-      if (sendOtpResponse.data.success) {
-        setOtpSent(true);
-        setAlertMessage('OTP sent successfully!');
-        setAlertType('success');
-
-        // Auto-dismiss alert after 3 seconds
-        setTimeout(() => {
-          setAlertMessage('');
-        }, 3000);
-
-        // Store debug OTP for testing (remove this in production)
-        localStorage.setItem('debug_otp', sendOtpResponse.data.debug.otp);
-      } else {
-        setAlertMessage('Failed to send OTP. Please try again.');
-        setAlertType('error');
-
-        setTimeout(() => {
-          setAlertMessage('');
-        }, 3000);
-      }
+      navigate('/paymentgateway');
     } catch (error) {
-      console.error('Error:', error);
-      setAlertMessage('An error occurred. Please try again.');
-      setAlertType('error');
-
-      setTimeout(() => {
-        setAlertMessage('');
-      }, 3000);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Handle OTP Resend
-  const handleResendOtp = async () => {
-    setIsLoading(true);
-    setOtpTimer(60);
-    setCanResendOtp(false);
-
-    try {
-      const sendOtpResponse = await axios.post(`${API_BASE_URL}/send-otp`, {
-        phoneNo: phone,
-      });
-
-      if (sendOtpResponse.data.success) {
-        localStorage.setItem('debug_otp', sendOtpResponse.data.debug.otp);
-        setOtpSent(true);
-      } else {
-        setErrors((prev) => ({
-          ...prev,
-          api: "Failed to resend OTP. Please try again.",
-        }));
-      }
-    } catch (error) {
-      console.error('Error:', error);
+      console.error("Error saving user data locally:", error);
       setErrors((prev) => ({
         ...prev,
-        api: error.response?.data?.message || "An error occurred. Please try again.",
+        api: "Failed to save user data. Try again later.",
       }));
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle Next (OTP Verification)
-  const handleNext = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    if (otp.length !== 6) {
-        setErrors((prev) => ({
-            ...prev,
-            otp: "Please enter a valid 6-digit OTP"
-        }));
-        setIsLoading(false);
-        return;
-    }
-
-    // For development: verify against stored OTP
-    const storedOtp = localStorage.getItem('debug_otp');
-    if (otp !== storedOtp) {
-        setErrors((prev) => ({
-            ...prev,
-            otp: "Invalid OTP. Please try again."
-        }));
-        setIsLoading(false);
-        return;
-    }
-
-    try {
-        // Validate city and state
-        if (!city || !state) {
-            setErrors((prev) => ({
-                ...prev,
-                cityState: "City and State are required"
-            }));
-            setIsLoading(false);
-            return;
-        }
-
-        // Prepare user data for localStorage - include the referralId from props/state
-        const signupData = {
-            name: displayName,
-            phoneNo: phone,
-            email,
-            password,
-            city,
-            state,
-            referralId: referralId // Make sure this matches the ID passed from the previous step
-        };
-
-        // Save data to localStorage
-        localStorage.setItem('signupData', JSON.stringify(signupData));
-        localStorage.removeItem('debug_otp');
-
-        // Navigate to next step
-        navigate('/paymentgateway');
-    } catch (error) {
-        console.error("Error saving user data locally:", error);
-        setErrors((prev) => ({
-            ...prev,
-            api: "Failed to save user data. Try again later.",
-        }));
-    } finally {
-        setIsLoading(false);
-    }
+  const inputStyle = {
+    backgroundColor: '#34495e',
+    color: '#ecf0f1',
   };
 
   return (
-    <>
-      <style jsx>{`
-        * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-        }
-
-        body, html {
-          height: 100%;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-          background: linear-gradient(180deg, #f5f7fa 0%, #c3cfe2 100%);
-          background-attachment: fixed;
-          background-repeat: no-repeat;
-        }
-
-        body {
-          min-height: 100vh;
-          padding: 20px 0;
-        }
-
-        .signup-container {
-          max-width: 500px;
-          margin: 0 auto;
-          padding: 0 20px;
-        }
-
-        .header {
-          font-size: 2.5rem;
-          font-weight: 800;
-          text-align: center;
-          letter-spacing: 2px;
-          background: linear-gradient(to right, #ffffff, #e0f7fa);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-          margin-bottom: 20px;
-          animation: fadeIn 0.8s ease-out;
-        }
-
-
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(-10px);
+    <div className="container mt-5">
+      <style>
+        {`
+          body, html {
+            height: 230%;
+            margin: 0;
           }
-          to {
+
+          body {
+            background: linear-gradient(180deg, #f5f7fa 0%, #c3cfe2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+          }
+
+          input::placeholder {
+            color: rgba(255, 255, 255, 0.7) !important;
             opacity: 1;
-            transform: translateY(0);
           }
-        }
 
-
-        .signup-card {
-          background: rgba(26, 42, 68, 0.95);
-          backdrop-filter: blur(10px);
-          border-radius: 20px;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
-          overflow: hidden;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .card-header {
-          background: linear-gradient(135deg, #42a5f5 0%, #2a5298 100%);
-          padding: 30px;
-          text-align: center;
-          position: relative;
-          overflow: hidden;
-        }
-
-        .card-header::before {
-          content: '';
-          position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-          animation: shimmer 3s infinite;
-        }
-
-        @keyframes shimmer {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        .header-title {
-          color: #ffffff;
-          font-size: 2rem;
-          font-weight: 700;
-          margin: 0;
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-          position: relative;
-          z-index: 1;
-        }
-
-        .header-subtitle {
-          color: rgba(255, 255, 255, 0.9);
-          font-size: 0.95rem;
-          margin-top: 8px;
-          position: relative;
-          z-index: 1;
-        }
-
-        .card-body {
-          padding: 40px 30px;
-          background: #1a2a44;
-        }
-
-        .form-section {
-          margin-bottom: 30px;
-        }
-
-        .section-title {
-          color: #42a5f5;
-          font-size: 1.1rem;
-          font-weight: 600;
-          margin-bottom: 20px;
-          padding-left: 10px;
-          border-left: 3px solid #42a5f5;
-        }
-
-        .form-group {
-          margin-bottom: 20px;
-          position: relative;
-          color: #ecf0f1;
-        }
-
-        .form-label {
-          color: #ecf0f1;
-          font-weight: 500;
-          margin-bottom: 8px;
-          display: block;
-          font-size: 0.9rem;
-        }
-
-        .form-control {
-          width: 100%;
-          padding: 14px 16px;
-          background: rgba(52, 73, 94, 0.8);
-          border: 2px solid rgba(255, 255, 255, 0.1);
-          border-radius: 10px;
-          color: #ffffff;
-          font-size: 1rem;
-          transition: all 0.3s ease;
-          backdrop-filter: blur(5px);
-        }
-
-        .form-control:focus {
-          outline: none;
-          border-color: #42a5f5;
-          box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
-          background: rgba(52, 73, 94, 1);
-          color: #ecf0f1;
-        }
-
-        .form-control::placeholder {
-          color: #ffffff;
-          opacity: 0.8;
-        }
-
-        .form-control:disabled {
-          opacity: 0.6;
-          cursor: not-allowed;
-          color:rgb(1, 14, 17);
-        }
-
-        .input-group {
-          position: relative;
-          display: flex;
-          align-items: stretch;
-        }
-
-        .input-group .form-control {
-          border-top-right-radius: 0;
-          border-bottom-right-radius: 0;
-          border-right: none;
-        }
-
-        .input-group .btn {
-          border: 2px solid rgba(255, 255, 255, 0.1);
-          border-left: none;
-          background: rgba(248, 249, 250, 0.9);
-          border-radius: 0 10px 10px 0;
-          padding: 0 16px;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .input-group .btn:hover {
-          background: rgba(233, 236, 239, 1);
-          border-color: #42a5f5;
-        }
-
-        .input-group .btn:focus {
-          outline: none;
-          box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
-        }
-
-        .input-group .btn i {
-          font-size: 1.1rem;
-          color: #6c757d;
-        }
-
-        .input-group .btn:hover i {
-          color: #495057;
-        }
-
-        .error-message {
-          color: #e74c3c;
-          font-size: 0.85rem;
-          margin-top: 6px;
-          padding-left: 4px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .error-message::before {
-          content: '⚠';
-          font-size: 0.9rem;
-        }
-
-        .password-requirements {
-          background: rgba(52, 73, 94, 0.5);
-          border-radius: 8px;
-          padding: 12px;
-          margin-top: 8px;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .password-requirements-title {
-          color: #ecf0f1;
-          font-size: 0.85rem;
-          font-weight: 500;
-          margin-bottom: 8px;
-        }
-
-        .requirements-list {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-
-        .requirement-item {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          font-size: 0.8rem;
-          color: rgba(236, 240, 241, 0.7);
-          margin-bottom: 4px;
-        }
-
-        .requirement-item.met {
-          color: #2ecc71;
-        }
-
-        .requirement-icon {
-          width: 16px;
-          height: 16px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 0.7rem;
-          border: 1px solid currentColor;
-        }
-
-        .requirement-icon.met {
-          background: #2ecc71;
-          border-color: #2ecc71;
-          color: white;
-        }
-
-        .referral-status {
-          margin-top: 8px;
-          padding: 8px 12px;
-          border-radius: 6px;
-          font-size: 0.85rem;
-          display: flex;
-          align-items: center;
-          gap: 8px;
-        }
-
-        .referral-status.valid {
-          background: rgba(46, 204, 113, 0.1);
-          border: 1px solid rgba(46, 204, 113, 0.3);
-          color: #2ecc71;
-        }
-
-        .referral-status.invalid {
-          background: rgba(231, 76, 60, 0.1);
-          border: 1px solid rgba(231, 76, 60, 0.3);
-          color: #e74c3c;
-        }
-
-        .referral-status.checking {
-          background: rgba(52, 152, 219, 0.1);
-          border: 1px solid rgba(52, 152, 219, 0.3);
-          color: #3498db;
-        }
-
-        .referrer-name {
-          margin-top: 4px;
-          font-weight: 500;
-        }
-
-        .otp-section {
-          background: rgba(66, 165, 245, 0.05);
-          border: 1px solid rgba(66, 165, 245, 0.2);
-          border-radius: 12px;
-          padding: 20px;
-          margin-top: 20px;
-        }
-
-        .otp-timer {
-          text-align: center;
-          margin-top: 15px;
-          color: #ecf0f1;
-          font-size: 0.9rem;
-        }
-
-        .resend-button {
-          background: linear-gradient(135deg, #42a5f5 0%, #2196f3 100%);
-          border: none;
-          color: white;
-          padding: 10px 20px;
-          border-radius: 8px;
-          font-size: 0.9rem;
-          font-weight: 500;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 4px 12px rgba(66, 165, 245, 0.3);
-        }
-
-        .resend-button:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(66, 165, 245, 0.4);
-          background: linear-gradient(135deg, #1e88e5 0%, #1976d2 100%);
-        }
-
-        .resend-button:disabled {
-          background: rgba(108, 117, 125, 0.6);
-          cursor: not-allowed;
-          transform: none;
-          box-shadow: none;
-        }
-
-        .alert {
-          padding: 15px 20px;
-          border-radius: 10px;
-          margin-bottom: 20px;
-          border: none;
-          font-size: 0.9rem;
-          display: flex;
-          align-items: center;
-          gap: 10px;
-        }
-
-        .alert-success {
-          background: rgba(46, 204, 113, 0.1);
-          border: 1px solid rgba(46, 204, 113, 0.3);
-          color: #2ecc71;
-        }
-
-        .alert-error {
-          background: rgba(231, 76, 60, 0.1);
-          border: 1px solid rgba(231, 76, 60, 0.3);
-          color: #e74c3c;
-        }
-
-        .btn-primary {
-          width: 100%;
-          padding: 16px;
-          background: linear-gradient(135deg, #42a5f5 0%, #2a5298 100%);
-          border: none;
-          border-radius: 12px;
-          color: white;
-          font-size: 1.1rem;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s ease;
-          box-shadow: 0 6px 20px rgba(66, 165, 245, 0.3);
-          position: relative;
-          overflow: hidden;
-        }
-
-        .btn-primary::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: -100%;
-          width: 100%;
-          height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-          transition: left 0.5s;
-        }
-
-        .btn-primary:hover::before {
-          left: 100%;
-        }
-
-        .btn-primary:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(66, 165, 245, 0.4);
-        }
-
-        .btn-primary:disabled {
-          background: rgba(108, 117, 125, 0.6);
-          cursor: not-allowed;
-          transform: none;
-          box-shadow: none;
-        }
-
-        .spinner-border {
-          width: 1rem;
-          height: 1rem;
-          margin-right: 8px;
-          animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-
-        .card-footer {
-          background: rgba(42, 82, 152, 0.3);
-          padding: 25px 30px;
-          text-align: center;
-          border-top: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .card-footer p {
-          margin: 0;
-          color: #bdc3c7;
-          font-size: 0.95rem;
-        }
-
-        .card-footer a {
-          color: #42a5f5;
-          text-decoration: none;
-          font-weight: 500;
-          transition: color 0.3s ease;
-        }
-
-        .card-footer a:hover {
-          color: #add8e6;
-          text-decoration: underline;
-        }
-
-        .two-column {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 15px;
-        }
-
-        @media (max-width: 768px) {
-          .signup-container {
-            padding: 0 15px;
+          .error-message {
+            color: #e74c3c;
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
           }
-          
-          .card-body {
-            padding: 30px 20px;
+
+          .password-requirements {
+            font-size: 0.875rem;
+            color: rgba(255, 255, 255, 0.7);
+            margin-top: 0.25rem;
           }
-          
+
+          .requirement-met {
+            color: #2ecc71;
+            font-weight: bold;
+            margin-left: 5px;
+          }
+
+          .card {
+            background-color: #1a2a44;
+            color: #ecf0f1;
+          }
+
           .card-header {
-            padding: 25px 20px;
+            background-color: #2a5298;
+            color: white;
           }
-          
-          .two-column {
-            grid-template-columns: 1fr;
-            gap: 20px;
+
+          .card-footer {
+            background-color: #2a5298;
+            color: #bdc3c7;
           }
-          
-          .header-title {
-            font-size: 1.75rem;
+
+          .btn-primary {
+            background-color: #0d6efd;
+            border-color: #e74c3c;
           }
-        }
-      `}</style>
 
-      <div className="signup-container">
-        <div className="signup-card">
-          <div className="card-header">
-            <h1 className="header-title">Create Account</h1>
-            <p className="header-subtitle">Join us and start your journey today</p>
-            <h2 className='header'>NAPHEX</h2>
-          </div>
-          
-          <div className="card-body">
-            {errors.api && (
-              <div className="alert alert-error" role="alert">
-                <span>⚠</span>
-                {errors.api}
-              </div>
-            )}
+          .btn-primary:hover {
+            background-color: #0b5ed7;
+            border-color: #c0392b;
+          }
 
-            {alertMessage && (
-              <div className={`alert alert-${alertType}`} role="alert">
-                <span>{alertType === 'success' ? '✓' : '⚠'}</span>
-                {alertMessage}
-              </div>
-            )}
+          .text-white:hover {
+            color: #add8e6 !important;
+          }
 
-            <form onSubmit={otpSent ? handleNext : handleSendOtp}>
-              {/* Personal Information Section */}
-              <div className="form-section">
-                <h3 className="section-title">Personal Information</h3>
-                
-                <div className="form-group">
-                  <label htmlFor="displayName" className="form-label">Full Name</label>
+          .btn-primary:disabled {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            cursor: not-allowed;
+          }
+
+          .form-label {
+            color: #ffff;
+          }
+        `}
+      </style>
+      <div className="row align-items-start justify-content-center">
+        <div className="col-lg-5">
+          <div className="card shadow-lg border-0 rounded-lg">
+            <div className="card-header text-center">
+              <h3>Sign Up</h3>
+            </div>
+            <div className="card-body">
+              {errors.api && (
+                <div className="alert alert-danger" role="alert">
+                  {errors.api}
+                </div>
+              )}
+              <form onSubmit={handleNext}>
+                <div className="mb-3">
+                  <label htmlFor="displayName" className="form-label">Name</label>
                   <input
                     type="text"
                     className="form-control"
@@ -920,24 +277,72 @@ const SignupPage = () => {
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Enter name as per Aadhaar card"
-                    disabled={otpSent}
+                    style={inputStyle}
                   />
                 </div>
-
-                <div className="form-group">
-                  <label htmlFor="email" className="form-label">Email Address (Optional)</label>
+                <div className="mb-3">
+                  <label htmlFor="email" className="form-label">Email (optional)</label>
                   <input
                     type="email"
                     className="form-control"
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    disabled={otpSent}
+                    placeholder="Enter email"
+                    style={inputStyle}
                   />
                 </div>
+                <div className="mb-3">
+                  <label htmlFor="referralId" className="form-label">Referral ID</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="referralId"
+                    required
+                    value={referralId}
+                    onChange={(e) => setReferralId(e.target.value)}
+                    placeholder="Enter Referral ID"
+                    style={inputStyle}
+                  />
+                  {errors.referralId && <div className="error-message">{errors.referralId}</div>}
+                </div>
 
-                <div className="form-group">
+                <div className="mb-3">
+                  <label htmlFor="city" className="form-label">City</label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="city"
+                    required
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Enter your city"
+                    style={inputStyle}
+                  />
+                  {errors.city && <div className="error-message">{errors.city}</div>}
+                </div>
+
+                <div className="mb-3">
+                  <label htmlFor="state" className="form-label">State</label>
+                  <select
+                    className="form-control"
+                    id="state"
+                    required
+                    value={state}
+                    onChange={(e) => setState(e.target.value)}
+                    style={inputStyle}
+                  >
+                    <option value="">Select State</option>
+                    {INDIAN_STATES.map((stateName) => (
+                      <option key={stateName} value={stateName}>
+                        {stateName}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.state && <div className="error-message">{errors.state}</div>}
+                </div>
+
+                <div className="mb-3">
                   <label htmlFor="phone" className="form-label">Phone Number</label>
                   <input
                     type="tel"
@@ -946,109 +351,13 @@ const SignupPage = () => {
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
-                    placeholder="Enter 10-digit phone number"
-                    disabled={otpSent}
+                    placeholder="Enter phone number"
+                    style={inputStyle}
                     maxLength="10"
                   />
                   {errors.phone && <div className="error-message">{errors.phone}</div>}
                 </div>
-              </div>
-
-              {/* Location Information Section */}
-              <div className="form-section">
-                <h3 className="section-title">Location Details</h3>
-                
-                <div className="two-column">
-                  <div className="form-group">
-                    <label htmlFor="city" className="form-label">City</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="city"
-                      required
-                      value={city}
-                      onChange={(e) => setCity(e.target.value)}
-                      placeholder="Enter your city"
-                      disabled={otpSent}
-                    />
-                    {errors.city && <div className="error-message">{errors.city}</div>}
-                  </div>
-
-                  <div className="form-group">
-                    <label htmlFor="state" className="form-label">State</label>
-                    <select
-                      className="form-control"
-                      id="state"
-                      required
-                      value={state}
-                      onChange={(e) => setState(e.target.value)}
-                      disabled={otpSent}
-                    >
-                      <option value="">Select State</option>
-                      {INDIAN_STATES.map((stateName) => (
-                        <option key={stateName} value={stateName}>
-                          {stateName}
-                        </option>
-                      ))}
-                    </select>
-                    {errors.state && <div className="error-message">{errors.state}</div>}
-                  </div>
-                </div>
-              </div>
-
-              {/* Referral Information Section */}
-              <div className="form-section">
-                <h3 className="section-title">Referral Information</h3>
-                
-                <div className="form-group">
-                  <label htmlFor="referralId" className="form-label">Referral ID</label>
-                  <input
-                    type="text"
-                    className="form-control"
-                    id="referralId"
-                    required
-                    value={referralId}
-                    onChange={(e) => {
-                      setReferralId(e.target.value);
-                      debouncedCheckReferral(e.target.value);
-                    }}
-                    placeholder="Enter Referral ID"
-                    style={{
-                      borderColor: referralStatus.isValid ? '#2ecc71' : referralStatus.message ? '#e74c3c' : 'rgba(255, 255, 255, 0.1)'
-                    }}
-                    disabled={otpSent}
-                  />
-                  
-                  {referralStatus.isChecking && (
-                    <div className="referral-status checking">
-                      <span>🔍</span>
-                      Checking referral ID...
-                    </div>
-                  )}
-                  
-                  {referralStatus.message && !referralStatus.isChecking && (
-                    <div className={`referral-status ${referralStatus.isValid ? 'valid' : 'invalid'}`}>
-                      <span>{referralStatus.isValid ? '✓' : '✗'}</span>
-                      <div>
-                        <div>{referralStatus.message}</div>
-                        {referralStatus.referrerName && (
-                          <div className="referrer-name">
-                            Referrer: {referralStatus.referrerName}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-                  
-                  {errors.referralId && <div className="error-message">{errors.referralId}</div>}
-                </div>
-              </div>
-
-              {/* Security Information Section */}
-              <div className="form-section">
-                <h3 className="section-title">Security Setup</h3>
-                
-                <div className="form-group">
+                <div className="mb-3">
                   <label htmlFor="password" className="form-label">Password</label>
                   <div className="input-group">
                     <input
@@ -1058,46 +367,29 @@ const SignupPage = () => {
                       required
                       value={password}
                       onChange={handlePasswordChange}
-                      placeholder="Create a strong password"
-                      disabled={otpSent}
+                      placeholder="Enter password"
+                      style={inputStyle}
                     />
                     <button
                       type="button"
-                      className="btn"
+                      className="btn btn-light"
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`} />
                     </button>
                   </div>
-                  
                   <div className="password-requirements">
-                    <div className="password-requirements-title">Password Requirements:</div>
-                    <ul className="requirements-list">
-                      <li className={`requirement-item ${passwordRequirements.minLength ? 'met' : ''}`}>
-                        <span className={`requirement-icon ${passwordRequirements.minLength ? 'met' : ''}`}>
-                          {passwordRequirements.minLength ? '✓' : '○'}
-                        </span>
-                        At least 8 characters long
-                      </li>
-                      <li className={`requirement-item ${passwordRequirements.hasNumber ? 'met' : ''}`}>
-                        <span className={`requirement-icon ${passwordRequirements.hasNumber ? 'met' : ''}`}>
-                          {passwordRequirements.hasNumber ? '✓' : '○'}
-                        </span>
-                        At least one number
-                      </li>
-                      <li className={`requirement-item ${passwordRequirements.hasSpecialChar ? 'met' : ''}`}>
-                        <span className={`requirement-icon ${passwordRequirements.hasSpecialChar ? 'met' : ''}`}>
-                          {passwordRequirements.hasSpecialChar ? '✓' : '○'}
-                        </span>
-                        At least one special character
-                      </li>
+                    Password must contain:
+                    <ul className="mb-0 ps-3">
+                      <li>At least 8 characters {passwordRequirements.minLength && <span className="requirement-met">✅</span>}</li>
+                      <li>At least 1 number {passwordRequirements.hasNumber && <span className="requirement-met">✅</span>}</li>
+                      <li>At least 1 special character {passwordRequirements.hasSpecialChar && <span className="requirement-met">✅</span>}</li>
                     </ul>
                   </div>
-                  
                   {errors.password && (
                     <div className="error-message">
                       {Array.isArray(errors.password) ? (
-                        <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+                        <ul className="mb-0 ps-3">
                           {errors.password.map((error, index) => (
                             <li key={index}>{error}</li>
                           ))}
@@ -1108,8 +400,7 @@ const SignupPage = () => {
                     </div>
                   )}
                 </div>
-
-                <div className="form-group">
+                <div className="mb-3">
                   <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
                   <div className="input-group">
                     <input
@@ -1119,12 +410,12 @@ const SignupPage = () => {
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="Re-enter your password"
-                      disabled={otpSent}
+                      placeholder="Re-enter password"
+                      style={inputStyle}
                     />
                     <button
                       type="button"
-                      className="btn"
+                      className="btn btn-light"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     >
                       <i className={`bi ${showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'}`} />
@@ -1132,74 +423,32 @@ const SignupPage = () => {
                   </div>
                   {errors.confirmPassword && <div className="error-message">{errors.confirmPassword}</div>}
                 </div>
-              </div>
-
-              {/* OTP Verification Section */}
-              {otpSent && (
-                <div className="otp-section">
-                  <h3 className="section-title" style={{ color: '#42a5f5', marginBottom: '15px' }}>
-                    OTP Verification
-                  </h3>
-                  
-                  <div className="form-group">
-                    <label htmlFor="otp" className="form-label">Enter OTP</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      id="otp"
-                      value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                      placeholder="Enter 6-digit OTP sent to your phone"
-                      maxLength="6"
-                      style={{ textAlign: 'center', fontSize: '1.2rem', letterSpacing: '0.5rem' }}
-                    />
-                    {errors.otp && <div className="error-message">{errors.otp}</div>}
+                {alertMessage && (
+                  <div className={`alert alert-${alertType} text-center`} role="alert">
+                    {alertMessage}
                   </div>
-                  
-                  <div className="otp-timer">
-                    {otpTimer > 0 ? (
-                      <div>
-                        <span>⏱ Resend OTP in {otpTimer} seconds</span>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        className="resend-button"
-                        onClick={handleResendOtp}
-                        disabled={!canResendOtp || isLoading}
-                      >
-                        🔄 Resend OTP
-                      </button>
-                    )}
-                  </div>
+                )}
+                <div className="text-center">
+                  <button
+                    type="submit"
+                    className="btn btn-primary w-100"
+                    disabled={isLoading}
+                  >
+                    {isLoading ? (
+                      <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                    ) : null}
+                    Next
+                  </button>
                 </div>
-              )}
-
-              {/* Submit Button */}
-              <div style={{ marginTop: '30px' }}>
-                <button
-                  type="submit"
-                  className="btn-primary"
-                  disabled={isLoading}
-                >
-                  {isLoading && (
-                    <span className="spinner-border" role="status" aria-hidden="true"></span>
-                  )}
-                  {otpSent ? "Verify & Continue" : "Send OTP"}
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <div className="card-footer">
-            <p>
-              Already have an account? 
-              <Link to="/login" style={{ marginLeft: '8px' }}>LogIn</Link>
-            </p>
+              </form>
+            </div>
+            <div className="card-footer text-center">
+              <p className="mb-0">Already have an account? <Link to="/login" className="text-white">Login</Link></p>
+            </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
