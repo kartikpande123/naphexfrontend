@@ -170,6 +170,8 @@ const MyAccount = () => {
       
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
+        console.log('Received user data:', data); // Debug log
+        
         if (data.success) {
           setUserData(data.userData);
           setLoading(false);
@@ -183,6 +185,7 @@ const MyAccount = () => {
       };
       
       eventSource.onerror = (err) => {
+        console.error('EventSource error:', err);
         setError('Failed to connect to server');
         setLoading(false);
         eventSource.close();
@@ -193,6 +196,7 @@ const MyAccount = () => {
         eventSource.close();
       };
     } catch (err) {
+      console.error('Fetch error:', err);
       setError('An error occurred while fetching user data');
       setLoading(false);
     }
@@ -244,6 +248,35 @@ const MyAccount = () => {
     navigate('/help');
   };
 
+  // Helper function to safely get user ID values
+  const getUserId = () => {
+    // Try different possible data structures
+    if (userData?.userIds?.myuserid) {
+      return userData.userIds.myuserid;
+    }
+    if (userData?.userids?.myuserid) {
+      return userData.userids.myuserid;
+    }
+    if (userData?.myuserid) {
+      return userData.myuserid;
+    }
+    return "Loading...";
+  };
+
+  const getReferralId = () => {
+    // Try different possible data structures
+    if (userData?.userIds?.myrefrelid) {
+      return userData.userIds.myrefrelid;
+    }
+    if (userData?.userids?.myrefrelid) {
+      return userData.userids.myrefrelid;
+    }
+    if (userData?.myrefrelid) {
+      return userData.myrefrelid;
+    }
+    return "Loading...";
+  };
+
   const renderContent = () => {
     if (loading) {
       return (
@@ -285,19 +318,25 @@ const MyAccount = () => {
                       {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
                     </div>
                   </div>
-                  <h4 className="mt-3">{userData.name}</h4>
-                  <p className="text-muted">{userData.phoneNo}</p>
+                  <h4 className="mt-3">{userData.name || 'Unknown User'}</h4>
+                  <p className="text-muted">{userData.phoneNo || 'No phone number'}</p>
                 </Col>
                 <Col md={8}>
                   <ListGroup variant="flush">
                     <ListGroup.Item>
-                      <strong>Location:</strong> {userData.city}, {userData.state}
+                      <strong>Location:</strong> {userData.city || 'N/A'}, {userData.state || 'N/A'}
                     </ListGroup.Item>
                     <ListGroup.Item>
-                      <strong>Account Created:</strong> {formatDate(userData.createdAt)}
+                      <strong>Account Created:</strong> {userData.createdAt ? formatDate(userData.createdAt) : 'N/A'}
                     </ListGroup.Item>
                     <ListGroup.Item>
-                      <strong>Available Tokens:</strong> <Badge bg="success" pill>{userData.tokens.toLocaleString()}</Badge>
+                      <strong>Available Tokens:</strong> <Badge bg="success" pill>{(userData.tokens || 0).toLocaleString()}</Badge>
+                    </ListGroup.Item>
+                    <ListGroup.Item>
+                      <strong>User ID:</strong> {getUserId()}
+                    </ListGroup.Item>
+                    <ListGroup.Item>
+                      <strong>Referral ID:</strong> {getReferralId()}
                     </ListGroup.Item>
                   </ListGroup>
                 </Col>
@@ -319,11 +358,12 @@ const MyAccount = () => {
                     <Card.Body className="text-center">
                       <h5>Your Referral ID</h5>
                       <div style={styles.referralCode}>
-                        {userData.userids?.myrefrelid || "REF9G4V1K"}
+                        {getReferralId()}
                       </div>
                       <button 
                         className="btn btn-outline-primary mt-3"
-                        onClick={() => copyToClipboard(userData.userids?.myrefrelid || "REF9G4V1K", "Referral ID")}
+                        onClick={() => copyToClipboard(getReferralId(), "Referral ID")}
+                        disabled={getReferralId() === "Loading..."}
                       >
                         <i className="bi bi-clipboard me-2"></i>Copy
                       </button>
@@ -334,11 +374,12 @@ const MyAccount = () => {
                     <Card.Body className="text-center">
                       <h5>Your User ID</h5>
                       <div style={styles.referralCode}>
-                        {userData.userids?.myuserid || "USERATGVCKEGI"}
+                        {getUserId()}
                       </div>
                       <button 
                         className="btn btn-outline-primary mt-3"
-                        onClick={() => copyToClipboard(userData.userids?.myuserid || "USERATGVCKEGI", "User ID")}
+                        onClick={() => copyToClipboard(getUserId(), "User ID")}
+                        disabled={getUserId() === "Loading..."}
                       >
                         <i className="bi bi-clipboard me-2"></i>Copy
                       </button>
@@ -366,13 +407,19 @@ const MyAccount = () => {
                     <Card.Body>
                       <ListGroup variant="flush">
                         <ListGroup.Item>
-                          <strong>Name:</strong> {userData.name}
+                          <strong>Name:</strong> {userData.name || 'N/A'}
                         </ListGroup.Item>
                         <ListGroup.Item>
-                          <strong>Phone:</strong> {userData.phoneNo}
+                          <strong>Phone:</strong> {userData.phoneNo || 'N/A'}
                         </ListGroup.Item>
                         <ListGroup.Item>
-                          <strong>Location:</strong> {userData.city}, {userData.state}
+                          <strong>Location:</strong> {userData.city || 'N/A'}, {userData.state || 'N/A'}
+                        </ListGroup.Item>
+                        <ListGroup.Item>
+                          <strong>User ID:</strong> {getUserId()}
+                        </ListGroup.Item>
+                        <ListGroup.Item>
+                          <strong>Referral ID:</strong> {getReferralId()}
                         </ListGroup.Item>
                       </ListGroup>
                     </Card.Body>
@@ -385,7 +432,7 @@ const MyAccount = () => {
                     </Card.Header>
                     <Card.Body>
                       <div style={styles.tokenDisplay}>
-                        <h2 className="mb-0">{userData.tokens.toLocaleString()}</h2>
+                        <h2 className="mb-0">{(userData.tokens || 0).toLocaleString()}</h2>
                         <small className="text-muted">Available Tokens</small>
                       </div>
                       <div className="d-grid gap-2">
@@ -506,7 +553,7 @@ const MyAccount = () => {
                         {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
                       </div>
                       <div className="ms-3">
-                        <h5 className="mb-0">{userData.name}</h5>
+                        <h5 className="mb-0">{userData.name || 'Unknown User'}</h5>
                         <div style={styles.tokenBadge}>
                           <i className="bi bi-coin me-1"></i>
                           <span>{userData.tokens ? userData.tokens.toLocaleString() : 0} Tokens</span>
