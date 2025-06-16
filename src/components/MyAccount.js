@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Nav, Spinner, Alert, Card, Badge, ListGroup, Table } from 'react-bootstrap';
+import { Container, Row, Col, Nav, Spinner, Alert, Card, Badge, ListGroup, Table, Toast, ToastContainer } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import API_BASE_URL from './ApiConfig';
 import { useNavigate } from 'react-router-dom';
@@ -10,6 +10,8 @@ const MyAccount = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [phoneNo, setPhoneNo] = useState('');
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState('');
   const navigate = useNavigate();
 
   // Inline CSS styles
@@ -91,7 +93,9 @@ const MyAccount = () => {
       backgroundColor: '#f8f9fa',
       borderRadius: '6px',
       margin: '15px 0',
-      letterSpacing: '1px'
+      letterSpacing: '1px',
+      userSelect: 'all',
+      cursor: 'text'
     },
     tokenDisplay: {
       textAlign: 'center',
@@ -194,6 +198,36 @@ const MyAccount = () => {
     }
   };
 
+  // Copy to clipboard function
+  const copyToClipboard = async (text, label) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setToastMessage(`${label} copied to clipboard!`);
+      setShowToast(true);
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      
+      try {
+        document.execCommand('copy');
+        setToastMessage(`${label} copied to clipboard!`);
+        setShowToast(true);
+      } catch (err) {
+        setToastMessage(`Failed to copy ${label}`);
+        setShowToast(true);
+      }
+      
+      document.body.removeChild(textArea);
+    }
+  };
+
   // Helper function to format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -287,7 +321,10 @@ const MyAccount = () => {
                       <div style={styles.referralCode}>
                         {userData.userids?.myrefrelid || "REF9G4V1K"}
                       </div>
-                      <button className="btn btn-outline-primary mt-3">
+                      <button 
+                        className="btn btn-outline-primary mt-3"
+                        onClick={() => copyToClipboard(userData.userids?.myrefrelid || "REF9G4V1K", "Referral ID")}
+                      >
                         <i className="bi bi-clipboard me-2"></i>Copy
                       </button>
                     </Card.Body>
@@ -299,7 +336,10 @@ const MyAccount = () => {
                       <div style={styles.referralCode}>
                         {userData.userids?.myuserid || "USERATGVCKEGI"}
                       </div>
-                      <button className="btn btn-outline-primary mt-3">
+                      <button 
+                        className="btn btn-outline-primary mt-3"
+                        onClick={() => copyToClipboard(userData.userids?.myuserid || "USERATGVCKEGI", "User ID")}
+                      >
                         <i className="bi bi-clipboard me-2"></i>Copy
                       </button>
                     </Card.Body>
@@ -449,153 +489,173 @@ const MyAccount = () => {
   }, []);
 
   return (
-    <Container fluid className="py-4">
-      <Row>
-        {/* Sidebar */}
-        <Col lg={3} md={4} style={styles.sidebarWrapper}>
-          <Card style={styles.sidebar}>
-            <Card.Header className="bg-dark text-white">
-              <h4 className="mb-0">My Account</h4>
-            </Card.Header>
-            <Card.Body className="p-0">
-              {userData && (
-                <div style={styles.userInfo}>
-                  <div className="d-flex align-items-center">
-                    <div style={styles.miniAvatar}>
-                      {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
-                    </div>
-                    <div className="ms-3">
-                      <h5 className="mb-0">{userData.name}</h5>
-                      <div style={styles.tokenBadge}>
-                        <i className="bi bi-coin me-1"></i>
-                        <span>{userData.tokens ? userData.tokens.toLocaleString() : 0} Tokens</span>
+    <>
+      <Container fluid className="py-4">
+        <Row>
+          {/* Sidebar */}
+          <Col lg={3} md={4} style={styles.sidebarWrapper}>
+            <Card style={styles.sidebar}>
+              <Card.Header className="bg-dark text-white">
+                <h4 className="mb-0">My Account</h4>
+              </Card.Header>
+              <Card.Body className="p-0">
+                {userData && (
+                  <div style={styles.userInfo}>
+                    <div className="d-flex align-items-center">
+                      <div style={styles.miniAvatar}>
+                        {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
+                      <div className="ms-3">
+                        <h5 className="mb-0">{userData.name}</h5>
+                        <div style={styles.tokenBadge}>
+                          <i className="bi bi-coin me-1"></i>
+                          <span>{userData.tokens ? userData.tokens.toLocaleString() : 0} Tokens</span>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              )}
-              <Nav className="flex-column">
-                <Nav.Link 
-                  style={{
-                    ...styles.navLink,
-                    ...(activeTab === 'profile' ? styles.navLinkActive : {})
-                  }} 
-                  onClick={() => setActiveTab('profile')}
-                  onMouseEnter={(e) => {
-                    if (activeTab !== 'profile') {
-                      e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
-                      e.currentTarget.style.color = styles.navLinkHover.color;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeTab !== 'profile') {
-                      e.currentTarget.style.backgroundColor = '';
-                      e.currentTarget.style.color = styles.navLink.color;
-                    }
-                  }}
-                >
-                  <i className="bi bi-person-circle me-2"></i>
-                  Profile
-                </Nav.Link>
-                <Nav.Link 
-                  style={{
-                    ...styles.navLink,
-                    ...(activeTab === 'refrelid' ? styles.navLinkActive : {})
-                  }}
-                  onClick={() => setActiveTab('refrelid')}
-                  onMouseEnter={(e) => {
-                    if (activeTab !== 'refrelid') {
-                      e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
-                      e.currentTarget.style.color = styles.navLinkHover.color;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeTab !== 'refrelid') {
-                      e.currentTarget.style.backgroundColor = '';
-                      e.currentTarget.style.color = styles.navLink.color;
-                    }
-                  }}
-                >
-                  <i className="bi bi-link-45deg me-2"></i>
-                  My Referral ID
-                </Nav.Link>
-                <Nav.Link 
-                  style={{
-                    ...styles.navLink,
-                    ...(activeTab === 'account' ? styles.navLinkActive : {})
-                  }}
-                  onClick={() => setActiveTab('account')}
-                  onMouseEnter={(e) => {
-                    if (activeTab !== 'account') {
-                      e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
-                      e.currentTarget.style.color = styles.navLinkHover.color;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeTab !== 'account') {
-                      e.currentTarget.style.backgroundColor = '';
-                      e.currentTarget.style.color = styles.navLink.color;
-                    }
-                  }}
-                >
-                  <i className="bi bi-graph-up me-2"></i>
-                  Account Overview
-                </Nav.Link>
-                <Nav.Link 
-                  style={{
-                    ...styles.navLink,
-                    ...(activeTab === 'details' ? styles.navLinkActive : {})
-                  }}
-                  onClick={() => setActiveTab('details')}
-                  onMouseEnter={(e) => {
-                    if (activeTab !== 'details') {
-                      e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
-                      e.currentTarget.style.color = styles.navLinkHover.color;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeTab !== 'details') {
-                      e.currentTarget.style.backgroundColor = '';
-                      e.currentTarget.style.color = styles.navLink.color;
-                    }
-                  }}
-                >
-                  <i className="bi bi-info-circle me-2"></i>
-                  Other Details
-                </Nav.Link>
-                <Nav.Link 
-                  style={{
-                    ...styles.navLink,
-                    ...(activeTab === 'support' ? styles.navLinkActive : {})
-                  }}
-                  onClick={() => setActiveTab('support')}
-                  onMouseEnter={(e) => {
-                    if (activeTab !== 'support') {
-                      e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
-                      e.currentTarget.style.color = styles.navLinkHover.color;
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (activeTab !== 'support') {
-                      e.currentTarget.style.backgroundColor = '';
-                      e.currentTarget.style.color = styles.navLink.color;
-                    }
-                  }}
-                >
-                  <i className="bi bi-headset me-2"></i>
-                  Help & Support
-                </Nav.Link>
-              </Nav>
-            </Card.Body>
-          </Card>
-        </Col>
-        
-        {/* Main Content */}
-        <Col lg={9} md={8}>
-          {renderContent()}
-        </Col>
-      </Row>
-    </Container>
+                )}
+                <Nav className="flex-column">
+                  <Nav.Link 
+                    style={{
+                      ...styles.navLink,
+                      ...(activeTab === 'profile' ? styles.navLinkActive : {})
+                    }} 
+                    onClick={() => setActiveTab('profile')}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'profile') {
+                        e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
+                        e.currentTarget.style.color = styles.navLinkHover.color;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'profile') {
+                        e.currentTarget.style.backgroundColor = '';
+                        e.currentTarget.style.color = styles.navLink.color;
+                      }
+                    }}
+                  >
+                    <i className="bi bi-person-circle me-2"></i>
+                    Profile
+                  </Nav.Link>
+                  <Nav.Link 
+                    style={{
+                      ...styles.navLink,
+                      ...(activeTab === 'refrelid' ? styles.navLinkActive : {})
+                    }}
+                    onClick={() => setActiveTab('refrelid')}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'refrelid') {
+                        e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
+                        e.currentTarget.style.color = styles.navLinkHover.color;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'refrelid') {
+                        e.currentTarget.style.backgroundColor = '';
+                        e.currentTarget.style.color = styles.navLink.color;
+                      }
+                    }}
+                  >
+                    <i className="bi bi-link-45deg me-2"></i>
+                    My Referral ID
+                  </Nav.Link>
+                  <Nav.Link 
+                    style={{
+                      ...styles.navLink,
+                      ...(activeTab === 'account' ? styles.navLinkActive : {})
+                    }}
+                    onClick={() => setActiveTab('account')}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'account') {
+                        e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
+                        e.currentTarget.style.color = styles.navLinkHover.color;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'account') {
+                        e.currentTarget.style.backgroundColor = '';
+                        e.currentTarget.style.color = styles.navLink.color;
+                      }
+                    }}
+                  >
+                    <i className="bi bi-graph-up me-2"></i>
+                    Account Overview
+                  </Nav.Link>
+                  <Nav.Link 
+                    style={{
+                      ...styles.navLink,
+                      ...(activeTab === 'details' ? styles.navLinkActive : {})
+                    }}
+                    onClick={() => setActiveTab('details')}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'details') {
+                        e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
+                        e.currentTarget.style.color = styles.navLinkHover.color;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'details') {
+                        e.currentTarget.style.backgroundColor = '';
+                        e.currentTarget.style.color = styles.navLink.color;
+                      }
+                    }}
+                  >
+                    <i className="bi bi-info-circle me-2"></i>
+                    Other Details
+                  </Nav.Link>
+                  <Nav.Link 
+                    style={{
+                      ...styles.navLink,
+                      ...(activeTab === 'support' ? styles.navLinkActive : {})
+                    }}
+                    onClick={() => setActiveTab('support')}
+                    onMouseEnter={(e) => {
+                      if (activeTab !== 'support') {
+                        e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
+                        e.currentTarget.style.color = styles.navLinkHover.color;
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (activeTab !== 'support') {
+                        e.currentTarget.style.backgroundColor = '';
+                        e.currentTarget.style.color = styles.navLink.color;
+                      }
+                    }}
+                  >
+                    <i className="bi bi-headset me-2"></i>
+                    Help & Support
+                  </Nav.Link>
+                </Nav>
+              </Card.Body>
+            </Card>
+          </Col>
+          
+          {/* Main Content */}
+          <Col lg={9} md={8}>
+            {renderContent()}
+          </Col>
+        </Row>
+      </Container>
+
+      {/* Toast notification for copy feedback */}
+      <ToastContainer position="top-end" className="p-3">
+        <Toast 
+          show={showToast} 
+          onClose={() => setShowToast(false)} 
+          delay={3000} 
+          autohide
+          bg="success"
+        >
+          <Toast.Header>
+            <strong className="me-auto">Success</strong>
+          </Toast.Header>
+          <Toast.Body className="text-white">
+            {toastMessage}
+          </Toast.Body>
+        </Toast>
+      </ToastContainer>
+    </>
   );
 };
 
