@@ -32,6 +32,10 @@ import Kycpolicy from './components/Kycpolicy';
 import RulesAndRegulations from './components/GameRules';
 import ResponsibleGaming from './components/Faqs';
 import NaphexAbout from './components/AboutUs';
+import AdminAcceptReject from './components/AdminAcceptReject';
+import RejectedUsers from './components/AdminRejectedUsers';
+import AdminBlockUnblock from './components/AdminBlockUnblock';
+import AccountStatusCheck from './components/AccountStatusCheck';
 
 function App() {
   return (
@@ -71,6 +75,10 @@ function App() {
           <Route path="/rules" element={<RulesAndRegulations />} />
           <Route path="/FAQs" element={<ResponsibleGaming />} />
           <Route path="/about" element={<NaphexAbout />} />
+          <Route path="/adminacceptreject" element={<AdminAcceptReject />} />
+          <Route path="/rejectedusers" element={<RejectedUsers />} />
+          <Route path="/blockunblockusers" element={<AdminBlockUnblock />} />
+          <Route path="/statuscheck" element={<AccountStatusCheck />} />
         </Routes>
       </div>
     </Router>

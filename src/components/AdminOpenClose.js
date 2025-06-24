@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BarChart3, Users, Trophy, DollarSign, TrendingUp, Settings, Bell, User, Menu } from 'lucide-react';
+import { BarChart3, Users, Trophy, DollarSign, TrendingUp, Settings, Bell, User, Menu, Settings2, Blocks, BlocksIcon, StopCircle } from 'lucide-react';
 import logo from "../images/logo-1.png";
 import { useNavigate } from 'react-router-dom';
 
@@ -125,6 +125,17 @@ function AdminOpenClose() {
         navigate("/adminprofit") 
     }
 
+    function AcceptReject(){
+        navigate("/adminacceptreject")
+    }
+
+    function RejectedUsers(){
+        navigate("/rejectedusers")
+    }
+    function BlockUnblock(){
+        navigate("/blockunblockusers")
+    }
+
     const menuItems = [
         {
             title: 'Results',
@@ -155,7 +166,25 @@ function AdminOpenClose() {
             icon: TrendingUp,
             onClick: goProfitLoss,
             description: 'Financial performance overview'
-        }
+        },
+        {
+            title: 'Accept/Reject Users',
+            icon: Users,
+            onClick: AcceptReject,
+            description: 'Accept Or Reject new user.'
+        },
+        {
+            title: 'Rejected Users',
+            icon: StopCircle,
+            onClick: RejectedUsers,
+            description: 'Accept Or Reject new user.'
+        },
+        {
+            title: 'Block/Unblock Users',
+            icon: Settings,
+            onClick: BlockUnblock,
+            description: 'Accept Or Reject new user.'
+        },
     ];
 
     const styles = {
@@ -232,15 +261,16 @@ function AdminOpenClose() {
         mainContent: {
             padding: '40px 32px',
             maxWidth: '1400px',
-            margin: '0 auto'
+            margin: '0 auto',
+
         },
-        pageTitle: {
+        pageTitle1: {
             color: 'white',
             fontSize: '32px',
             fontWeight: '700',
             textAlign: 'center',
             marginBottom: '48px',
-            textShadow: '0 2px 8px rgba(0,0,0,0.3)'
+            textShadow: '0 2px 8px rgba(0,0,0,0.3)',
         },
         grid: {
             display: 'grid',
@@ -355,7 +385,6 @@ function AdminOpenClose() {
 
             {/* Main Content */}
             <main style={styles.mainContent} className="content-animation">
-                <h2 style={styles.pageTitle}>Dashboard Overview</h2>
                 <div style={styles.grid}>
                     {menuItems.map((item, index) => {
                         const IconComponent = item.icon;

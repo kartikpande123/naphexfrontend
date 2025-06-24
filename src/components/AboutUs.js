@@ -67,6 +67,17 @@ const AboutPage = () => {
                 >
                   <img src={logo} alt='logo' style={{height:"100px", width:"100px", borderRadius:"50%"}}/>
                 </div>
+                <h2 
+                  className="h3 text-light mb-2"
+                  style={{
+                    background: 'linear-gradient(45deg, #60a5fa, #22d3ee)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}
+                >
+                  NADAKATTI ENTERPRISES PRESENTS
+                </h2>
                 <h1 
                   className="display-1 fw-bold mb-4"
                   style={{
@@ -76,10 +87,10 @@ const AboutPage = () => {
                     backgroundClip: 'text'
                   }}
                 >
-                  About Naphex
+                  Naphex
                 </h1>
                 <p className="lead text-light fs-4" style={{ maxWidth: '800px', margin: '0 auto' }}>
-                  Your premier destination for world-class online gaming experiences
+                  A premium product of Nadakatti Enterprises - Your premier destination for world-class online gaming experiences
                 </p>
               </div>
             </div>
@@ -104,20 +115,21 @@ const AboutPage = () => {
               </div>
               <div className="text-light fs-5 lh-lg">
                 <p className="mb-4">
-                  Welcome to Naphex, an online gaming site which offers a wide range of gaming options to users. 
-                  These options include top casino games, online slots, and sports betting that you can enjoy using 
-                  your device such as mobile and laptop.
+                  Welcome to Naphex, a premium online gaming platform brought to you by Nadakatti Enterprises. 
+                  We offer a wide range of gaming options to users including top casino games, online slots, 
+                  and sports betting that you can enjoy using your device such as mobile and laptop.
                 </p>
                 <p className="mb-4">
-                  Naphex also offers live betting options on different sports and live dealer casinos like blackjack, 
-                  poker, roulette, and more. At Naphex, we offer the best gaming experience to users and the chance 
-                  to test their skills and win real rewards.
+                  As a sub-product of Nadakatti Enterprises, Naphex upholds the same standards of excellence 
+                  and innovation. We offer live betting options on different sports and live dealer casinos 
+                  like blackjack, poker, roulette, and more. At Naphex, we provide the best gaming experience 
+                  to users and the chance to test their skills and win real rewards.
                 </p>
                 <p className="mb-0">
-                  At Naphex, we ensure that all of your personal and financial data is safe and secured. For this, 
-                  we use industry-standard encryption and give our best to ensure your complete safety and security. 
-                  Naphex also follows strict safety protocols so that users can experience worry-free gaming and 
-                  focus more on their games and bets.
+                  Backed by Nadakatti Enterprises' reputation for quality and reliability, we ensure that all 
+                  of your personal and financial data is safe and secured. We use industry-standard encryption 
+                  and follow strict safety protocols so that users can experience worry-free gaming and focus 
+                  more on their games and bets.
                 </p>
               </div>
             </div>
@@ -234,9 +246,9 @@ const AboutPage = () => {
             >
               <h3 className="display-5 fw-bold text-white mb-4">Our Mission</h3>
               <p className="lead text-light fs-4 lh-lg" style={{ maxWidth: '900px', margin: '0 auto' }}>
-                Our mission is to provide the most friendly and rewarding gaming platform to users while ensuring 
-                the complete safety of their data and money. We strive to create an environment where gaming 
-                excellence meets absolute security.
+                As part of Nadakatti Enterprises, our mission is to provide the most friendly and rewarding gaming platform 
+                to users while ensuring the complete safety of their data and money. We strive to create an environment 
+                where gaming excellence meets absolute security, upholding the values and standards of our parent company.
               </p>
             </div>
           </div>
@@ -319,7 +331,7 @@ const AboutPage = () => {
                 <div className="footer-content">
                   <div className="copyright-section">
                     <p className="copyright-text">
-                      © 2025/2026 NAPHEX. All rights reserved.
+                      © 2025/2026 NADAKATTI ENTERPRISES. All rights reserved.
                     </p>
                   </div>
                   <div className="footer-links">
