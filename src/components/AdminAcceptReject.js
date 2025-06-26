@@ -320,12 +320,12 @@ const UserManagementDashboard = () => {
 
                 {/* Expanded Details */}
                 {expandedUsers.has(user.userId) && (
-                  <div className="card-body p-4">
+                  <div className="card-body2 p-4">
                     <div className="row g-5">
                       {/* User Details */}
                       <div className="col-lg-6">
                         <h6 className="fw-semibold mb-3">User Details</h6>
-                        <div className="user-details">
+                        <div className="user-details2">
                           <div className="detail-row d-flex justify-content-between py-2">
                             <span className="text-muted">Referral ID:</span>
                             <span className="fw-medium">{user.referralId || 'N/A'}</span>

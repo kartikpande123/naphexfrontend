@@ -357,12 +357,12 @@ body {
 }
 
 /* Expanded Details */
-.card-body {
+.card-body2 {
   background: var(--white);
   padding: 2rem;
 }
 
-.user-details {
+.user-details2 {
   background: linear-gradient(135deg, var(--gray-50), var(--extra-light-blue));
   border-radius: var(--border-radius);
   padding: 1.5rem;
@@ -371,7 +371,7 @@ body {
   overflow: hidden;
 }
 
-.user-details::before {
+.user-details2::before {
   content: '';
   position: absolute;
   top: -50%;
