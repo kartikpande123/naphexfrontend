@@ -384,7 +384,7 @@ const SignupPage = () => {
         localStorage.removeItem('debug_otp');
 
         // Navigate to next step
-        navigate('/paymentgateway');
+        navigate('/userkyc');
     } catch (error) {
         console.error("Error saving user data locally:", error);
         setErrors((prev) => ({

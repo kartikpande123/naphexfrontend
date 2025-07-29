@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Nav, Spinner, Alert, Card, Badge, ListGroup, Table, Toast, ToastContainer } from 'react-bootstrap';
+import { Container, Row, Col, Nav, Spinner, Alert, Card, Badge, ListGroup, Table, Toast, ToastContainer, Modal, Button, Form } from 'react-bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import API_BASE_URL from './ApiConfig';
 import { useNavigate } from 'react-router-dom';
@@ -12,6 +12,9 @@ const MyAccount = () => {
   const [phoneNo, setPhoneNo] = useState('');
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState('');
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState('');
+  const [selectedImageTitle, setSelectedImageTitle] = useState('');
   const navigate = useNavigate();
 
   // Inline CSS styles
@@ -129,6 +132,41 @@ const MyAccount = () => {
     loadingContainer: {
       textAlign: 'center',
       padding: '50px'
+    },
+    kycImage: {
+      width: '100%',
+      height: '200px',
+      objectFit: 'cover',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      transition: 'transform 0.3s ease',
+      border: '2px solid #e9ecef'
+    },
+    kycImageHover: {
+      transform: 'scale(1.05)'
+    },
+    kycCard: {
+      marginBottom: '20px',
+      borderRadius: '12px',
+      overflow: 'hidden',
+      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+    },
+    statusBadge: {
+      padding: '8px 16px',
+      borderRadius: '20px',
+      fontSize: '0.9rem',
+      fontWeight: 'bold'
+    },
+    modalImage: {
+      width: '100%',
+      height: 'auto',
+      maxHeight: '80vh',
+      objectFit: 'contain'
+    },
+    forgotPasswordCard: {
+      borderRadius: '12px',
+      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
+      marginBottom: '20px'
     }
   };
 
@@ -248,6 +286,16 @@ const MyAccount = () => {
     navigate('/help');
   };
 
+  const handleImageClick = (imageUrl, title) => {
+    setSelectedImage(imageUrl);
+    setSelectedImageTitle(title);
+    setShowImageModal(true);
+  };
+
+  const handleForgotPassword = () => {
+    navigate('/forgotpassword');
+  };
+
   // Helper function to safely get user ID values
   const getUserId = () => {
     // Try different possible data structures
@@ -275,6 +323,20 @@ const MyAccount = () => {
       return userData.myrefrelid;
     }
     return "Loading...";
+  };
+
+  // Helper function to get KYC status badge
+  const getKycStatusBadge = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'accepted':
+        return <Badge bg="success" style={styles.statusBadge}>✓ Verified</Badge>;
+      case 'submitted':
+        return <Badge bg="warning" style={styles.statusBadge}>⏳ Under Review</Badge>;
+      case 'rejected':
+        return <Badge bg="danger" style={styles.statusBadge}>✗ Rejected</Badge>;
+      default:
+        return <Badge bg="secondary" style={styles.statusBadge}>Not Submitted</Badge>;
+    }
   };
 
   const renderContent = () => {
@@ -306,43 +368,76 @@ const MyAccount = () => {
     switch (activeTab) {
       case 'profile':
         return (
-          <Card>
-            <Card.Header style={styles.cardHeaderGradient}>
-              <h4>User Profile</h4>
-            </Card.Header>
-            <Card.Body>
-              <Row>
-                <Col md={4} className="text-center mb-4">
-                  <div style={styles.avatarContainer}>
-                    <div style={styles.avatar}>
-                      {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+          <div>
+            <Card>
+              <Card.Header style={styles.cardHeaderGradient}>
+                <h4>User Profile</h4>
+              </Card.Header>
+              <Card.Body>
+                <Row>
+                  <Col md={4} className="text-center mb-4">
+                    <div style={styles.avatarContainer}>
+                      <div style={styles.avatar}>
+                        {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+                      </div>
                     </div>
-                  </div>
-                  <h4 className="mt-3">{userData.name || 'Unknown User'}</h4>
-                  <p className="text-muted">{userData.phoneNo || 'No phone number'}</p>
-                </Col>
-                <Col md={8}>
-                  <ListGroup variant="flush">
-                    <ListGroup.Item>
-                      <strong>Location:</strong> {userData.city || 'N/A'}, {userData.state || 'N/A'}
-                    </ListGroup.Item>
-                    <ListGroup.Item>
-                      <strong>Account Created:</strong> {userData.createdAt ? formatDate(userData.createdAt) : 'N/A'}
-                    </ListGroup.Item>
-                    <ListGroup.Item>
-                      <strong>Available Tokens:</strong> <Badge bg="success" pill>{(userData.tokens || 0).toLocaleString()}</Badge>
-                    </ListGroup.Item>
-                    <ListGroup.Item>
-                      <strong>User ID:</strong> {getUserId()}
-                    </ListGroup.Item>
-                    <ListGroup.Item>
-                      <strong>Referral ID:</strong> {getReferralId()}
-                    </ListGroup.Item>
-                  </ListGroup>
-                </Col>
-              </Row>
-            </Card.Body>
-          </Card>
+                    <h4 className="mt-3">{userData.name || 'Unknown User'}</h4>
+                    <p className="text-muted">{userData.phoneNo || 'No phone number'}</p>
+                  </Col>
+                  <Col md={8}>
+                    <ListGroup variant="flush">
+                      <ListGroup.Item>
+                        <strong>Location:</strong> {userData.city || 'N/A'}, {userData.state || 'N/A'}
+                      </ListGroup.Item>
+                      <ListGroup.Item>
+                        <strong>Account Created:</strong> {userData.createdAt ? formatDate(userData.createdAt) : 'N/A'}
+                      </ListGroup.Item>
+                      <ListGroup.Item>
+                        <strong>Available Tokens:</strong> <Badge bg="success" pill>{(userData.tokens || 0).toLocaleString()}</Badge>
+                      </ListGroup.Item>
+                      <ListGroup.Item>
+                        <strong>User ID:</strong> {getUserId()}
+                      </ListGroup.Item>
+                      <ListGroup.Item>
+                        <strong>Referral ID:</strong> {getReferralId()}
+                      </ListGroup.Item>
+                    </ListGroup>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+
+            {/* Forgot Password Section - Moved to Profile */}
+            <Card style={styles.forgotPasswordCard} className="mt-4">
+              <Card.Header style={styles.cardHeaderGradient}>
+                <h4 className="mb-0">
+                  <i className="bi bi-key me-2"></i>
+                  Password Management
+                </h4>
+              </Card.Header>
+              <Card.Body>
+                <Row className="justify-content-center">
+                  <Col md={6}>
+                    <div className="text-center">
+                      <i className="bi bi-shield-lock" style={{ fontSize: '48px', color: '#0d6efd', marginBottom: '20px' }}></i>
+                      <h5>Reset Your Password</h5>
+                      <p className="text-muted mb-4">
+                        Need to change your password? Click the button below to go to the password reset page.
+                      </p>
+                      <Button
+                        variant="primary"
+                        size="lg"
+                        onClick={handleForgotPassword}
+                      >
+                        <i className="bi bi-arrow-clockwise me-2"></i>
+                        Reset Password
+                      </Button>
+                    </div>
+                  </Col>
+                </Row>
+              </Card.Body>
+            </Card>
+          </div>
         );
       
       case 'refrelid':
@@ -449,17 +544,148 @@ const MyAccount = () => {
       
       case 'details':
         return (
-          <Card>
-            <Card.Header style={styles.cardHeaderGradient}>
-              <h4>Other Details</h4>
-            </Card.Header>
-            <Card.Body>
-              <div className="text-center py-5">
-                <i className="bi bi-info-circle" style={{ fontSize: '48px', color: '#6c757d', opacity: '0.5' }}></i>
-                <h5 className="mt-3 text-muted">No information available</h5>
-              </div>
-            </Card.Body>
-          </Card>
+          <div>
+            {/* KYC Details Section - Forgot Password Section Removed */}
+            <Card style={styles.kycCard}>
+              <Card.Header style={styles.cardHeaderGradient}>
+                <div className="d-flex justify-content-between align-items-center">
+                  <h4 className="mb-0">KYC Verification Details</h4>
+                  {getKycStatusBadge(userData.kycStatus)}
+                </div>
+              </Card.Header>
+              <Card.Body>
+                {userData.kyc ? (
+                  <div>
+                    <Row className="mb-4">
+                      <Col md={6}>
+                        <ListGroup variant="flush">
+                          <ListGroup.Item>
+                            <strong>KYC Status:</strong> {getKycStatusBadge(userData.kycStatus)}
+                          </ListGroup.Item>
+                          <ListGroup.Item>
+                            <strong>Submitted Date:</strong> {userData.kycSubmittedAt ? formatDate(userData.kycSubmittedAt) : 'N/A'}
+                          </ListGroup.Item>
+                          {userData.kycAcceptedAt && (
+                            <ListGroup.Item>
+                              <strong>Accepted Date:</strong> {formatDate(userData.kycAcceptedAt)}
+                            </ListGroup.Item>
+                          )}
+                        </ListGroup>
+                      </Col>
+                    </Row>
+
+                    <h5 className="mb-3">KYC Documents</h5>
+                    <Row>
+                      {userData.kyc.aadharCardUrl && (
+                        <Col md={4} className="mb-4">
+                          <Card className="h-100">
+                            <Card.Header className="bg-light text-center">
+                              <h6 className="mb-0">
+                                <i className="bi bi-card-text me-2"></i>
+                                Aadhar Card
+                              </h6>
+                            </Card.Header>
+                            <Card.Body className="text-center p-2">
+                              <img
+                                src={userData.kyc.aadharCardUrl}
+                                alt="Aadhar Card"
+                                style={styles.kycImage}
+                                onClick={() => handleImageClick(userData.kyc.aadharCardUrl, 'Aadhar Card')}
+                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                              />
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                className="mt-2"
+                                onClick={() => handleImageClick(userData.kyc.aadharCardUrl, 'Aadhar Card')}
+                              >
+                                <i className="bi bi-eye me-1"></i>View Full Image
+                              </Button>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      )}
+
+                      {userData.kyc.panCardUrl && (
+                        <Col md={4} className="mb-4">
+                          <Card className="h-100">
+                            <Card.Header className="bg-light text-center">
+                              <h6 className="mb-0">
+                                <i className="bi bi-credit-card me-2"></i>
+                                PAN Card
+                              </h6>
+                            </Card.Header>
+                            <Card.Body className="text-center p-2">
+                              <img
+                                src={userData.kyc.panCardUrl}
+                                alt="PAN Card"
+                                style={styles.kycImage}
+                                onClick={() => handleImageClick(userData.kyc.panCardUrl, 'PAN Card')}
+                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                              />
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                className="mt-2"
+                                onClick={() => handleImageClick(userData.kyc.panCardUrl, 'PAN Card')}
+                              >
+                                <i className="bi bi-eye me-1"></i>View Full Image
+                              </Button>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      )}
+
+                      {userData.kyc.bankPassbookUrl && (
+                        <Col md={4} className="mb-4">
+                          <Card className="h-100">
+                            <Card.Header className="bg-light text-center">
+                              <h6 className="mb-0">
+                                <i className="bi bi-bank me-2"></i>
+                                Bank Passbook
+                              </h6>
+                            </Card.Header>
+                            <Card.Body className="text-center p-2">
+                              <img
+                                src={userData.kyc.bankPassbookUrl}
+                                alt="Bank Passbook"
+                                style={styles.kycImage}
+                                onClick={() => handleImageClick(userData.kyc.bankPassbookUrl, 'Bank Passbook')}
+                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
+                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                              />
+                              <Button
+                                variant="outline-primary"
+                                size="sm"
+                                className="mt-2"
+                                onClick={() => handleImageClick(userData.kyc.bankPassbookUrl, 'Bank Passbook')}
+                              >
+                                <i className="bi bi-eye me-1"></i>View Full Image
+                              </Button>
+                            </Card.Body>
+                          </Card>
+                        </Col>
+                      )}
+                    </Row>
+
+                    {(!userData.kyc.aadharCardUrl && !userData.kyc.panCardUrl && !userData.kyc.bankPassbookUrl) && (
+                      <Alert variant="info">
+                        <i className="bi bi-info-circle me-2"></i>
+                        No KYC documents found. Please complete your KYC verification.
+                      </Alert>
+                    )}
+                  </div>
+                ) : (
+                  <Alert variant="warning">
+                    <i className="bi bi-exclamation-triangle me-2"></i>
+                    KYC verification not completed. Please submit your documents for verification.
+                  </Alert>
+                )}
+              </Card.Body>
+            </Card>
+          </div>
         );
       
       case 'support':
@@ -542,7 +768,7 @@ const MyAccount = () => {
           {/* Sidebar */}
           <Col lg={3} md={4} style={styles.sidebarWrapper}>
             <Card style={styles.sidebar}>
-              <Card.Header className="bg-dark text-white">
+              <Card.Header className="text-white" style={{backgroundColor:"rgb(13, 110, 253)"}}>
                 <h4 className="mb-0">My Account</h4>
               </Card.Header>
               <Card.Body className="p-0">
@@ -684,6 +910,37 @@ const MyAccount = () => {
           </Col>
         </Row>
       </Container>
+
+      {/* Image Modal */}
+      <Modal 
+        show={showImageModal} 
+        onHide={() => setShowImageModal(false)} 
+        size="lg" 
+        centered
+      >
+        <Modal.Header closeButton>
+          <Modal.Title>{selectedImageTitle}</Modal.Title>
+        </Modal.Header>
+        <Modal.Body className="text-center">
+          <img
+            src={selectedImage}
+            alt={selectedImageTitle}
+            style={styles.modalImage}
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowImageModal(false)}>
+            Close
+          </Button>
+          <Button 
+            variant="primary" 
+            onClick={() => window.open(selectedImage, '_blank')}
+          >
+            <i className="bi bi-download me-2"></i>
+            Download
+          </Button>
+        </Modal.Footer>
+      </Modal>
 
       {/* Toast notification for copy feedback */}
       <ToastContainer position="top-end" className="p-3">

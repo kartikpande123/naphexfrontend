@@ -4,7 +4,7 @@ import AuthPage from './components/AuthPage';
 import SignupPage from './components/Signup';
 import Home from './components/Home';
 import ForgotPassword from './components/Forgotpassword';
-import PaymentGetway from './components/PaymentGetway';
+import PaymentGetway from './components/UserKyc';
 import Game1 from "./components/Game1"
 import UserProfile from './components/Users';
 import AdminLogin from './components/AdminLogin';
@@ -36,6 +36,8 @@ import AdminAcceptReject from './components/AdminAcceptReject';
 import RejectedUsers from './components/AdminRejectedUsers';
 import AdminBlockUnblock from './components/AdminBlockUnblock';
 import AccountStatusCheck from './components/AccountStatusCheck';
+import UserKyc from './components/UserKyc';
+
 
 function App() {
   return (
@@ -47,7 +49,7 @@ function App() {
           <Route path="/" element={<AuthPage />} />
           <Route path="/home" element={<Home />} />
           <Route path='/forgotpassword' element={<ForgotPassword />} />
-          <Route path='/paymentgateway' element={<PaymentGetway />}/>
+          <Route path='/userkyc' element={<UserKyc />}/>
           <Route path='/game1' element={<Game1 />}/>
           <Route path='/game2' element={<Game2 />}/>
           <Route path='/users' element={<UserProfile />}/>

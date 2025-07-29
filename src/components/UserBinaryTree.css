@@ -70,7 +70,7 @@
 
 .search-button {
   position: absolute;
-  top: 50%;
+  top: 43%;
   right: 0;
   transform: translateY(-44%); /* Vertically centers the button */
   height: 48px; /* Matches input padding height visually */

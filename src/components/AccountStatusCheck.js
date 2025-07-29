@@ -31,6 +31,7 @@ const AccountStatusChecker = () => {
     
     const eventSource = new EventSource(`${API_BASE_URL}/api/users`);
     
+
     eventSource.onmessage = (event) => {
       try {
         const response = JSON.parse(event.data);

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import './Paymentgetway.css';
+import './UserKyc.css';
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from './ApiConfig';
 
@@ -67,7 +67,7 @@ const validateFile = (file) => {
   return { isValid: true, error: null };
 };
 
-const PaymentGateway = () => {
+const UserKyc = () => {
   const [showPopup, setShowPopup] = useState(false);
   const [userId, setUserId] = useState('');
   const [referralId, setReferralId] = useState('');
@@ -311,11 +311,6 @@ const PaymentGateway = () => {
   return (
     <div className="payment-container">
       <div className="content-wrapper">
-        <div className="header">
-          <h1 className="title">Payment Gateway</h1>
-          <p className="subtitle">Complete KYC verification to create your account</p>
-        </div>
-
         {/* KYC Section */}
         {!showKYC && !kycCompleted && (
           <div className="kyc-intro">
@@ -1079,4 +1074,4 @@ const PaymentGateway = () => {
   );
 };
 
-export default PaymentGateway;
+export default UserKyc;
