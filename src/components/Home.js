@@ -7,6 +7,7 @@ import logo from "../images/logo-1.png";
 import "./Home.css";
 import API_BASE_URL from "./ApiConfig";
 import WelcomePopup from "./WelcomePopup";
+import EntryFees from "./EntryFees"; 
 
 const Home = () => {
   const [isHovered, setIsHovered] = useState(null);
@@ -16,7 +17,10 @@ const Home = () => {
   const [winnerDetails, setWinnerDetails] = useState([]);
   const [currentWinnerIndex, setCurrentWinnerIndex] = useState(0);
   const [processedWinnerIds, setProcessedWinnerIds] = useState(new Set());
-  const [showWelcomePopup, setShowWelcomePopup] = useState(false); // Initialize as false
+  const [showWelcomePopup, setShowWelcomePopup] = useState(false);
+  const [showEntryFeePopup, setShowEntryFeePopup] = useState(false); // Entry fee popup state
+  const [isEntryFeePaid, setIsEntryFeePaid] = useState(false); // Track entry fee status
+  const [userProfileLoaded, setUserProfileLoaded] = useState(false); // Track if profile is loaded
 
   const navigate = useNavigate();
 
@@ -38,7 +42,109 @@ const Home = () => {
   };
 
   const toggleLogoutPopup = () => {
+    // Don't allow logout popup if entry fee is not paid
+    if (!isEntryFeePaid) {
+      return;
+    }
     setShowLogoutPopup(!showLogoutPopup);
+  };
+
+  // Handle entry fee payment completion
+  const handleEntryFeePaymentSuccess = () => {
+    setIsEntryFeePaid(true);
+    setShowEntryFeePopup(false);
+    // Refresh user data after payment
+    const userData = JSON.parse(localStorage.getItem("userData"));
+    if (userData) {
+      fetchUserTokens(); // Refresh tokens and profile data
+    }
+  };
+
+  // Function to fetch user tokens and profile data
+  const fetchUserTokens = async () => {
+    try {
+      const userData = JSON.parse(localStorage.getItem("userData"));
+      if (!userData || !userData.phoneNo) {
+        const storedUserData = JSON.parse(localStorage.getItem("userData"));
+        if (storedUserData && storedUserData.tokens) {
+          setTokenCount(storedUserData.tokens);
+        }
+        return;
+      }
+
+      console.log("Fetching tokens for:", userData.phoneNo);
+
+      const response = await fetch(`${API_BASE_URL}/user-profile/${userData.phoneNo}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const responseText = await response.text();
+      console.log("Raw response:", responseText);
+
+      const lines = responseText.split('\n');
+      let jsonData = null;
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const dataString = line.substring(6);
+          try {
+            jsonData = JSON.parse(dataString);
+            break;
+          } catch (parseError) {
+            console.error("Error parsing JSON from SSE:", parseError);
+          }
+        }
+      }
+
+      if (jsonData && jsonData.success) {
+        console.log("Received token update:", jsonData.tokens);
+        setTokenCount(jsonData.tokens);
+
+        // Check entry fee status
+        const entryFeeStatus = jsonData.userData?.entryFee;
+        console.log("Entry fee status:", entryFeeStatus);
+        
+        if (entryFeeStatus === "paid") {
+          setIsEntryFeePaid(true);
+        } else {
+          setIsEntryFeePaid(false);
+          setShowEntryFeePopup(true); // Show entry fee popup if not paid
+        }
+
+        const currentUserData = JSON.parse(localStorage.getItem("userData"));
+        localStorage.setItem("userData", JSON.stringify({
+          ...currentUserData,
+          tokens: jsonData.tokens,
+          ...jsonData.userData
+        }));
+      } else {
+        console.error("Error in token fetch:", jsonData?.message || "No valid data received");
+        const storedUserData = JSON.parse(localStorage.getItem("userData"));
+        if (storedUserData && storedUserData.tokens) {
+          setTokenCount(storedUserData.tokens);
+        }
+        // If API fails, still check if we need to show entry fee popup
+        setShowEntryFeePopup(true);
+      }
+    } catch (error) {
+      console.error("Error fetching tokens:", error.message || error);
+      const storedUserData = JSON.parse(localStorage.getItem("userData"));
+      if (storedUserData && storedUserData.tokens) {
+        setTokenCount(storedUserData.tokens);
+      }
+      // If API fails, still check if we need to show entry fee popup
+      setShowEntryFeePopup(true);
+    } finally {
+      setUserProfileLoaded(true);
+    }
   };
 
   // Fetch user tokens and check for winners
@@ -49,7 +155,7 @@ const Home = () => {
     // Function to check for winners with improved logic
     const checkForWinners = async () => {
       try {
-        if (!userData || !userData.phoneNo) return;
+        if (!userData || !userData.phoneNo || !isEntryFeePaid) return;
 
         // Use the specific user endpoint for better performance
         const response = await axios.get(`${API_BASE_URL}/get-user-winners/${userData.phoneNo}`);
@@ -86,83 +192,15 @@ const Home = () => {
       }
     };
 
-    // Function to fetch user tokens (keep existing logic)
-    const fetchUserTokens = async () => {
-      try {
-        if (!userData || !userData.phoneNo) {
-          const storedUserData = JSON.parse(localStorage.getItem("userData"));
-          if (storedUserData && storedUserData.tokens) {
-            setTokenCount(storedUserData.tokens);
-          }
-          return;
-        }
-
-        console.log("Fetching tokens for:", userData.phoneNo);
-
-        const response = await fetch(`${API_BASE_URL}/user-profile/${userData.phoneNo}`, {
-          method: 'GET',
-          headers: {
-            'Accept': 'text/event-stream',
-            'Cache-Control': 'no-cache'
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const responseText = await response.text();
-        console.log("Raw response:", responseText);
-
-        const lines = responseText.split('\n');
-        let jsonData = null;
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const dataString = line.substring(6);
-            try {
-              jsonData = JSON.parse(dataString);
-              break;
-            } catch (parseError) {
-              console.error("Error parsing JSON from SSE:", parseError);
-            }
-          }
-        }
-
-        if (jsonData && jsonData.success) {
-          console.log("Received token update:", jsonData.tokens);
-          setTokenCount(jsonData.tokens);
-
-          const currentUserData = JSON.parse(localStorage.getItem("userData"));
-          localStorage.setItem("userData", JSON.stringify({
-            ...currentUserData,
-            tokens: jsonData.tokens,
-            ...jsonData.userData
-          }));
-        } else {
-          console.error("Error in token fetch:", jsonData?.message || "No valid data received");
-          const storedUserData = JSON.parse(localStorage.getItem("userData"));
-          if (storedUserData && storedUserData.tokens) {
-            setTokenCount(storedUserData.tokens);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching tokens:", error.message || error);
-        const storedUserData = JSON.parse(localStorage.getItem("userData"));
-        if (storedUserData && storedUserData.tokens) {
-          setTokenCount(storedUserData.tokens);
-        }
-      }
-    };
-
     // Initial fetch
     fetchUserTokens();
-    checkForWinners();
 
-    // Set up polling for real-time updates (every 30 seconds)
+    // Set up polling for real-time updates (every 30 seconds) only if entry fee is paid
     pollingInterval = setInterval(() => {
-      fetchUserTokens();
-      checkForWinners();
+      if (isEntryFeePaid) {
+        fetchUserTokens();
+        checkForWinners();
+      }
     }, 30000);
 
     // Cleanup on component unmount
@@ -172,7 +210,7 @@ const Home = () => {
         clearInterval(pollingInterval);
       }
     };
-  }, []); // Empty dependency array for initial setup only
+  }, [isEntryFeePaid]); // Add isEntryFeePaid as dependency
 
   // Improved close winner popup function
   const closeWinnerPopup = async () => {
@@ -220,7 +258,19 @@ const Home = () => {
   };
 
   const handleClickGame1 = () => {
+    // Don't allow game access if entry fee is not paid
+    if (!isEntryFeePaid) {
+      return;
+    }
     navigate("/game1");
+  };
+
+  // Prevent navigation to other pages if entry fee is not paid
+  const handleNavigation = (path) => {
+    if (!isEntryFeePaid) {
+      return;
+    }
+    navigate(path);
   };
 
   const generateCelebrationElements = () => {
@@ -281,12 +331,21 @@ const Home = () => {
 
   return (
     <div className="enhanced-layout">
-      <WelcomePopup
-        isVisible={showWelcomePopup}
-        onClose={handleCloseWelcomePopup}
-      />
-      {/* Winner Popup */}
-      {showWinnerPopup && winnerDetails.length > 0 && (
+      {/* Entry Fee Popup - Highest Priority */}
+      {showEntryFeePopup && userProfileLoaded && (
+        <EntryFees onContinue={handleEntryFeePaymentSuccess} />
+      )}
+
+      {/* Welcome Popup - Only show if entry fee is paid */}
+      {isEntryFeePaid && (
+        <WelcomePopup
+          isVisible={showWelcomePopup}
+          onClose={handleCloseWelcomePopup}
+        />
+      )}
+
+      {/* Winner Popup - Only show if entry fee is paid */}
+      {isEntryFeePaid && showWinnerPopup && winnerDetails.length > 0 && (
         <div className="winner-popup-overlay">
           <div className="confetti-container">
             {generateCelebrationElements()}
@@ -333,81 +392,128 @@ const Home = () => {
           <div className="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul className="navbar-nav align-items-center nav-gap">
               <li className="nav-item">
-                <Link
-                  className="nav-link enhanced-token-btn"
-                  to="/add-money"
+                <button
+                  className={`nav-link enhanced-token-btn ${!isEntryFeePaid ? 'disabled-nav' : ''}`}
+                  onClick={() => isEntryFeePaid && handleNavigation("/addtokens")}
                   onMouseEnter={() => setIsHovered("tokens")}
                   onMouseLeave={() => setIsHovered(null)}
+                  disabled={!isEntryFeePaid}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none',
+                    opacity: !isEntryFeePaid ? 0.5 : 1,
+                    cursor: !isEntryFeePaid ? 'not-allowed' : 'pointer'
+                  }}
                 >
                   <span className="token-amount">{tokenCount}</span> Tokens
                   <i className="bi bi-plus-circle-fill ms-2 token-icon"></i>
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link
-                  className="nav-link enhanced-nav-link"
-                  to="/myaccount"
-                  onMouseEnter={() => setIsHovered("account")}
-                  onMouseLeave={() => setIsHovered(null)}
-                >
-                  <i className="bi bi-person-circle nav-icon"></i>
-                  <span>My Account</span>
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link
-                  className="nav-link enhanced-nav-link"
-                  to="/earnings"
-                  onMouseEnter={() => setIsHovered("earnings")}
-                  onMouseLeave={() => setIsHovered(null)}
-                >
-                  <i className="bi bi-gift nav-icon"></i>
-                  <span>Friend Earnings</span>
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link
-                  className="nav-link enhanced-nav-link"
-                  to="/help"
-                  onMouseEnter={() => setIsHovered("help")}
-                  onMouseLeave={() => setIsHovered(null)}
-                >
-                  <i className="bi bi-question-circle nav-icon"></i>
-                  <span>Help</span>
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link
-                  className="nav-link enhanced-nav-link"
-                  to="/history"
-                  onMouseEnter={() => setIsHovered("history")}
-                  onMouseLeave={() => setIsHovered(null)}
-                >
-                  <i className="bi bi-clock-history nav-icon"></i>
-                  <span>History</span>
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link
-                  className="nav-link enhanced-nav-link"
-                  to="/about"
-                  onMouseEnter={() => setIsHovered("about")}
-                  onMouseLeave={() => setIsHovered(null)}
-                >
-                  <i className="bi bi-info-circle nav-icon"></i>
-                  <span>About</span>
-                </Link>
+                </button>
               </li>
               <li className="nav-item">
                 <button
-                  className="nav-link enhanced-nav-link btn-link"
+                  className={`nav-link enhanced-nav-link ${!isEntryFeePaid ? 'disabled-nav' : ''}`}
+                  onClick={() => isEntryFeePaid && handleNavigation("/myaccount")}
+                  onMouseEnter={() => setIsHovered("account")}
+                  onMouseLeave={() => setIsHovered(null)}
+                  disabled={!isEntryFeePaid}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none',
+                    opacity: !isEntryFeePaid ? 0.5 : 1,
+                    cursor: !isEntryFeePaid ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <i className="bi bi-person-circle nav-icon"></i>
+                  <span>My Account</span>
+                </button>
+              </li>
+              <li className="nav-item">
+                <button
+                  className={`nav-link enhanced-nav-link ${!isEntryFeePaid ? 'disabled-nav' : ''}`}
+                  onClick={() => isEntryFeePaid && handleNavigation("/earnings")}
+                  onMouseEnter={() => setIsHovered("earnings")}
+                  onMouseLeave={() => setIsHovered(null)}
+                  disabled={!isEntryFeePaid}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none',
+                    opacity: !isEntryFeePaid ? 0.5 : 1,
+                    cursor: !isEntryFeePaid ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <i className="bi bi-gift nav-icon"></i>
+                  <span>Friend Earnings</span>
+                </button>
+              </li>
+              <li className="nav-item">
+                <button
+                  className={`nav-link enhanced-nav-link ${!isEntryFeePaid ? 'disabled-nav' : ''}`}
+                  onClick={() => isEntryFeePaid && handleNavigation("/help")}
+                  onMouseEnter={() => setIsHovered("help")}
+                  onMouseLeave={() => setIsHovered(null)}
+                  disabled={!isEntryFeePaid}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none',
+                    opacity: !isEntryFeePaid ? 0.5 : 1,
+                    cursor: !isEntryFeePaid ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <i className="bi bi-question-circle nav-icon"></i>
+                  <span>Help</span>
+                </button>
+              </li>
+              <li className="nav-item">
+                <button
+                  className={`nav-link enhanced-nav-link ${!isEntryFeePaid ? 'disabled-nav' : ''}`}
+                  onClick={() => isEntryFeePaid && handleNavigation("/history")}
+                  onMouseEnter={() => setIsHovered("history")}
+                  onMouseLeave={() => setIsHovered(null)}
+                  disabled={!isEntryFeePaid}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none',
+                    opacity: !isEntryFeePaid ? 0.5 : 1,
+                    cursor: !isEntryFeePaid ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <i className="bi bi-clock-history nav-icon"></i>
+                  <span>History</span>
+                </button>
+              </li>
+              <li className="nav-item">
+                <button
+                  className={`nav-link enhanced-nav-link ${!isEntryFeePaid ? 'disabled-nav' : ''}`}
+                  onClick={() => isEntryFeePaid && handleNavigation("/about")}
+                  onMouseEnter={() => setIsHovered("about")}
+                  onMouseLeave={() => setIsHovered(null)}
+                  disabled={!isEntryFeePaid}
+                  style={{ 
+                    background: 'none', 
+                    border: 'none',
+                    opacity: !isEntryFeePaid ? 0.5 : 1,
+                    cursor: !isEntryFeePaid ? 'not-allowed' : 'pointer'
+                  }}
+                >
+                  <i className="bi bi-info-circle nav-icon"></i>
+                  <span>About</span>
+                </button>
+              </li>
+              <li className="nav-item">
+                <button
+                  className={`nav-link enhanced-nav-link btn-link ${!isEntryFeePaid ? 'disabled-nav' : ''}`}
                   onClick={toggleLogoutPopup}
+                  disabled={!isEntryFeePaid}
+                  style={{ 
+                    opacity: !isEntryFeePaid ? 0.5 : 1,
+                    cursor: !isEntryFeePaid ? 'not-allowed' : 'pointer'
+                  }}
                 >
                   <i className="bi bi-box-arrow-right nav-icon"></i>
                   <span>Logout</span>
                 </button>
               </li>
-              {showLogoutPopup && (
+              {isEntryFeePaid && showLogoutPopup && (
                 <div className="logout-popup-overlay">
                   <div className="logout-popup">
                     <div className="logout-popup-header">
@@ -437,16 +543,31 @@ const Home = () => {
         <div className="enhanced-banner-row">
           {/* Single Game Banner - Open-Close */}
           <div
-            className="enhanced-banner-container single-game"
-            onMouseEnter={() => setIsHovered("banner1")}
+            className={`enhanced-banner-container single-game ${!isEntryFeePaid ? 'disabled-banner' : ''}`}
+            onMouseEnter={() => isEntryFeePaid && setIsHovered("banner1")}
             onMouseLeave={() => setIsHovered(null)}
+            style={{ 
+              opacity: !isEntryFeePaid ? 0.5 : 1,
+              cursor: !isEntryFeePaid ? 'not-allowed' : 'pointer'
+            }}
           >
             <img src={image} alt="Play Now" className="enhanced-banner" />
             <div className="enhanced-overlay">
               <h2 className="banner-title">Open-Close</h2>
-              <div className="banner-subtitle">Start Your Gaming Adventure</div>
-              <button className="play-button" onClick={handleClickGame1}>
-                <i className="bi bi-play-fill"></i> Start Game
+              <div className="banner-subtitle">
+                {!isEntryFeePaid ? "Pay Entry Fee to Play" : "Start Your Gaming Adventure"}
+              </div>
+              <button 
+                className="play-button" 
+                onClick={handleClickGame1}
+                disabled={!isEntryFeePaid}
+                style={{ 
+                  opacity: !isEntryFeePaid ? 0.5 : 1,
+                  cursor: !isEntryFeePaid ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <i className="bi bi-play-fill"></i> 
+                {!isEntryFeePaid ? "Pay Entry Fee" : "Start Game"}
               </button>
             </div>
           </div>

@@ -37,6 +37,8 @@ import RejectedUsers from './components/AdminRejectedUsers';
 import AdminBlockUnblock from './components/AdminBlockUnblock';
 import AccountStatusCheck from './components/AccountStatusCheck';
 import UserKyc from './components/UserKyc';
+import EntryFees from './components/EntryFees';
+import AddTokens from './components/AddTokens';
 
 
 function App() {
@@ -81,6 +83,8 @@ function App() {
           <Route path="/rejectedusers" element={<RejectedUsers />} />
           <Route path="/blockunblockusers" element={<AdminBlockUnblock />} />
           <Route path="/statuscheck" element={<AccountStatusCheck />} />
+          <Route path="/fees" element={<EntryFees />} />
+          <Route path="/addtokens" element={<AddTokens />} />
         </Routes>
       </div>
     </Router>

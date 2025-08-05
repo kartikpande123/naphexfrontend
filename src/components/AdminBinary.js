@@ -14,10 +14,18 @@ const AdminBinaryTree = () => {
   const [maxLevel, setMaxLevel] = useState(2);
   const [levelOptions, setLevelOptions] = useState([1, 2, 3, 4, 5, 6]);
   const [searchPaths, setSearchPaths] = useState([]);
+  
+  // New states for search suggestions
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
 
   // Add refs for scrolling to highlighted nodes
   const treeWrapperRef = useRef(null);
   const nodeRefs = useRef({});
+  const searchInputRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   useEffect(() => {
     const fetchTreeData = async () => {
@@ -30,6 +38,22 @@ const AdminBinaryTree = () => {
         // Process the flat data into a hierarchical tree structure
         const processedTreeData = processTreeData(response.data);
         setTreeData(processedTreeData);
+
+        // Extract all users for search suggestions
+        const usersList = [];
+        const extractUsers = (node) => {
+          if (node) {
+            usersList.push({
+              userId: node.userId,
+              name: node.name
+            });
+            if (node.children) {
+              node.children.forEach(child => extractUsers(child));
+            }
+          }
+        };
+        extractUsers(processedTreeData);
+        setAllUsers(usersList);
 
         // Initialize default expanded nodes (first 2 levels)
         const defaultExpanded = {};
@@ -117,6 +141,185 @@ const AdminBinaryTree = () => {
     );
   };
 
+  // Handle search input change with suggestions
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setSelectedSuggestionIndex(-1);
+
+    if (value.trim().length > 0) {
+      // Filter users based on name or ID
+      const filteredSuggestions = allUsers.filter(user =>
+        user.name?.toLowerCase().includes(value.toLowerCase()) ||
+        user.userId?.toLowerCase().includes(value.toLowerCase())
+      ).slice(0, 10); // Limit to 10 suggestions
+
+      setSuggestions(filteredSuggestions);
+      setShowSuggestions(true);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      setSearchResults([]);
+      setSearchPaths([]);
+    }
+  };
+
+  // Handle keyboard navigation in suggestions
+  const handleKeyDown = (e) => {
+    if (!showSuggestions || suggestions.length === 0) {
+      if (e.key === 'Enter') {
+        handleSearch(e);
+      }
+      return;
+    }
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev < suggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0) {
+          selectSuggestion(suggestions[selectedSuggestionIndex]);
+        } else {
+          handleSearch(e);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+    }
+  };
+
+  // Select a suggestion
+  const selectSuggestion = (suggestion) => {
+    setSearchTerm(suggestion.name);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    
+    // Immediately search for the selected user
+    performSearch(suggestion.name);
+  };
+
+  // Perform search operation
+  const performSearch = (searchValue) => {
+    if (!searchValue.trim()) {
+      setSearchResults([]);
+      setSearchPaths([]);
+      return;
+    }
+
+    const results = [];
+    const paths = [];
+    const searchInTree = (node, path = []) => {
+      if (!node) return;
+
+      const currentPath = [...path, node];
+
+      // Check if current node matches search
+      if (
+        node.name?.toLowerCase().includes(searchValue.toLowerCase()) ||
+        node.userId?.toLowerCase().includes(searchValue.toLowerCase())
+      ) {
+        results.push([...currentPath]);
+
+        // Store all node IDs in the path for highlighting
+        paths.push(currentPath.map(node => node.userId));
+
+        // Expand all nodes in the path to make the target visible
+        setViewMode("custom");
+        const newExpandedNodes = {};
+        currentPath.forEach(pathNode => {
+          newExpandedNodes[pathNode.userId] = true;
+        });
+        
+        setExpandedNodes(prev => ({ ...prev, ...newExpandedNodes }));
+      }
+
+      // Search in children
+      if (node.children) {
+        node.children.forEach(child => searchInTree(child, currentPath));
+      }
+    };
+
+    searchInTree(treeData);
+    setSearchResults(results);
+    setSearchPaths(paths);
+
+    // Auto-scroll to first result
+    if (results.length > 0) {
+      const firstResult = results[0];
+      const targetNode = firstResult[firstResult.length - 1];
+      scrollToNode(targetNode.userId);
+    }
+  };
+
+  // Handle search form submission
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setShowSuggestions(false);
+    performSearch(searchTerm);
+  };
+
+  // Scroll to a specific node
+  const scrollToNode = (nodeId) => {
+    // Use setTimeout to ensure the DOM has updated after expanding nodes
+    setTimeout(() => {
+      const nodeElement = nodeRefs.current[nodeId];
+      if (nodeElement && treeWrapperRef.current) {
+        // Calculate scroll position to center the node
+        const nodeRect = nodeElement.getBoundingClientRect();
+        const wrapperRect = treeWrapperRef.current.getBoundingClientRect();
+        const wrapper = treeWrapperRef.current;
+
+        // Calculate the center position
+        const targetScrollLeft = nodeElement.offsetLeft - (wrapperRect.width / 2) + (nodeRect.width / 2);
+        const targetScrollTop = nodeElement.offsetTop - (wrapperRect.height / 2) + (nodeRect.height / 2);
+
+        // Smooth scroll to the target position
+        wrapper.scrollTo({
+          left: Math.max(0, targetScrollLeft),
+          top: Math.max(0, targetScrollTop),
+          behavior: 'smooth'
+        });
+
+        // Add a temporary highlight effect
+        nodeElement.classList.add('scroll-highlight');
+        setTimeout(() => {
+          nodeElement.classList.remove('scroll-highlight');
+        }, 2000);
+      }
+    }, 300); // Increased timeout to ensure nodes are expanded
+  };
+
+  // Close suggestions when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        searchInputRef.current && 
+        !searchInputRef.current.contains(event.target) &&
+        suggestionsRef.current &&
+        !suggestionsRef.current.contains(event.target)
+      ) {
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
   // Expand/collapse based on current view mode and max level
   useEffect(() => {
     if (!treeData) return;
@@ -148,75 +351,6 @@ const AdminBinaryTree = () => {
 
     setExpandedNodes(newExpandedNodes);
   }, [viewMode, maxLevel, treeData]);
-
-  // Scroll to highlighted node after search
-  useEffect(() => {
-    if (searchResults.length > 0) {
-      // Get the first highlighted node's ID
-      const firstResult = searchResults[0];
-      const highlightedNodeId = firstResult[firstResult.length - 1].userId;
-
-      // Use setTimeout to ensure the DOM has updated
-      setTimeout(() => {
-        const nodeElement = nodeRefs.current[highlightedNodeId];
-        if (nodeElement && treeWrapperRef.current) {
-          // Calculate scroll position
-          const nodeRect = nodeElement.getBoundingClientRect();
-          const wrapperRect = treeWrapperRef.current.getBoundingClientRect();
-
-          // Scroll the wrapper to center the highlighted node
-          treeWrapperRef.current.scrollLeft =
-            nodeElement.offsetLeft - (wrapperRect.width / 2) + (nodeRect.width / 2);
-          treeWrapperRef.current.scrollTop =
-            nodeElement.offsetTop - (wrapperRect.height / 2) + (nodeRect.height / 2);
-        }
-      }, 100);
-    }
-  }, [searchResults]);
-
-  // Handle search
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (!searchTerm.trim()) {
-      setSearchResults([]);
-      setSearchPaths([]);
-      return;
-    }
-
-    const results = [];
-    const paths = [];
-    const searchInTree = (node, path = []) => {
-      if (!node) return;
-
-      const currentPath = [...path, node];
-
-      // Check if current node matches search
-      if (
-        node.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        node.userId?.toLowerCase().includes(searchTerm.toLowerCase())
-      ) {
-        results.push([...currentPath]);
-
-        // Store all node IDs in the path for highlighting
-        paths.push(currentPath.map(node => node.userId));
-
-        // Expand all nodes in the path
-        setViewMode("custom");
-        currentPath.forEach(pathNode => {
-          setExpandedNodes(prev => ({ ...prev, [pathNode.userId]: true }));
-        });
-      }
-
-      // Search in children
-      if (node.children) {
-        node.children.forEach(child => searchInTree(child, currentPath));
-      }
-    };
-
-    searchInTree(treeData);
-    setSearchResults(results);
-    setSearchPaths(paths);
-  };
 
   // Handle navigation to binary table
   const handleShowBinaryTable = () => {
@@ -416,11 +550,14 @@ const AdminBinaryTree = () => {
           <form onSubmit={handleSearch}>
             <div className="search-input-wrapper">
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="Search by name or ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchInputChange}
+                onKeyDown={handleKeyDown}
                 className="search-input"
+                autoComplete="off"
               />
               <button type="submit" className="search-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -428,6 +565,25 @@ const AdminBinaryTree = () => {
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
               </button>
+              
+              {/* Search Suggestions Dropdown */}
+              {showSuggestions && suggestions.length > 0 && (
+                <div className="search-suggestions" ref={suggestionsRef}>
+                  {suggestions.map((suggestion, index) => (
+                    <div
+                      key={`${suggestion.userId}-${index}`}
+                      className={`suggestion-item ${index === selectedSuggestionIndex ? 'selected' : ''}`}
+                      onClick={() => selectSuggestion(suggestion)}
+                      onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                    >
+                      <div className="suggestion-content">
+                        <span className="suggestion-name">{suggestion.name}</span>
+                        <span className="suggestion-id">ID: {suggestion.userId}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </form>
         </div>

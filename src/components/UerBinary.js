@@ -15,6 +15,12 @@ const UserBinaryTree = () => {
   const [levelOptions, setLevelOptions] = useState([1, 2, 3, 4, 5, 6]);
   const [searchPaths, setSearchPaths] = useState([]);
   
+  // New states for search suggestions
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
+  
   // New states for empty slots feature
   const [showEmptySlots, setShowEmptySlots] = useState(false);
   const [emptySlots, setEmptySlots] = useState([]);
@@ -22,6 +28,8 @@ const UserBinaryTree = () => {
   
   const treeWrapperRef = useRef(null);
   const nodeRefs = useRef({});
+  const searchInputRef = useRef(null);
+  const suggestionsRef = useRef(null);
 
   useEffect(() => {
     const fetchTreeData = async () => {
@@ -43,6 +51,23 @@ const UserBinaryTree = () => {
           `${API_BASE_URL}/user-downline?userId=${userId}`
         );
         setTreeData(response.data);
+        
+        // Extract all users for search suggestions
+        const users = [];
+        const extractUsers = (node) => {
+          if (node) {
+            users.push({
+              name: node.name,
+              userId: node.userId,
+              id: node.userId
+            });
+            if (node.children) {
+              node.children.forEach(child => extractUsers(child));
+            }
+          }
+        };
+        extractUsers(response.data);
+        setAllUsers(users);
         
         // Initialize default expanded nodes (first 2 levels)
         const defaultExpanded = {};
@@ -143,7 +168,57 @@ const UserBinaryTree = () => {
     return sorted;
   };
 
-  // Navigate to user (similar to search functionality)
+  // Enhanced scroll to user function
+  const scrollToUser = (userId, callback) => {
+    // Multiple attempts to ensure scrolling works
+    const attemptScroll = (attempt = 0) => {
+      const nodeElement = nodeRefs.current[userId];
+      if (nodeElement && treeWrapperRef.current) {
+        const wrapper = treeWrapperRef.current;
+        const nodeRect = nodeElement.getBoundingClientRect();
+        const wrapperRect = wrapper.getBoundingClientRect();
+        
+        // Calculate the center position using offsetLeft and offsetTop
+        const targetScrollLeft = nodeElement.offsetLeft - (wrapper.clientWidth / 2) + (nodeElement.offsetWidth / 2);
+        const targetScrollTop = nodeElement.offsetTop - (wrapper.clientHeight / 2) + (nodeElement.offsetHeight / 2);
+        
+        // Ensure we don't scroll beyond boundaries
+        const maxScrollLeft = wrapper.scrollWidth - wrapper.clientWidth;
+        const maxScrollTop = wrapper.scrollHeight - wrapper.clientHeight;
+        
+        const finalScrollLeft = Math.max(0, Math.min(targetScrollLeft, maxScrollLeft));
+        const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
+        
+        // Use both smooth scrollTo and direct property setting for better compatibility
+        try {
+          wrapper.scrollTo({
+            left: finalScrollLeft,
+            top: finalScrollTop,
+            behavior: 'smooth'
+          });
+        } catch (e) {
+          // Fallback for browsers that don't support smooth scrolling
+          wrapper.scrollLeft = finalScrollLeft;
+          wrapper.scrollTop = finalScrollTop;
+        }
+        
+        // Execute callback after scrolling
+        if (callback) {
+          setTimeout(callback, 800);
+        }
+      } else if (attempt < 5) {
+        // Retry if element not found yet (might still be expanding)
+        setTimeout(() => attemptScroll(attempt + 1), 200);
+      }
+    };
+    
+    // Use requestAnimationFrame and setTimeout for better timing
+    requestAnimationFrame(() => {
+      setTimeout(() => attemptScroll(), 100);
+    });
+  };
+
+  // Navigate to user (enhanced for empty slots)
   const navigateToUser = (userId) => {
     // Find the user in the tree and create a path to it
     const findUserPath = (node, targetId, path = []) => {
@@ -170,9 +245,11 @@ const UserBinaryTree = () => {
     if (userPath) {
       // Expand all nodes in the path
       setViewMode("custom");
+      const newExpandedNodes = {...expandedNodes};
       userPath.forEach(pathNode => {
-        setExpandedNodes(prev => ({...prev, [pathNode.userId]: true}));
+        newExpandedNodes[pathNode.userId] = true;
       });
+      setExpandedNodes(newExpandedNodes);
       
       // Set search results to highlight the user
       setSearchResults([userPath]);
@@ -181,21 +258,165 @@ const UserBinaryTree = () => {
       // Close the modal
       setShowEmptySlots(false);
       
-      // Scroll to the user after a short delay
+      // Enhanced scroll to user with multiple attempts
       setTimeout(() => {
-        const nodeElement = nodeRefs.current[userId];
-        if (nodeElement && treeWrapperRef.current) {
-          const nodeRect = nodeElement.getBoundingClientRect();
-          const wrapperRect = treeWrapperRef.current.getBoundingClientRect();
-          
-          treeWrapperRef.current.scrollLeft = 
-            nodeElement.offsetLeft - (wrapperRect.width / 2) + (nodeRect.width / 2);
-          treeWrapperRef.current.scrollTop = 
-            nodeElement.offsetTop - (wrapperRect.height / 2) + (nodeRect.height / 2);
-        }
-      }, 100);
+        scrollToUser(userId);
+      }, 300);
     }
   };
+
+  // Handle search input change with suggestions
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    setSelectedSuggestionIndex(-1);
+    
+    // Trim whitespace and check if there's actual content
+    if (value.trim().length > 0) {
+      // Filter users based on input (using trimmed value for search)
+      const suggestions = allUsers.filter(user => 
+        user.name.toLowerCase().includes(value.trim().toLowerCase()) ||
+        user.userId.toLowerCase().includes(value.trim().toLowerCase())
+      ).slice(0, 10); // Limit to 10 suggestions
+      
+      setSearchSuggestions(suggestions);
+      setShowSuggestions(suggestions.length > 0);
+    } else {
+      setSearchSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handle keyboard navigation in suggestions
+  const handleKeyDown = (e) => {
+    if (!showSuggestions || searchSuggestions.length === 0) return;
+    
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => 
+          prev < searchSuggestions.length - 1 ? prev + 1 : prev
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex(prev => prev > 0 ? prev - 1 : -1);
+        break;
+      case 'Enter':
+        e.preventDefault();
+        if (selectedSuggestionIndex >= 0) {
+          selectSuggestion(searchSuggestions[selectedSuggestionIndex]);
+        } else {
+          handleSearch(e);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+    }
+  };
+
+  // Select a suggestion
+  const selectSuggestion = (user) => {
+    setSearchTerm(user.name);
+    setShowSuggestions(false);
+    setSelectedSuggestionIndex(-1);
+    
+    // Immediately search for this user
+    performSearch(user.name, user.userId);
+  };
+
+  // Enhanced search function
+  const performSearch = (searchValue, targetUserId = null) => {
+    // Trim the search value and check for empty content
+    const trimmedSearchValue = searchValue.trim();
+    
+    if (!trimmedSearchValue) {
+      setSearchResults([]);
+      setSearchPaths([]);
+      return;
+    }
+
+    const results = [];
+    const paths = [];
+    const searchInTree = (node, path = []) => {
+      if (!node) return;
+      
+      const currentPath = [...path, node];
+      
+      // Check if current node matches search (using trimmed value)
+      const matchesSearch = targetUserId ? 
+        node.userId === targetUserId :
+        (node.name.toLowerCase().includes(trimmedSearchValue.toLowerCase()) || 
+         node.userId.toLowerCase().includes(trimmedSearchValue.toLowerCase()));
+      
+      if (matchesSearch) {
+        results.push([...currentPath]);
+        
+        // Store all node IDs in the path for highlighting
+        paths.push(currentPath.map(node => node.userId));
+        
+        // Expand all nodes in the path
+        setViewMode("custom");
+        const newExpandedNodes = {...expandedNodes};
+        currentPath.forEach(pathNode => {
+          newExpandedNodes[pathNode.userId] = true;
+        });
+        setExpandedNodes(newExpandedNodes);
+      }
+      
+      // Search in children
+      if (node.children) {
+        node.children.forEach(child => searchInTree(child, currentPath));
+      }
+    };
+    
+    searchInTree(treeData);
+    setSearchResults(results);
+    setSearchPaths(paths);
+    
+    // Enhanced scroll to first result with multiple attempts
+    if (results.length > 0) {
+      const firstResult = results[0];
+      const highlightedNodeId = firstResult[firstResult.length - 1].userId;
+      
+      setTimeout(() => {
+        scrollToUser(highlightedNodeId);
+      }, 300);
+    }
+  };
+
+  // Handle search form submission
+  const handleSearch = (e) => {
+    e.preventDefault();
+    
+    // Check if search term is empty or only whitespace
+    if (!searchTerm.trim()) {
+      // Optionally show an alert or just return silently
+      alert("Please enter a search term");
+      return;
+    }
+    
+    setShowSuggestions(false);
+    performSearch(searchTerm);
+  };
+
+  // Click outside to close suggestions
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target) &&
+          searchInputRef.current && !searchInputRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   // Expand/collapse based on current view mode and max level
   useEffect(() => {
@@ -228,75 +449,6 @@ const UserBinaryTree = () => {
     
     setExpandedNodes(newExpandedNodes);
   }, [viewMode, maxLevel, treeData]);
-
-  // Scroll to highlighted node after search
-  useEffect(() => {
-    if (searchResults.length > 0) {
-      // Get the first highlighted node's ID
-      const firstResult = searchResults[0];
-      const highlightedNodeId = firstResult[firstResult.length - 1].userId;
-      
-      // Use setTimeout to ensure the DOM has updated
-      setTimeout(() => {
-        const nodeElement = nodeRefs.current[highlightedNodeId];
-        if (nodeElement && treeWrapperRef.current) {
-          // Calculate scroll position
-          const nodeRect = nodeElement.getBoundingClientRect();
-          const wrapperRect = treeWrapperRef.current.getBoundingClientRect();
-          
-          // Scroll the wrapper to center the highlighted node
-          treeWrapperRef.current.scrollLeft = 
-            nodeElement.offsetLeft - (wrapperRect.width / 2) + (nodeRect.width / 2);
-          treeWrapperRef.current.scrollTop = 
-            nodeElement.offsetTop - (wrapperRect.height / 2) + (nodeRect.height / 2);
-        }
-      }, 100);
-    }
-  }, [searchResults]);
-
-  // Handle search
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (!searchTerm.trim()) {
-      setSearchResults([]);
-      setSearchPaths([]);
-      return;
-    }
-
-    const results = [];
-    const paths = [];
-    const searchInTree = (node, path = []) => {
-      if (!node) return;
-      
-      const currentPath = [...path, node];
-      
-      // Check if current node matches search
-      if (
-        node.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        node.userId.toLowerCase().includes(searchTerm.toLowerCase())
-      ) {
-        results.push([...currentPath]);
-        
-        // Store all node IDs in the path for highlighting
-        paths.push(currentPath.map(node => node.userId));
-        
-        // Expand all nodes in the path
-        setViewMode("custom");
-        currentPath.forEach(pathNode => {
-          setExpandedNodes(prev => ({...prev, [pathNode.userId]: true}));
-        });
-      }
-      
-      // Search in children
-      if (node.children) {
-        node.children.forEach(child => searchInTree(child, currentPath));
-      }
-    };
-    
-    searchInTree(treeData);
-    setSearchResults(results);
-    setSearchPaths(paths);
-  };
 
   // Toggle node expansion
   const toggleNode = (userId) => {
@@ -516,11 +668,14 @@ const UserBinaryTree = () => {
           <form onSubmit={handleSearch}>
             <div className="search-input-wrapper">
               <input
+                ref={searchInputRef}
                 type="text"
                 placeholder="Search by name or ID..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={handleSearchInputChange}
+                onKeyDown={handleKeyDown}
                 className="search-input"
+                autoComplete="off"
               />
               <button type="submit" className="search-button">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -528,6 +683,46 @@ const UserBinaryTree = () => {
                   <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                 </svg>
               </button>
+              
+              {/* Search Suggestions Dropdown */}
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div 
+                  ref={suggestionsRef}
+                  className="search-suggestions"
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    backgroundColor: 'white',
+                    border: '1px solid #ddd',
+                    borderTop: 'none',
+                    borderRadius: '0 0 8px 8px',
+                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                    zIndex: 1000,
+                    maxHeight: '200px',
+                    overflowY: 'auto'
+                  }}
+                >
+                  {searchSuggestions.map((user, index) => (
+                    <div
+                      key={user.userId}
+                      className={`suggestion-item ${index === selectedSuggestionIndex ? 'selected' : ''}`}
+                      onClick={() => selectSuggestion(user)}
+                      style={{
+                        padding: '10px 15px',
+                        cursor: 'pointer',
+                        borderBottom: index < searchSuggestions.length - 1 ? '1px solid #eee' : 'none',
+                        backgroundColor: index === selectedSuggestionIndex ? '#f0f8ff' : 'transparent'
+                      }}
+                      onMouseEnter={() => setSelectedSuggestionIndex(index)}
+                    >
+                      <div style={{ fontWeight: '600', color: '#333' }}>{user.name}</div>
+                      <div style={{ fontSize: '12px', color: '#666' }}>ID: {user.userId}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </form>
         </div>

@@ -353,7 +353,7 @@ const UserGameHistory = () => {
                 <tr>
                   <th className="border-0">Date</th>
                   <th className="border-0">Game Mode</th>
-                  <th className="border-0">Played Numbers</th>
+                  <th className="border-0">Played Pictures</th>
                   <th className="border-0">Session</th>
                   <th className="border-0 text-end">Amount</th>
                 </tr>
