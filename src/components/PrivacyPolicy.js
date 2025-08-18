@@ -94,7 +94,7 @@ const PrivacyPolicy = () => {
                     Name, email address, contact number, date of birth, and payment details.
                   </SubSection>
                   <SubSection subtitle="2.2 Automatically Collected Data" subSectionStyle={subSectionStyle}>
-                    IP address, device info, browser type, OS, session data, and pages visited.
+                    IP address, session data, and pages visited.
                   </SubSection>
                   <SubSection subtitle="2.3 Additional Verification Data" subSectionStyle={subSectionStyle}>
                     For high-value accounts or recovery: ID, proof of address, etc.
@@ -165,14 +165,6 @@ const PrivacyPolicy = () => {
                           <span style={customBulletStyle}></span>
                           Performance Cookies
                         </li>
-                        <li className="d-flex mb-2">
-                          <span style={customBulletStyle}></span>
-                          Personalization Cookies
-                        </li>
-                        <li className="d-flex mb-2">
-                          <span style={customBulletStyle}></span>
-                          Advertising Cookies
-                        </li>
                       </ul>
                     </SubSection>
                     <SubSection subtitle="5.2 Managing Cookies" subSectionStyle={{...subSectionStyle, background: 'rgba(255,255,255,0.7)'}}>
@@ -205,22 +197,16 @@ const PrivacyPolicy = () => {
                       <li className="d-flex mb-3">
                         <span style={customBulletStyle}></span>
                         <div>
-                          <strong className="text-dark">Deletion and Restriction:</strong>
-                          <span className="text-muted ms-2">Request deletion or restrict processing.</span>
+                          <strong className="text-dark">Restriction:</strong>
+                          <span className="text-muted ms-2">Request restrict processing.</span>
                         </div>
                       </li>
-                      <li className="d-flex mb-3">
-                        <span style={customBulletStyle}></span>
-                        <div>
-                          <strong className="text-dark">Data Portability:</strong>
-                          <span className="text-muted ms-2">Receive your data in a portable format.</span>
-                        </div>
-                      </li>
+                      
                       <li className="d-flex mb-0">
                         <span style={customBulletStyle}></span>
                         <div>
                           <strong className="text-dark">Withdraw Consent:</strong>
-                          <span className="text-muted ms-2">You may revoke consent at any time.</span>
+                          <span className="text-muted ms-2">You may request revoke consent at any time.</span>
                         </div>
                       </li>
                     </ul>

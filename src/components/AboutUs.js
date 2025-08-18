@@ -116,20 +116,20 @@ const AboutPage = () => {
               <div className="text-light fs-5 lh-lg">
                 <p className="mb-4">
                   Welcome to Naphex, a premium online gaming platform brought to you by Nadakatti Enterprises. 
-                  We offer a wide range of gaming options to users including top casino games, online slots, 
-                  and sports betting that you can enjoy using your device such as mobile and laptop.
+                  We offer a wide range of gaming options to users including, online slots, 
+                  and sports gaming that you can enjoy using your device such as mobile and laptop.
                 </p>
                 <p className="mb-4">
                   As a sub-product of Nadakatti Enterprises, Naphex upholds the same standards of excellence 
-                  and innovation. We offer live betting options on different sports and live dealer casinos 
-                  like blackjack, poker, roulette, and more. At Naphex, we provide the best gaming experience 
+                  and innovation. We offer live gaming options on different sports and games 
+                  . At Naphex, we provide the best gaming experience 
                   to users and the chance to test their skills and win real rewards.
                 </p>
                 <p className="mb-0">
-                  Backed by Nadakatti Enterprises' reputation for quality and reliability, we ensure that all 
+                  Backed by Nadakatti Enterprises reputation for quality and reliability, we ensure that all 
                   of your personal and financial data is safe and secured. We use industry-standard encryption 
                   and follow strict safety protocols so that users can experience worry-free gaming and focus 
-                  more on their games and bets.
+                  more on their games.
                 </p>
               </div>
             </div>
@@ -215,7 +215,7 @@ const AboutPage = () => {
               </div>
               <div className="text-light fs-6 lh-lg">
                 <p className="mb-3">
-                  Here, you get the gaming environment where you can place your stakes with complete safety at all times 
+                  Here, you get the gaming environment where you can test your skills with complete safety at all times 
                   and have confidence in the integrity of all the games.
                 </p>
                 <p className="mb-4">

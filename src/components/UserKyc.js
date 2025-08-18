@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import './UserKyc.css';
 import { useNavigate } from "react-router-dom";
 import API_BASE_URL from './ApiConfig';
@@ -39,6 +39,10 @@ const AdminIcon = () => (
   <i className="bi bi-person-check" style={{ fontSize: '24px' }}></i>
 );
 
+const CameraIcon = () => (
+  <i className="bi bi-camera" style={{ fontSize: '20px' }}></i>
+);
+
 const generateUserId = () => {
   return 'USER' + Math.random().toString(36).substr(2, 9).toUpperCase();
 };
@@ -48,7 +52,7 @@ const generateReferralId = () => {
 };
 
 // File validation function
-const validateFile = (file) => {
+const validateFile = (file, fileType = 'document') => {
   const maxSize = 5 * 1024 * 1024; // 5MB in bytes
   const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
 
@@ -79,23 +83,32 @@ const UserKyc = () => {
   const [showKYC, setShowKYC] = useState(false);
   const [kycCompleted, setKycCompleted] = useState(false);
 
-  // KYC State
+  // Camera states
+  const [showCamera, setShowCamera] = useState(false);
+  const [stream, setStream] = useState(null);
+  const videoRef = useRef(null);
+  const canvasRef = useRef(null);
+
+  // KYC State - Added selfie
   const [kycData, setKycData] = useState({
     aadharCard: null,
     panCard: null,
-    bankPassbook: null
+    bankPassbook: null,
+    selfie: null // Added selfie
   });
 
   const [kycErrors, setKycErrors] = useState({
     aadharCard: '',
     panCard: '',
-    bankPassbook: ''
+    bankPassbook: '',
+    selfie: '' // Added selfie error
   });
 
   const [uploadProgress, setUploadProgress] = useState({
     aadharCard: false,
     panCard: false,
-    bankPassbook: false
+    bankPassbook: false,
+    selfie: false // Added selfie progress
   });
 
   const navigate = useNavigate();
@@ -114,7 +127,45 @@ const UserKyc = () => {
     }
   }, [navigate]);
 
-  const handleFileUpload = (event, documentType) => {
+  // Prevent going back when KYC process has started
+  useEffect(() => {
+    if (showKYC || kycCompleted) {
+      const handleBeforeUnload = (e) => {
+        e.preventDefault();
+        e.returnValue = '';
+      };
+
+      const handlePopState = (e) => {
+        e.preventDefault();
+        window.history.pushState(null, null, window.location.pathname);
+      };
+
+      window.addEventListener('beforeunload', handleBeforeUnload);
+      window.addEventListener('popstate', handlePopState);
+      
+      // Push current state to prevent back navigation
+      window.history.pushState(null, null, window.location.pathname);
+
+      return () => {
+        window.removeEventListener('beforeunload', handleBeforeUnload);
+        window.removeEventListener('popstate', handlePopState);
+      };
+    }
+  }, [showKYC, kycCompleted]);
+
+  // Clean up camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
+  const handleFileUpload = async (event, documentType) => {
+    // Only handle non-selfie documents since selfie is camera-only
+    if (documentType === 'selfie') return;
+    
     const file = event.target.files[0];
     const validation = validateFile(file);
 
@@ -160,14 +211,99 @@ const UserKyc = () => {
     }, 1000);
   };
 
-  const handleKYCSubmit = () => {
-    // Validate all documents are uploaded
-    const { aadharCard, panCard, bankPassbook } = kycData;
-
-    if (!aadharCard || !panCard || !bankPassbook) {
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+        video: { 
+          width: { ideal: 640 },
+          height: { ideal: 480 },
+          facingMode: 'user' // Front camera for selfie
+        } 
+      });
+      setStream(mediaStream);
+      setShowCamera(true);
+      
+      // Wait for video element to be ready
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      }, 100);
+    } catch (error) {
+      console.error('Error accessing camera:', error);
       setAlert({
         show: true,
-        message: 'Please upload all required documents',
+        message: 'Unable to access camera. Please use file upload instead.',
+        isError: true
+      });
+      setTimeout(() => setAlert({ show: false, message: '', isError: false }), 3000);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+
+      // Set canvas dimensions to video dimensions
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+
+      // Draw the video frame to canvas
+      context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // Convert canvas to blob
+      canvas.toBlob((blob) => {
+        const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
+        
+        // Set upload progress
+        setUploadProgress(prev => ({
+          ...prev,
+          selfie: true
+        }));
+
+        // Simulate processing time
+        setTimeout(() => {
+          setKycData(prev => ({
+            ...prev,
+            selfie: file
+          }));
+
+          setUploadProgress(prev => ({
+            ...prev,
+            selfie: false
+          }));
+
+          setAlert({
+            show: true,
+            message: 'Selfie captured successfully!',
+            isError: false
+          });
+          setTimeout(() => setAlert({ show: false, message: '', isError: false }), 2000);
+        }, 1000);
+
+        closeCamera();
+      }, 'image/jpeg', 0.8);
+    }
+  };
+
+  const closeCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setShowCamera(false);
+  };
+
+  const handleKYCSubmit = () => {
+    // Validate all documents are uploaded including selfie
+    const { aadharCard, panCard, bankPassbook, selfie } = kycData;
+
+    if (!aadharCard || !panCard || !bankPassbook || !selfie) {
+      setAlert({
+        show: true,
+        message: 'Please upload all required documents including selfie',
         isError: true
       });
       setTimeout(() => setAlert({ show: false, message: '', isError: false }), 3000);
@@ -201,9 +337,9 @@ const UserKyc = () => {
         throw new Error('Required signup data is missing');
       }
 
-      // Validate KYC documents
-      if (!kycData.aadharCard || !kycData.panCard || !kycData.bankPassbook) {
-        throw new Error('All KYC documents are required');
+      // Validate KYC documents including selfie
+      if (!kycData.aadharCard || !kycData.panCard || !kycData.bankPassbook || !kycData.selfie) {
+        throw new Error('All KYC documents including selfie are required');
       }
 
       // Create FormData for file upload
@@ -220,10 +356,11 @@ const UserKyc = () => {
       formData.append('city', signupData.city?.trim() || '');
       formData.append('state', signupData.state?.trim() || '');
 
-      // Add KYC files
+      // Add KYC files including selfie
       formData.append('aadharCard', kycData.aadharCard);
       formData.append('panCard', kycData.panCard);
       formData.append('bankPassbook', kycData.bankPassbook);
+      formData.append('selfie', kycData.selfie); // Added selfie
 
       // Make API call to the updated endpoint
       const response = await fetch(`${API_BASE_URL}/registerUser`, {
@@ -296,7 +433,7 @@ const UserKyc = () => {
   };
 
   const goToLogin = () => {
-    navigate("/login");
+    navigate("/");
   };
 
   const goToHelp = () => {
@@ -311,6 +448,162 @@ const UserKyc = () => {
   return (
     <div className="payment-container">
       <div className="content-wrapper">
+        {/* Important Notice */}
+        {(showKYC || kycCompleted) && (
+          <div style={{
+            backgroundColor: '#fff3cd',
+            border: '2px solid #ffeaa7',
+            borderRadius: '12px',
+            padding: '16px',
+            marginBottom: '24px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '12px',
+            boxShadow: '0 2px 8px rgba(255, 193, 7, 0.2)'
+          }}>
+            <i className="bi bi-exclamation-triangle-fill" style={{
+              fontSize: '24px',
+              color: '#856404',
+              flexShrink: 0
+            }}></i>
+            <div style={{
+              color: '#856404',
+              fontSize: '16px',
+              fontWeight: '600',
+              lineHeight: '1.4'
+            }}>
+              <strong>Important:</strong> Please do not go back or refresh this page during the KYC process. Your progress will be lost and you'll need to start over.
+            </div>
+          </div>
+        )}
+
+        {/* Camera Modal */}
+        {showCamera && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.9)',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 10000,
+            padding: '20px'
+          }}>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              padding: '24px',
+              maxWidth: '90vw',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              gap: '20px'
+            }}>
+              <h3 style={{
+                margin: '0',
+                fontSize: '24px',
+                fontWeight: '600',
+                color: '#2c3e50',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '12px'
+              }}>
+                <CameraIcon />
+                Take Your Selfie
+              </h3>
+              
+              <div style={{
+                position: 'relative',
+                borderRadius: '12px',
+                overflow: 'hidden',
+                border: '3px solid #007bff'
+              }}>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  style={{
+                    width: '320px',
+                    height: '240px',
+                    objectFit: 'cover'
+                  }}
+                />
+              </div>
+
+              <div style={{
+                display: 'flex',
+                gap: '16px',
+                flexWrap: 'wrap',
+                justifyContent: 'center'
+              }}>
+                <button
+                  onClick={capturePhoto}
+                  style={{
+                    background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '14px 28px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)'
+                  }}
+                >
+                  <i className="bi bi-camera-fill" style={{ fontSize: '18px' }}></i>
+                  Capture Photo
+                </button>
+
+                <button
+                  onClick={closeCamera}
+                  style={{
+                    background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: '14px 28px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    transition: 'all 0.3s ease',
+                    boxShadow: '0 4px 15px rgba(220, 53, 69, 0.3)'
+                  }}
+                >
+                  <i className="bi bi-x-lg" style={{ fontSize: '18px' }}></i>
+                  Cancel
+                </button>
+              </div>
+
+              <p style={{
+                margin: '0',
+                fontSize: '14px',
+                color: '#6c757d',
+                textAlign: 'center',
+                maxWidth: '300px'
+              }}>
+                Position your face in the center and ensure good lighting for the best photo quality.
+              </p>
+            </div>
+
+            <canvas
+              ref={canvasRef}
+              style={{ display: 'none' }}
+            />
+          </div>
+        )}
+
         {/* KYC Section */}
         {!showKYC && !kycCompleted && (
           <div className="kyc-intro">
@@ -445,10 +738,238 @@ const UserKyc = () => {
               </div>
             </div>
 
+            {/* Selfie Upload */}
+            <div className="document-upload">
+              <label className="document-label">
+                <i className="bi bi-person-circle"></i>
+                Selfie Photo
+              </label>
+              <div className="upload-area">
+                {/* Selfie Capture Area */}
+                {!kycData.selfie ? (
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px',
+                    alignItems: 'center'
+                  }}>
+                    <button
+                      type="button"
+                      onClick={startCamera}
+                      disabled={uploadProgress.selfie}
+                      style={{
+                        background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '16px 32px',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        transition: 'all 0.3s ease',
+                        opacity: uploadProgress.selfie ? 0.6 : 1,
+                        width: '100%',
+                        justifyContent: 'center',
+                        boxShadow: '0 4px 15px rgba(23, 162, 184, 0.3)'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!uploadProgress.selfie) {
+                          e.target.style.transform = 'translateY(-2px)';
+                          e.target.style.boxShadow = '0 6px 20px rgba(23, 162, 184, 0.4)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!uploadProgress.selfie) {
+                          e.target.style.transform = 'translateY(0)';
+                          e.target.style.boxShadow = '0 4px 15px rgba(23, 162, 184, 0.3)';
+                        }
+                      }}
+                    >
+                      {uploadProgress.selfie ? (
+                        <>
+                          <i className="bi bi-arrow-clockwise spin" style={{ fontSize: '20px' }}></i>
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <CameraIcon />
+                          Take Selfie Photo
+                        </>
+                      )}
+                    </button>
+
+                    {/* Selfie Guidelines */}
+                    <div style={{
+                      backgroundColor: '#f8f9fa',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      fontSize: '13px',
+                      color: '#6c757d',
+                      lineHeight: '1.4',
+                      width: '100%'
+                    }}>
+                      <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        marginBottom: '12px',
+                        color: '#17a2b8',
+                        fontWeight: '600',
+                        fontSize: '14px'
+                      }}>
+                        <i className="bi bi-info-circle-fill" style={{ fontSize: '16px' }}></i>
+                        Selfie Guidelines
+                      </div>
+                      <ul style={{
+                        margin: '0',
+                        paddingLeft: '18px',
+                        fontSize: '12px'
+                      }}>
+                        <li>Face should be clearly visible and centered</li>
+                        <li>Ensure good lighting with no shadows</li>
+                        <li>Look directly at the camera</li>
+                        <li>Remove sunglasses, hat, or face coverings</li>
+                        <li>Use a plain background if possible</li>
+                      </ul>
+                    </div>
+                  </div>
+                ) : (
+                  // Show captured selfie preview
+                  <div style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '16px'
+                  }}>
+                    <div style={{
+                      backgroundColor: '#f8f9fa',
+                      border: '2px solid #28a745',
+                      borderRadius: '12px',
+                      padding: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '16px'
+                    }}>
+                      <div style={{
+                        width: '80px',
+                        height: '80px',
+                        borderRadius: '12px',
+                        overflow: 'hidden',
+                        border: '2px solid #dee2e6',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backgroundColor: 'white'
+                      }}>
+                        {kycData.selfie && (
+                          <img
+                            src={URL.createObjectURL(kycData.selfie)}
+                            alt="Captured Selfie"
+                            style={{
+                              width: '100%',
+                              height: '100%',
+                              objectFit: 'cover'
+                            }}
+                          />
+                        )}
+                      </div>
+                      
+                      <div style={{ flex: 1 }}>
+                        <div style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '8px',
+                          marginBottom: '8px'
+                        }}>
+                          <CheckIcon />
+                          <span style={{
+                            fontWeight: '600',
+                            color: '#155724',
+                            fontSize: '16px'
+                          }}>
+                            Selfie Captured Successfully
+                          </span>
+                        </div>
+                        
+                        <div style={{
+                          fontSize: '14px',
+                          color: '#6c757d',
+                          marginBottom: '12px'
+                        }}>
+                          {kycData.selfie.name || 'selfie.jpg'} 
+                          <span style={{ marginLeft: '8px', fontSize: '12px' }}>
+                            ({(kycData.selfie.size / 1024).toFixed(1)} KB)
+                          </span>
+                        </div>
+                        
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setKycData(prev => ({
+                              ...prev,
+                              selfie: null
+                            }));
+                            setKycErrors(prev => ({
+                              ...prev,
+                              selfie: ''
+                            }));
+                          }}
+                          style={{
+                            background: 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)',
+                            color: '#212529',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '8px 16px',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            transition: 'all 0.3s ease'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.transform = 'translateY(-1px)';
+                            e.target.style.boxShadow = '0 4px 12px rgba(255, 193, 7, 0.3)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = 'none';
+                          }}
+                        >
+                          <i className="bi bi-arrow-clockwise" style={{ fontSize: '14px' }}></i>
+                          Retake Photo
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {kycErrors.selfie && (
+                  <p className="error-text" style={{
+                    color: '#dc3545',
+                    fontSize: '14px',
+                    marginTop: '8px',
+                    marginBottom: '0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <i className="bi bi-exclamation-triangle-fill" style={{ fontSize: '16px' }}></i>
+                    {kycErrors.selfie}
+                  </p>
+                )}
+              </div>
+            </div>
+
             <button
               className="submit-kyc-btn"
               onClick={handleKYCSubmit}
-              disabled={!kycData.aadharCard || !kycData.panCard || !kycData.bankPassbook}
+              disabled={!kycData.aadharCard || !kycData.panCard || !kycData.bankPassbook || !kycData.selfie}
             >
               Submit KYC Documents
             </button>
@@ -456,12 +977,12 @@ const UserKyc = () => {
         )}
 
         {/* Create Account Button - Only shown after KYC completion */}
-        {kycCompleted && (
+        {kycCompleted && !showPopup && (
           <div className="account-creation">
             <div className="kyc-success">
               <CheckIcon />
               <h3>KYC Submission Completed!</h3>
-              <p>Your documents have been uploaded successfully. You can now create your account.</p>
+              <p>Your documents including selfie have been uploaded successfully. You can now create your account.</p>
             </div>
 
             <button
@@ -475,7 +996,7 @@ const UserKyc = () => {
           </div>
         )}
 
-        {/* {/* Admin Verification Popup with User ID * used inline css for/} */}
+        {/* Admin Verification Popup with User ID */}
         {showPopup && (
           <div
             className="kyc-popup-overlay"
@@ -485,8 +1006,7 @@ const UserKyc = () => {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: 'rgba(0, 0, 0, 0.85)',
-              backdropFilter: 'blur(10px)',
+              backgroundColor: '#ffffff',
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
@@ -739,7 +1259,7 @@ const UserKyc = () => {
                     lineHeight: '1.6',
                     marginBottom: '12px'
                   }}>
-                    Your account is now under admin verification. We're reviewing your KYC details and documents.
+                    Your account is now under admin verification. We're reviewing your KYC details, documents, and selfie photo.
                   </p>
                 </div>
 
@@ -759,36 +1279,6 @@ const UserKyc = () => {
                     flexDirection: 'column',
                     gap: '18px'
                   }}>
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '18px',
-                      padding: '14px 0'
-                    }}>
-                      <div style={{
-                        width: '36px',
-                        height: '36px',
-                        borderRadius: '50%',
-                        backgroundColor: '#e6f7ed',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0
-                      }}>
-                        <i className="bi bi-check-circle-fill" style={{
-                          fontSize: '24px',
-                          color: '#28a745'
-                        }}></i>
-                      </div>
-                      <span style={{
-                        fontSize: '18px',
-                        fontWeight: '600',
-                        color: '#28a745'
-                      }}>
-                        Account Created
-                      </span>
-                    </div>
-
                     <div style={{
                       display: 'flex',
                       alignItems: 'center',

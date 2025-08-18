@@ -214,6 +214,10 @@ const AuthPage = () => {
       <div className="links-header">Quick Links</div>
 
       <div className="nav-links">
+        <Link to="/statuscheck" className="nav-link">
+          <span className="link-icon">📊</span>
+          <span className="link-text">Check account status</span>
+        </Link>
         <Link to="/terms&conditions" className="nav-link">
           <span className="link-icon">📋</span>
           <span className="link-text">Terms & Conditions</span>
@@ -229,10 +233,6 @@ const AuthPage = () => {
         <Link to="/about" className="nav-link">
           <span className="link-icon">ℹ️</span>
           <span className="link-text">About Us</span>
-        </Link>
-        <Link to="/statuscheck" className="nav-link">
-          <span className="link-icon">📊</span>
-          <span className="link-text">Check account status</span>
         </Link>
       </div>
     </div>

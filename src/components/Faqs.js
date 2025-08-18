@@ -230,15 +230,15 @@ const ResponsibleGaming = () => {
 const faqData = [
   {
     question: "What is responsible gaming?",
-    answer: "It's the practice of keeping gambling under control to ensure it remains fun and risk-free."
+    answer: "It's the practice of keeping gaming under control to ensure it remains fun and risk-free."
   },
   {
     question: "What tools does Naphex provide for responsible gaming?",
-    answer: "Naphex offers self-assessment tools, spending trackers, limit setting, and self-exclusion options."
+    answer: "Naphex offers self-assessment tools, spending trackers, and request for deactivation of account options through support channels."
   },
   {
     question: "How can I self-exclude from Naphex?",
-    answer: "Contact Naphex customer support or use the self-exclusion feature directly on the website."
+    answer: "Contact Naphex customer support."
   },
   {
     question: "How does Naphex protect minors?",
@@ -267,11 +267,11 @@ const faqData = [
 const sections = [
   {
     title: "Responsible Gaming at Naphex",
-    content: "Responsible gaming means enjoying games within healthy limits while avoiding potential risks of problem gambling. At Naphex, we prioritize user safety and integrity, creating a space where fun stays safe."
+    content: "Responsible gaming means enjoying games within healthy limits while avoiding potential risks of problem gaming. At Naphex, we prioritize user safety and integrity, creating a space where fun stays safe."
   },
   {
     title: "What is Responsible Gaming?",
-    content: "It's the conscious decision to gamble for fun without letting it impact your financial, mental, or relationship security."
+    content: "It's the conscious decision to game for fun without letting it impact your financial, mental, or relationship security."
   },
   {
     title: "Why is Responsible Gaming Important?",
@@ -290,10 +290,6 @@ const sections = [
     content: "Naphex uses tech-based solutions like spending trackers and personalized reports to help players stay informed and in control."
   },
   {
-    title: "Guidelines on Healthy Gaming Habits",
-    content: "Clear instructions on setting session limits and taking regular breaks are provided across the platform to promote smart habits."
-  },
-  {
     title: "Self-Assessment for Players",
     content: (
       <span>
@@ -309,16 +305,8 @@ const sections = [
     )
   },
   {
-    title: "Setting Gaming Activity Limits",
-    content: "Players can set spending limits within their Naphex account and supplement with personal budgets to prevent overspending."
-  },
-  {
     title: "Knowing When to Take a Break",
     content: "Breaks improve clarity and reduce risk. Naphex recommends regular time-outs from gaming activities."
-  },
-  {
-    title: "Do Not Gamble Under the Influence",
-    content: "Avoid gambling under the influence of alcohol or drugs, as this impairs judgment and increases risk."
   },
   {
     title: "Protection of Minors from Gambling",

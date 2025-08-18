@@ -167,6 +167,12 @@ const MyAccount = () => {
       borderRadius: '12px',
       boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
       marginBottom: '20px'
+    },
+    buttonGroup: {
+      display: 'flex',
+      gap: '10px',
+      justifyContent: 'center',
+      flexWrap: 'wrap'
     }
   };
 
@@ -190,7 +196,7 @@ const MyAccount = () => {
     };
 
     const userPhoneNo = getUserDataFromLocalStorage();
-    
+
     if (userPhoneNo) {
       fetchUserData(userPhoneNo);
     } else {
@@ -202,14 +208,14 @@ const MyAccount = () => {
   const fetchUserData = async (userPhoneNo) => {
     try {
       setLoading(true);
-      
+
       // Create an EventSource connection to the server
       const eventSource = new EventSource(`${API_BASE_URL}/user-profile/${userPhoneNo}`);
-      
+
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
         console.log('Received user data:', data); // Debug log
-        
+
         if (data.success) {
           setUserData(data.userData);
           setLoading(false);
@@ -221,14 +227,14 @@ const MyAccount = () => {
           eventSource.close();
         }
       };
-      
+
       eventSource.onerror = (err) => {
         console.error('EventSource error:', err);
         setError('Failed to connect to server');
         setLoading(false);
         eventSource.close();
       };
-      
+
       // Clean up the event source on component unmount
       return () => {
         eventSource.close();
@@ -256,7 +262,7 @@ const MyAccount = () => {
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
-      
+
       try {
         document.execCommand('copy');
         setToastMessage(`${label} copied to clipboard!`);
@@ -265,7 +271,62 @@ const MyAccount = () => {
         setToastMessage(`Failed to copy ${label}`);
         setShowToast(true);
       }
-      
+
+      document.body.removeChild(textArea);
+    }
+  };
+
+  // Share function for social media
+  const shareId = async (id, label) => {
+    const shareText = `My ${label}: ${id}`;
+
+    if (navigator.share) {
+      // Use native share API if available (mobile devices)
+      try {
+        await navigator.share({
+          title: `My ${label}`,
+          text: shareText
+          // Removed URL - only sharing the ID text
+        });
+        setToastMessage(`${label} shared successfully!`);
+        setShowToast(true);
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          // If user cancels, don't show error
+          fallbackShare(shareText, label);
+        }
+      }
+    } else {
+      // Fallback to copying share text
+      fallbackShare(shareText, label);
+    }
+  };
+
+  const fallbackShare = async (shareText, label) => {
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setToastMessage(`${label} share text copied to clipboard! You can now paste it on any social media platform.`);
+      setShowToast(true);
+    } catch (err) {
+      // Final fallback
+      const textArea = document.createElement('textarea');
+      textArea.value = shareText;
+      textArea.style.position = 'fixed';
+      textArea.style.left = '-999999px';
+      textArea.style.top = '-999999px';
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+
+      try {
+        document.execCommand('copy');
+        setToastMessage(`${label} share text copied to clipboard! You can now paste it on any social media platform.`);
+        setShowToast(true);
+      } catch (err) {
+        setToastMessage(`Failed to prepare ${label} for sharing`);
+        setShowToast(true);
+      }
+
       document.body.removeChild(textArea);
     }
   };
@@ -273,9 +334,9 @@ const MyAccount = () => {
   // Helper function to format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'short', 
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
@@ -439,7 +500,7 @@ const MyAccount = () => {
             </Card>
           </div>
         );
-      
+
       case 'refrelid':
         return (
           <Card>
@@ -455,29 +516,47 @@ const MyAccount = () => {
                       <div style={styles.referralCode}>
                         {getReferralId()}
                       </div>
-                      <button 
-                        className="btn btn-outline-primary mt-3"
-                        onClick={() => copyToClipboard(getReferralId(), "Referral ID")}
-                        disabled={getReferralId() === "Loading..."}
-                      >
-                        <i className="bi bi-clipboard me-2"></i>Copy
-                      </button>
+                      <div style={styles.buttonGroup}>
+                        <button
+                          className="btn btn-outline-primary"
+                          onClick={() => copyToClipboard(getReferralId(), "Referral ID")}
+                          disabled={getReferralId() === "Loading..."}
+                        >
+                          <i className="bi bi-clipboard me-2"></i>Copy
+                        </button>
+                        <button
+                          className="btn btn-success"
+                          onClick={() => shareId(getReferralId(), "Referral ID")}
+                          disabled={getReferralId() === "Loading..."}
+                        >
+                          <i className="bi bi-share me-2"></i>Share
+                        </button>
+                      </div>
                     </Card.Body>
                   </Card>
-                  
+
                   <Card style={styles.referralCard}>
                     <Card.Body className="text-center">
                       <h5>Your User ID</h5>
                       <div style={styles.referralCode}>
                         {getUserId()}
                       </div>
-                      <button 
-                        className="btn btn-outline-primary mt-3"
-                        onClick={() => copyToClipboard(getUserId(), "User ID")}
-                        disabled={getUserId() === "Loading..."}
-                      >
-                        <i className="bi bi-clipboard me-2"></i>Copy
-                      </button>
+                      <div style={styles.buttonGroup}>
+                        <button
+                          className="btn btn-outline-primary"
+                          onClick={() => copyToClipboard(getUserId(), "User ID")}
+                          disabled={getUserId() === "Loading..."}
+                        >
+                          <i className="bi bi-clipboard me-2"></i>Copy
+                        </button>
+                        <button
+                          className="btn btn-success"
+                          onClick={() => shareId(getUserId(), "User ID")}
+                          disabled={getUserId() === "Loading..."}
+                        >
+                          <i className="bi bi-share me-2"></i>Share
+                        </button>
+                      </div>
                     </Card.Body>
                   </Card>
                 </Col>
@@ -485,7 +564,7 @@ const MyAccount = () => {
             </Card.Body>
           </Card>
         );
-      
+
       case 'account':
         return (
           <Card>
@@ -531,7 +610,12 @@ const MyAccount = () => {
                         <small className="text-muted">Available Tokens</small>
                       </div>
                       <div className="d-grid gap-2">
-                        <button className="btn btn-primary">Add Tokens</button>
+                        <button
+                          className="btn btn-primary"
+                          onClick={() => navigate("/addtokens")}
+                        >
+                          Add Tokens
+                        </button>
                         <button className="btn btn-outline-primary">Withdraw Tokens</button>
                       </div>
                     </Card.Body>
@@ -541,7 +625,7 @@ const MyAccount = () => {
             </Card.Body>
           </Card>
         );
-      
+
       case 'details':
         return (
           <div>
@@ -687,7 +771,7 @@ const MyAccount = () => {
             </Card>
           </div>
         );
-      
+
       case 'support':
         return (
           <Card>
@@ -698,39 +782,15 @@ const MyAccount = () => {
               <Row className="justify-content-center">
                 <Col md={8}>
                   <div>
-                    <Card style={styles.supportCard} 
-                          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                    >
-                      <Card.Body className="text-center p-4">
-                        <i className="bi bi-headset" style={styles.supportIcon}></i>
-                        <h5>Customer Support</h5>
-                        <p>Our customer support team is available 24/7 to assist you.</p>
-                        <button className="btn btn-primary" onClick={handleContactSupport}>Contact Support</button>
-                      </Card.Body>
-                    </Card>
-                    
                     <Card style={styles.supportCard}
-                          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                    >
-                      <Card.Body className="text-center p-4">
-                        <i className="bi bi-question-circle" style={styles.supportIcon}></i>
-                        <h5>FAQs</h5>
-                        <p>Find answers to commonly asked questions about our platform.</p>
-                        <button className="btn btn-outline-primary" onClick={()=>navigate("/FAQs")}>View FAQs</button>
-                      </Card.Body>
-                    </Card>
-                    
-                    <Card style={styles.supportCard}
-                          onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                          onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
                     >
                       <Card.Body className="text-center p-4">
                         <i className="bi bi-book" style={styles.supportIcon}></i>
                         <h5>Game Rules</h5>
                         <p>Learn about the rules and how to play our games.</p>
-                        <button className="btn btn-outline-primary" onClick={()=>navigate("/rules")}>Read Game Rules</button>
+                        <button className="btn btn-outline-primary" onClick={() => navigate("/rules")}>Read Game Rules</button>
                       </Card.Body>
                     </Card>
                   </div>
@@ -739,7 +799,7 @@ const MyAccount = () => {
             </Card.Body>
           </Card>
         );
-      
+
       default:
         return (
           <Alert variant="info">
@@ -755,7 +815,7 @@ const MyAccount = () => {
     link.rel = 'stylesheet';
     link.href = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css';
     document.head.appendChild(link);
-    
+
     return () => {
       document.head.removeChild(link);
     };
@@ -768,7 +828,7 @@ const MyAccount = () => {
           {/* Sidebar */}
           <Col lg={3} md={4} style={styles.sidebarWrapper}>
             <Card style={styles.sidebar}>
-              <Card.Header className="text-white" style={{backgroundColor:"rgb(13, 110, 253)"}}>
+              <Card.Header className="text-white" style={{ backgroundColor: "rgb(13, 110, 253)" }}>
                 <h4 className="mb-0">My Account</h4>
               </Card.Header>
               <Card.Body className="p-0">
@@ -789,11 +849,11 @@ const MyAccount = () => {
                   </div>
                 )}
                 <Nav className="flex-column">
-                  <Nav.Link 
+                  <Nav.Link
                     style={{
                       ...styles.navLink,
                       ...(activeTab === 'profile' ? styles.navLinkActive : {})
-                    }} 
+                    }}
                     onClick={() => setActiveTab('profile')}
                     onMouseEnter={(e) => {
                       if (activeTab !== 'profile') {
@@ -811,7 +871,7 @@ const MyAccount = () => {
                     <i className="bi bi-person-circle me-2"></i>
                     Profile
                   </Nav.Link>
-                  <Nav.Link 
+                  <Nav.Link
                     style={{
                       ...styles.navLink,
                       ...(activeTab === 'refrelid' ? styles.navLinkActive : {})
@@ -833,7 +893,7 @@ const MyAccount = () => {
                     <i className="bi bi-link-45deg me-2"></i>
                     My Referral ID
                   </Nav.Link>
-                  <Nav.Link 
+                  <Nav.Link
                     style={{
                       ...styles.navLink,
                       ...(activeTab === 'account' ? styles.navLinkActive : {})
@@ -855,7 +915,7 @@ const MyAccount = () => {
                     <i className="bi bi-graph-up me-2"></i>
                     Account Overview
                   </Nav.Link>
-                  <Nav.Link 
+                  <Nav.Link
                     style={{
                       ...styles.navLink,
                       ...(activeTab === 'details' ? styles.navLinkActive : {})
@@ -877,7 +937,7 @@ const MyAccount = () => {
                     <i className="bi bi-info-circle me-2"></i>
                     Other Details
                   </Nav.Link>
-                  <Nav.Link 
+                  <Nav.Link
                     style={{
                       ...styles.navLink,
                       ...(activeTab === 'support' ? styles.navLinkActive : {})
@@ -903,7 +963,7 @@ const MyAccount = () => {
               </Card.Body>
             </Card>
           </Col>
-          
+
           {/* Main Content */}
           <Col lg={9} md={8}>
             {renderContent()}
@@ -912,10 +972,10 @@ const MyAccount = () => {
       </Container>
 
       {/* Image Modal */}
-      <Modal 
-        show={showImageModal} 
-        onHide={() => setShowImageModal(false)} 
-        size="lg" 
+      <Modal
+        show={showImageModal}
+        onHide={() => setShowImageModal(false)}
+        size="lg"
         centered
       >
         <Modal.Header closeButton>
@@ -932,8 +992,8 @@ const MyAccount = () => {
           <Button variant="secondary" onClick={() => setShowImageModal(false)}>
             Close
           </Button>
-          <Button 
-            variant="primary" 
+          <Button
+            variant="primary"
             onClick={() => window.open(selectedImage, '_blank')}
           >
             <i className="bi bi-download me-2"></i>
@@ -944,10 +1004,10 @@ const MyAccount = () => {
 
       {/* Toast notification for copy feedback */}
       <ToastContainer position="top-end" className="p-3">
-        <Toast 
-          show={showToast} 
-          onClose={() => setShowToast(false)} 
-          delay={3000} 
+        <Toast
+          show={showToast}
+          onClose={() => setShowToast(false)}
+          delay={3000}
           autohide
           bg="success"
         >

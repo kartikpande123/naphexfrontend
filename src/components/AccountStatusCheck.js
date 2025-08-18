@@ -5,10 +5,14 @@ import { useNavigate } from 'react-router-dom';
 
 const AccountStatusChecker = () => {
   const [userId, setUserId] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
+  const [phoneLoading, setPhoneLoading] = useState(false);
   const [statusResult, setStatusResult] = useState(null);
+  const [phoneResult, setPhoneResult] = useState(null);
   const [allUsers, setAllUsers] = useState([]);
   const [rejectedUsers, setRejectedUsers] = useState([]);
+  const [activeTab, setActiveTab] = useState('status'); // 'status' or 'findId'
 
   const navigate = useNavigate()
 
@@ -51,6 +55,76 @@ const AccountStatusChecker = () => {
       eventSource.close();
     };
   }, []);
+
+  const findUserByPhone = () => {
+    if (!phoneNumber.trim()) {
+      setPhoneResult({
+        type: 'error',
+        message: 'Please enter a valid phone number'
+      });
+      return;
+    }
+
+    setPhoneLoading(true);
+    
+    console.log('Searching for phone number:', phoneNumber.trim());
+    
+    // Search in main users collection
+    const user = allUsers.find(u => {
+      return u.phoneNo && u.phoneNo.toString().includes(phoneNumber.trim());
+    });
+    
+    if (user) {
+      setPhoneResult({
+        type: 'success',
+        title: '✅ User Found',
+        message: 'User found! Here is your User ID:',
+        userId: user.userIds?.myuserid || 'N/A',
+        user: user
+      });
+    } else {
+      // Check in rejected users
+      const rejectedUser = rejectedUsers.find(u => 
+        u.phoneNo && u.phoneNo.toString().includes(phoneNumber.trim())
+      );
+      
+      if (rejectedUser) {
+        setPhoneResult({
+          type: 'found-rejected',
+          title: '⚠️ User Found (Rejected)',
+          message: 'User found but account was rejected:',
+          userId: rejectedUser.userId || 'N/A',
+          user: rejectedUser
+        });
+      } else {
+        setPhoneResult({
+          type: 'not-found',
+          title: '🔍 User Not Found',
+          message: `No account found with phone number: ${phoneNumber.trim()}. Please check your phone number and try again.`
+        });
+      }
+    }
+    
+    setPhoneLoading(false);
+  };
+
+  const copyToClipboard = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // You could add a toast notification here
+      alert('User ID copied to clipboard!');
+    } catch (err) {
+      console.error('Failed to copy: ', err);
+      // Fallback method
+      const textArea = document.createElement('textarea');
+      textArea.value = text;
+      document.body.appendChild(textArea);
+      textArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(textArea);
+      alert('User ID copied to clipboard!');
+    }
+  };
 
   const checkAccountStatus = () => {
     if (!userId.trim()) {
@@ -159,6 +233,7 @@ const AccountStatusChecker = () => {
       case 'success': return 'badge bg-success';
       case 'pending': return 'badge bg-warning text-dark';
       case 'rejected': return 'badge bg-danger';
+      case 'found-rejected': return 'badge bg-warning text-dark';
       case 'warning': return 'badge bg-info';
       case 'not-found': return 'badge bg-secondary';
       case 'error': return 'badge bg-danger';
@@ -171,6 +246,7 @@ const AccountStatusChecker = () => {
       case 'success': return 'border-success';
       case 'pending': return 'border-warning';
       case 'rejected': return 'border-danger';
+      case 'found-rejected': return 'border-warning';
       case 'warning': return 'border-info';
       case 'not-found': return 'border-secondary';
       case 'error': return 'border-danger';
@@ -199,66 +275,269 @@ const AccountStatusChecker = () => {
             </p>
           </div>
 
-          {/* Search Card */}
+          {/* Tab Navigation */}
           <div className="card shadow-lg border-0 mb-4" style={{
             borderRadius: '20px',
             background: '#ffffff',
             border: '2px solid #e3f2fd'
           }}>
-            <div className="card-body p-4">
-              <div className="row align-items-center">
-                <div className="col-md-8">
-                  <label htmlFor="userIdInput" className="form-label fw-semibold text-dark mb-2">
-                    Enter Your User ID
-                  </label>
-                  <input
-                    type="text"
-                    id="userIdInput"
-                    className="form-control form-control-lg"
-                    placeholder="e.g., USERQMZY7NECD"
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && checkAccountStatus()}
-                    style={{
-                      borderRadius: '12px',
-                      border: '2px solid #e9ecef',
-                      fontSize: '16px'
+            <div className="card-header border-0 bg-transparent p-0">
+              <ul className="nav nav-pills nav-fill" style={{ padding: '20px 20px 0 20px' }}>
+                <li className="nav-item">
+                  <button 
+                    className={`nav-link ${activeTab === 'status' ? 'active' : ''}`}
+                    onClick={() => {
+                      setActiveTab('status');
+                      setStatusResult(null);
+                      setPhoneResult(null);
                     }}
-                  />
-                </div>
-                <div className="col-md-4 mt-3 mt-md-0">
-                  <button
-                    className="btn btn-lg w-100"
-                    onClick={checkAccountStatus}
-                    disabled={loading}
                     style={{
                       borderRadius: '12px',
-                      background: 'linear-gradient(45deg, #1976d2, #2196f3)',
-                      border: 'none',
-                      color: 'white',
                       fontWeight: '600',
-                      padding: '12px 24px',
-                      marginTop: '32px'
+                      background: activeTab === 'status' ? 'linear-gradient(45deg, #1976d2, #2196f3)' : 'transparent',
+                      color: activeTab === 'status' ? 'white' : '#1976d2',
+                      border: activeTab === 'status' ? 'none' : '2px solid #e3f2fd'
                     }}
                   >
-                    {loading ? (
-                      <>
-                        <span className="spinner-border spinner-border-sm me-2" role="status"></span>
-                        Checking...
-                      </>
-                    ) : (
-                      <>
-                        <i className="fas fa-search me-2"></i>
-                        Check Status
-                      </>
-                    )}
+                    <i className="fas fa-search me-2"></i>
+                    Check Account Status
                   </button>
+                </li>
+                <li className="nav-item ms-2">
+                  <button 
+                    className={`nav-link ${activeTab === 'findId' ? 'active' : ''}`}
+                    onClick={() => {
+                      setActiveTab('findId');
+                      setStatusResult(null);
+                      setPhoneResult(null);
+                    }}
+                    style={{
+                      borderRadius: '12px',
+                      fontWeight: '600',
+                      background: activeTab === 'findId' ? 'linear-gradient(45deg, #1976d2, #2196f3)' : 'transparent',
+                      color: activeTab === 'findId' ? 'white' : '#1976d2',
+                      border: activeTab === 'findId' ? 'none' : '2px solid #e3f2fd'
+                    }}
+                  >
+                    <i className="fas fa-phone me-2"></i>
+                    Find User ID
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            <div className="card-body p-4">
+              {/* Account Status Tab */}
+              {activeTab === 'status' && (
+                <div className="row align-items-center">
+                  <div className="col-md-8">
+                    <label htmlFor="userIdInput" className="form-label fw-semibold text-dark mb-2">
+                      Enter Your User ID
+                    </label>
+                    <input
+                      type="text"
+                      id="userIdInput"
+                      className="form-control form-control-lg"
+                      placeholder="e.g., USERQMZY7NECD"
+                      value={userId}
+                      onChange={(e) => setUserId(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && checkAccountStatus()}
+                      style={{
+                        borderRadius: '12px',
+                        border: '2px solid #e9ecef',
+                        fontSize: '16px'
+                      }}
+                    />
+                  </div>
+                  <div className="col-md-4 mt-3 mt-md-0">
+                    <button
+                      className="btn btn-lg w-100"
+                      onClick={checkAccountStatus}
+                      disabled={loading}
+                      style={{
+                        borderRadius: '12px',
+                        background: 'linear-gradient(45deg, #1976d2, #2196f3)',
+                        border: 'none',
+                        color: 'white',
+                        fontWeight: '600',
+                        padding: '12px 24px',
+                        marginTop: '32px'
+                      }}
+                    >
+                      {loading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          Checking...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-search me-2"></i>
+                          Check Status
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Find User ID Tab */}
+              {activeTab === 'findId' && (
+                <div className="row align-items-center">
+                  <div className="col-md-8">
+                    <label htmlFor="phoneInput" className="form-label fw-semibold text-dark mb-2">
+                      Enter Your Phone Number
+                    </label>
+                    <input
+                      type="text"
+                      id="phoneInput"
+                      className="form-control form-control-lg"
+                      placeholder="e.g., 9876543210"
+                      value={phoneNumber}
+                      onChange={(e) => setPhoneNumber(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && findUserByPhone()}
+                      style={{
+                        borderRadius: '12px',
+                        border: '2px solid #e9ecef',
+                        fontSize: '16px'
+                      }}
+                    />
+                    <small className="text-muted">Enter your registered phone number to find your User ID</small>
+                  </div>
+                  <div className="col-md-4 mt-3 mt-md-0">
+                    <button
+                      className="btn btn-lg w-100"
+                      onClick={findUserByPhone}
+                      disabled={phoneLoading}
+                      style={{
+                        borderRadius: '12px',
+                        background: 'linear-gradient(45deg, #1976d2, #2196f3)',
+                        border: 'none',
+                        color: 'white',
+                        fontWeight: '600',
+                        padding: '12px 24px',
+                        marginTop:"5px"
+                      }}
+                    >
+                      {phoneLoading ? (
+                        <>
+                          <span className="spinner-border spinner-border-sm me-2" role="status"></span>
+                          Searching...
+                        </>
+                      ) : (
+                        <>
+                          <i className="fas fa-phone me-2"></i>
+                          Find User ID
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Results Card */}
+          {/* Phone Search Results */}
+          {phoneResult && (
+            <div className={`card shadow-lg border-3 ${getCardClass(phoneResult.type)}`} style={{
+              borderRadius: '20px',
+              background: '#ffffff',
+              border: '2px solid #e3f2fd'
+            }}>
+              <div className="card-body p-4">
+                <div className="d-flex align-items-center mb-3">
+                  <h3 className="card-title mb-0 me-3">{phoneResult.title}</h3>
+                  <span className={getStatusBadgeClass(phoneResult.type)}>
+                    {phoneResult.type.toUpperCase().replace('-', ' ')}
+                  </span>
+                </div>
+                
+                <p className="card-text fs-5 mb-4">{phoneResult.message}</p>
+
+                {/* User ID Display with Copy Button */}
+                {phoneResult.userId && phoneResult.userId !== 'N/A' && (
+                  <div className="alert alert-info d-flex align-items-center justify-content-between" style={{ borderRadius: '12px' }}>
+                    <div>
+                      <h6 className="alert-heading fw-bold mb-2">
+                        <i className="fas fa-id-card me-2"></i>
+                        Your User ID
+                      </h6>
+                      <span className="fs-4 fw-bold text-primary font-monospace">{phoneResult.userId}</span>
+                    </div>
+                    <button 
+                      className="btn btn-outline-primary"
+                      onClick={() => copyToClipboard(phoneResult.userId)}
+                      style={{ borderRadius: '10px' }}
+                    >
+                      <i className="fas fa-copy me-2"></i>
+                      Copy
+                    </button>
+                  </div>
+                )}
+
+                {/* User Details */}
+                {phoneResult.user && (
+                  <div className="mt-4">
+                    <h6 className="fw-bold mb-3">Account Information</h6>
+                    <div className="row">
+                      <div className="col-md-6">
+                        <div className="bg-light p-3 rounded-3 mb-3">
+                          <small className="text-muted d-block">User Name</small>
+                          <span className="fw-semibold">{phoneResult.user.name || phoneResult.user.userName || 'N/A'}</span>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="bg-light p-3 rounded-3 mb-3">
+                          <small className="text-muted d-block">Phone Number</small>
+                          <span className="fw-semibold">{phoneResult.user.phoneNo || 'N/A'}</span>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="bg-light p-3 rounded-3 mb-3">
+                          <small className="text-muted d-block">City</small>
+                          <span className="fw-semibold">{phoneResult.user.city || 'N/A'}</span>
+                        </div>
+                      </div>
+                      <div className="col-md-6">
+                        <div className="bg-light p-3 rounded-3 mb-3">
+                          <small className="text-muted d-block">State</small>
+                          <span className="fw-semibold">{phoneResult.user.state || 'N/A'}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="d-flex gap-2 mt-4 flex-wrap">
+                  <button 
+                    className="btn btn-primary"
+                    onClick={() => {
+                      setPhoneResult(null);
+                      setPhoneNumber('');
+                    }}
+                    style={{ borderRadius: '10px' }}
+                  >
+                    Search Another Number
+                  </button>
+                  {phoneResult.userId && phoneResult.userId !== 'N/A' && (
+                    <button 
+                      className="btn btn-success"
+                      onClick={() => {
+                        setActiveTab('status');
+                        setUserId(phoneResult.userId);
+                        setPhoneResult(null);
+                      }}
+                      style={{ borderRadius: '10px' }}
+                    >
+                      Check Account Status
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Status Results Card */}
           {statusResult && (
             <div className={`card shadow-lg border-3 ${getCardClass(statusResult.type)}`} style={{
               borderRadius: '20px',
@@ -408,6 +687,14 @@ const AccountStatusChecker = () => {
         
         .card:hover {
           transform: translateY(-5px);
+        }
+        
+        .nav-link {
+          transition: all 0.3s ease;
+        }
+        
+        .font-monospace {
+          font-family: 'Courier New', monospace;
         }
       `}</style>
     </div>

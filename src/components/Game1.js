@@ -36,8 +36,7 @@ const sessionTimings = [
         start: "10:00 AM",
         end: "5:00 PM",
         breaks: [
-            { time: "2:00 PM", disabledModes: ["open-pana", "open-number",     "open-close"
-            ] }
+            { time: "2:00 PM", disabledModes: ["3-fruits-start", "1-fruits-start", "2-fruits"] }
         ]
     },
     {
@@ -45,19 +44,27 @@ const sessionTimings = [
         start: "5:00 PM",
         end: "11:45 PM",
         breaks: [
-            { time: "9:00 PM", disabledModes: ["open-pana", "open-number",    "open-close"
-            ] }
+            { time: "9:00 PM", disabledModes: ["3-fruits-start", "1-fruits-start", "2-fruits"] }
         ]
     }
 ];
 
 const choiceModes = [
-    "open-pana",
-    "open-number",
-    "close-pana",
-    "close-number",
-    "open-close"
+    "3-fruits-start",
+    "1-fruits-start",
+    "3-fruits-end",
+    "1-fruits-end",
+    "2-fruits"
 ];
+
+// Mode display names mapping
+const modeDisplayNames = {
+    "3-fruits-start": "3 FRUITS START",
+    "1-fruits-start": "1 FRUITS START", 
+    "3-fruits-end": "3 FRUITS END",
+    "1-fruits-end": "1 FRUITS END",
+    "2-fruits": "2 FRUITS"
+};
 
 const OpenCloseGame = () => {
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -73,33 +80,31 @@ const OpenCloseGame = () => {
     const navigate = useNavigate();
     const bottomSectionRef = useRef(null);
 
-
     // Add this script to your component or as a separate file
-useEffect(() => {
-    // Function to set image URLs as CSS variables
-    const setupImageVariables = () => {
-      const imageItems = document.querySelectorAll('.image-item-full');
-      
-      imageItems.forEach(item => {
-        const img = item.querySelector('img');
-        if (img && img.src) {
-          // Set the image URL as a CSS variable
-          item.style.setProperty('--image-url', `url(${img.src})`);
-        }
-      });
-    };
-    
-    // Run the setup after the component mounts
-    setupImageVariables();
-    
-    // Also run it whenever the image grid might change
-    window.addEventListener('resize', setupImageVariables);
-    
-    return () => {
-      window.removeEventListener('resize', setupImageVariables);
-    };
-  }, [images]); // Depend on the images array to re-run if it changes
-
+    useEffect(() => {
+        // Function to set image URLs as CSS variables
+        const setupImageVariables = () => {
+            const imageItems = document.querySelectorAll('.image-item-full');
+            
+            imageItems.forEach(item => {
+                const img = item.querySelector('img');
+                if (img && img.src) {
+                    // Set the image URL as a CSS variable
+                    item.style.setProperty('--image-url', `url(${img.src})`);
+                }
+            });
+        };
+        
+        // Run the setup after the component mounts
+        setupImageVariables();
+        
+        // Also run it whenever the image grid might change
+        window.addEventListener('resize', setupImageVariables);
+        
+        return () => {
+            window.removeEventListener('resize', setupImageVariables);
+        };
+    }, [images]); // Depend on the images array to re-run if it changes
 
     useEffect(() => {
         let eventSource = null;
@@ -159,8 +164,6 @@ useEffect(() => {
         };
     }, []);
 
-
-
     const parseTime = (timeStr) => {
         const [time, period] = timeStr.split(" ");
         let [hours, minutes] = time.split(":").map(Number);
@@ -193,20 +196,20 @@ useEffect(() => {
 
     const getValidationRules = (mode) => {
         switch (mode) {
-            case "open-pana":
-            case "close-pana":
+            case "3-fruits-start":
+            case "3-fruits-end":
                 return {
                     minSelections: 3,
                     maxSelections: 3,
                     orderType: "ascending"
                 };
-            case "open-number":
-            case "close-number":
+            case "1-fruits-start":
+            case "1-fruits-end":
                 return {
                     minSelections: 1,
                     maxSelections: 1
                 };
-            case "open-close":
+            case "2-fruits":
                 return {
                     minSelections: 2,
                     maxSelections: 2,
@@ -268,13 +271,12 @@ useEffect(() => {
 
             // Check if current time is at or past break time
             return (
-                (mode === "open-pana" || mode === "open-number" || mode === "open-close") &&
+                (mode === "3-fruits-start" || mode === "1-fruits-start" || mode === "2-fruits") &&
                 currentTime >= breakDateTime &&
                 bp.disabledModes.includes(mode)
             );
         });
     };
-
 
     const handleChoiceMode = (mode) => {
         if (selectedSession === null) {
@@ -296,16 +298,15 @@ useEffect(() => {
 
         // If there's an active break point and the mode is disabled
         if (activeBreakPoint && activeBreakPoint.disabledModes.includes(mode)) {
-            showPopup(`${mode} is not available during break time!`, "warning");
+            showPopup(`${modeDisplayNames[mode]} is not available during break time!`, "warning");
             return;
         }
 
         setChoiceMode(mode);
         setSelectedImages([]);
-        showPopup(`${mode.toUpperCase()} mode selected`, "info");
+        showPopup(`${modeDisplayNames[mode]} mode selected`, "info");
         bottomSectionRef.current?.scrollIntoView({ behavior: "smooth" });
     };
-
 
     const handleImageSelect = (imagePath) => {
         if (!choiceMode) {
@@ -317,7 +318,7 @@ useEffect(() => {
         const { minSelections, maxSelections, orderType } = validationRules;
 
         if (selectedImages.length >= maxSelections) {
-            showPopup(`Maximum ${maxSelections} images for ${choiceMode} mode`, "warning");
+            showPopup(`Maximum ${maxSelections} images for ${modeDisplayNames[choiceMode]} mode`, "warning");
             return;
         }
 
@@ -337,7 +338,6 @@ useEffect(() => {
 
         setSelectedImages(prev => [...prev, imagePath]);
     };
-
 
     const handleRemoveSelectedImage = (img) => {
         setSelectedImages((prev) => prev.filter((image) => image !== img));
@@ -384,24 +384,24 @@ useEffect(() => {
                 return;
             }
     
-            // Rest of the validation checks...
-            if (choiceMode === "open-pana" && selectedImages.length !== 3) {
-                showPopup("Open Pana requires exactly 3 numbers!", "warning");
+            // Updated validation checks with new mode names
+            if (choiceMode === "3-fruits-start" && selectedImages.length !== 3) {
+                showPopup("3 Fruits Start requires exactly 3 numbers!", "warning");
                 return;
             }
     
-            if (choiceMode === "close-pana" && selectedImages.length !== 3) {
-                showPopup("Close Pana requires exactly 3 numbers!", "warning");
+            if (choiceMode === "3-fruits-end" && selectedImages.length !== 3) {
+                showPopup("3 Fruits End requires exactly 3 numbers!", "warning");
                 return;
             }
     
-            if (choiceMode === "open-close" && selectedImages.length !== 2) {
-                showPopup("Open-Close requires exactly 2 numbers!", "warning");
+            if (choiceMode === "2-fruits" && selectedImages.length !== 2) {
+                showPopup("2 Fruits requires exactly 2 numbers!", "warning");
                 return;
             }
     
-            if ((choiceMode === "open-number" || choiceMode === "close-number") && selectedImages.length !== 1) {
-                showPopup(`${choiceMode === "open-number" ? "Open" : "Close"} Number requires exactly 1 number!`, "warning");
+            if ((choiceMode === "1-fruits-start" || choiceMode === "1-fruits-end") && selectedImages.length !== 1) {
+                showPopup(`${choiceMode === "1-fruits-start" ? "1 Fruits Start" : "1 Fruits End"} requires exactly 1 number!`, "warning");
                 return;
             }
     
@@ -562,6 +562,7 @@ useEffect(() => {
             showPopup("Failed to place bet. Please try again.", "error");
         }
     };
+
     return (
         <motion.div
             initial={{ opacity: 0 }}
@@ -577,7 +578,7 @@ useEffect(() => {
                     <FaArrowLeft className="ic"/>
                     <span>Back</span>
                 </button>
-                <h1 className="game-title">Open-Close</h1>
+                <h1 className="game-title">FRUITS-GAME</h1>
                 <button className="nav-button how-to-play-button">
                     <FaQuestionCircle className="ic"/>
                     <span>How to Play</span>
@@ -640,7 +641,7 @@ useEffect(() => {
                             }}
                             disabled={isDisabledDuringBreak}
                         >
-                            {mode.toUpperCase()}
+                            {modeDisplayNames[mode]}
                             {isDisabledDuringBreak && <span className="break-indicator"></span>}
                         </motion.button>
                     );

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Eye, EyeOff, Calendar, Phone, MapPin, CreditCard, User, Coins, X } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, EyeOff, Calendar, Phone, MapPin, CreditCard, User, Coins, X, Camera } from 'lucide-react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './UserManagementDashboard.css';
 import API_BASE_URL from './ApiConfig';
@@ -413,6 +413,29 @@ const UserManagementDashboard = () => {
                                   />
                                   <div className="kyc-fallback text-center p-3 bg-light rounded" style={{display: 'none'}}>
                                     <CreditCard className="text-muted mb-2" size={24} />
+                                    <p className="small text-muted mb-0">Image not available</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Added Selfie Section */}
+                            {user.kyc.selfieUrl && (
+                              <div className="mb-3">
+                                <label className="form-label small fw-medium">Selfie</label>
+                                <div className="kyc-image-container" onClick={() => openImageModal(user.kyc.selfieUrl)} style={{cursor: 'pointer'}}>
+                                  <img 
+                                    src={user.kyc.selfieUrl} 
+                                    alt="User Selfie" 
+                                    className="img-fluid kyc-image rounded"
+                                    style={{maxHeight: '150px', objectFit: 'cover'}}
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      e.target.nextSibling.style.display = 'block';
+                                    }}
+                                  />
+                                  <div className="kyc-fallback text-center p-3 bg-light rounded" style={{display: 'none'}}>
+                                    <Camera className="text-muted mb-2" size={24} />
                                     <p className="small text-muted mb-0">Image not available</p>
                                   </div>
                                 </div>

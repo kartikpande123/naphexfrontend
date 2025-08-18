@@ -122,13 +122,13 @@ const RulesAndRegulations = () => {
                 </Section>
 
                 <Section 
-                  title="Bonus Usage & Wagering Rules" 
+                  title="Bonus Usage" 
                   sectionBarStyle={sectionBarStyle}
                 >
                   <ul className="list-unstyled">
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
-                      Bonuses have wagering requirements (often multiple times the bonus amount) and a fixed time to complete them.
+                      Bonuses have requirements (often multiple times the bonus amount) and a fixed time to complete them.
                     </li>
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
@@ -136,11 +136,11 @@ const RulesAndRegulations = () => {
                     </li>
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
-                      Real money is used first before bonus money in bets. Bonus funds apply only when real money is insufficient.
+                      Real money is used first before bonus money in games.
                     </li>
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
-                      All bets during the bonus period (real or bonus) contribute to the wagering goal.
+                      All played games during the bonus period (real or bonus) contribute to the wagering goal.
                     </li>
                   </ul>
                 </Section>
@@ -160,12 +160,6 @@ const RulesAndRegulations = () => {
                     subSectionStyle={subSectionStyle}
                   >
                     The welcome bonus cannot be combined with any other offer or promotion.
-                  </SubSection>
-                  <SubSection 
-                    subtitle="Betting Restrictions" 
-                    subSectionStyle={subSectionStyle}
-                  >
-                    Bets with low or no-profit margins (e.g., hedging) are excluded from bonus eligibility.
                   </SubSection>
                   <SubSection 
                     subtitle="Technical Issues" 
@@ -205,28 +199,17 @@ const RulesAndRegulations = () => {
                         <span style={stepNumberStyle}>3</span>
                         <div>
                           <strong className="text-dark">Claim:</strong>
-                          <span className="text-muted ms-2">Check your inbox, open the claim email, and click 'Claim'.</span>
+                          <span className="text-muted ms-2">Automatically bonus will sent to your account according to binary Performance.</span>
                         </div>
                       </li>
                       <li className="d-flex mb-0">
                         <span style={stepNumberStyle}>4</span>
                         <div>
                           <strong className="text-dark">Enjoy:</strong>
-                          <span className="text-muted ms-2">Receive 2% cashback up to ₹10,000 in your account.</span>
+                          <span className="text-muted ms-2">Bonus everyday according to your Performance of binary.</span>
                         </div>
                       </li>
                     </ol>
-                  </div>
-                </Section>
-
-                <Section 
-                  title="FREEPLAY" 
-                  sectionBarStyle={sectionBarStyle}
-                >
-                  <div className="p-4" style={freeplayBoxStyle}>
-                    <p className="text-dark mb-0 lh-lg">
-                      FreePlay lets you explore Naphex's wide range of games—slots, casino classics, and tables—using FreePlay vouchers as if they were real money. You can even win the Jackpot! FreePlay rewards are earned through ongoing promotions. Once used, any winnings from FreePlay are yours to keep.
-                    </p>
                   </div>
                 </Section>
               </div>

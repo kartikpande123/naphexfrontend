@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import API_BASE_URL from './ApiConfig';
@@ -24,6 +24,17 @@ const SignupPage = () => {
   // New state for OTP timer
   const [otpTimer, setOtpTimer] = useState(60);
   const [canResendOtp, setCanResendOtp] = useState(false);
+
+  // Refs for input fields to enable scrolling
+  const displayNameRef = useRef(null);
+  const emailRef = useRef(null);
+  const phoneRef = useRef(null);
+  const cityRef = useRef(null);
+  const stateRef = useRef(null);
+  const referralIdRef = useRef(null);
+  const passwordRef = useRef(null);
+  const confirmPasswordRef = useRef(null);
+  const otpRef = useRef(null);
 
   // List of all Indian states
   const INDIAN_STATES = [
@@ -52,6 +63,38 @@ const SignupPage = () => {
     referrerName: '',
     isChecking: false
   });
+
+  // Function to scroll to first error field
+  const scrollToFirstError = (newErrors) => {
+    const errorFieldRefs = {
+      displayName: displayNameRef,
+      email: emailRef,
+      phone: phoneRef,
+      city: cityRef,
+      state: stateRef,
+      referralId: referralIdRef,
+      password: passwordRef,
+      confirmPassword: confirmPasswordRef,
+      otp: otpRef
+    };
+
+    // Find the first error field in the order they appear on the form
+    const fieldOrder = ['displayName', 'email', 'phone', 'city', 'state', 'referralId', 'password', 'confirmPassword', 'otp'];
+    
+    for (const field of fieldOrder) {
+      if (newErrors[field] && errorFieldRefs[field]?.current) {
+        errorFieldRefs[field].current.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+        // Focus on the input field
+        setTimeout(() => {
+          errorFieldRefs[field].current.focus();
+        }, 300);
+        break;
+      }
+    }
+  };
 
   // Load data from localStorage
   useEffect(() => {
@@ -180,70 +223,50 @@ const SignupPage = () => {
     setErrors({});
     setIsLoading(true);
 
+    const newErrors = {};
+
+    // Validate display name
+    if (!displayName.trim()) {
+      newErrors.displayName = "Full name is required";
+    }
+
     if (!referralStatus.isValid) {
-      setErrors(prev => ({
-        ...prev,
-        referralId: "Please enter a valid referral ID with available slots"
-      }));
-      setIsLoading(false);
-      return;
+      newErrors.referralId = "Please enter a valid referral ID with available slots";
     }
 
     // Validate phone number
     if (!validatePhoneNumber(phone)) {
-      setErrors((prev) => ({
-        ...prev,
-        phone: "Please enter a valid 10-digit phone number",
-      }));
-      setIsLoading(false);
-      return;
+      newErrors.phone = "Please enter a valid 10-digit phone number";
     }
 
     // Validate city
     if (!city.trim()) {
-      setErrors((prev) => ({
-        ...prev,
-        city: "City is required",
-      }));
-      setIsLoading(false);
-      return;
+      newErrors.city = "City is required";
     }
 
     // Validate state
     if (!state) {
-      setErrors((prev) => ({
-        ...prev,
-        state: "Please select a state",
-      }));
-      setIsLoading(false);
-      return;
+      newErrors.state = "Please select a state";
     }
 
     if (!referralId.trim()) {
-      setErrors((prev) => ({
-        ...prev,
-        referralId: "Referral ID is required",
-      }));
-      setIsLoading(false);
-      return;
+      newErrors.referralId = "Referral ID is required";
     }
 
     const passwordErrors = validatePassword(password);
 
     if (password !== confirmPassword) {
-      setErrors((prev) => ({
-        ...prev,
-        confirmPassword: "Passwords do not match",
-      }));
-      setIsLoading(false);
-      return;
+      newErrors.confirmPassword = "Passwords do not match";
     }
 
     if (passwordErrors.length > 0) {
-      setErrors((prev) => ({
-        ...prev,
-        password: passwordErrors,
-      }));
+      newErrors.password = passwordErrors;
+    }
+
+    // If there are validation errors, scroll to the first one
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      scrollToFirstError(newErrors);
       setIsLoading(false);
       return;
     }
@@ -255,10 +278,9 @@ const SignupPage = () => {
       });
 
       if (!checkPhoneResponse.data.success) {
-        setErrors((prev) => ({
-          ...prev,
-          phone: "Phone number already registered. Please log in.",
-        }));
+        const phoneError = { phone: "Phone number already registered. Please log in." };
+        setErrors(phoneError);
+        scrollToFirstError(phoneError);
         setIsLoading(false);
         return;
       }
@@ -316,17 +338,13 @@ const SignupPage = () => {
         localStorage.setItem('debug_otp', sendOtpResponse.data.debug.otp);
         setOtpSent(true);
       } else {
-        setErrors((prev) => ({
-          ...prev,
-          api: "Failed to resend OTP. Please try again.",
-        }));
+        const apiError = { api: "Failed to resend OTP. Please try again." };
+        setErrors(apiError);
       }
     } catch (error) {
       console.error('Error:', error);
-      setErrors((prev) => ({
-        ...prev,
-        api: error.response?.data?.message || "An error occurred. Please try again.",
-      }));
+      const apiError = { api: error.response?.data?.message || "An error occurred. Please try again." };
+      setErrors(apiError);
     } finally {
       setIsLoading(false);
     }
@@ -337,37 +355,33 @@ const SignupPage = () => {
     e.preventDefault();
     setIsLoading(true);
 
+    const newErrors = {};
+
     if (otp.length !== 6) {
-        setErrors((prev) => ({
-            ...prev,
-            otp: "Please enter a valid 6-digit OTP"
-        }));
-        setIsLoading(false);
-        return;
+      newErrors.otp = "Please enter a valid 6-digit OTP";
     }
 
     // For development: verify against stored OTP
     const storedOtp = localStorage.getItem('debug_otp');
     if (otp !== storedOtp) {
-        setErrors((prev) => ({
-            ...prev,
-            otp: "Invalid OTP. Please try again."
-        }));
-        setIsLoading(false);
-        return;
+      newErrors.otp = "Invalid OTP. Please try again.";
+    }
+
+    // Validate city and state
+    if (!city || !state) {
+      if (!city) newErrors.city = "City is required";
+      if (!state) newErrors.state = "State is required";
+    }
+
+    // If there are validation errors, scroll to the first one
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      scrollToFirstError(newErrors);
+      setIsLoading(false);
+      return;
     }
 
     try {
-        // Validate city and state
-        if (!city || !state) {
-            setErrors((prev) => ({
-                ...prev,
-                cityState: "City and State are required"
-            }));
-            setIsLoading(false);
-            return;
-        }
-
         // Prepare user data for localStorage - include the referralId from props/state
         const signupData = {
             name: displayName,
@@ -387,10 +401,8 @@ const SignupPage = () => {
         navigate('/userkyc');
     } catch (error) {
         console.error("Error saving user data locally:", error);
-        setErrors((prev) => ({
-            ...prev,
-            api: "Failed to save user data. Try again later.",
-        }));
+        const apiError = { api: "Failed to save user data. Try again later." };
+        setErrors(apiError);
     } finally {
         setIsLoading(false);
     }
@@ -551,6 +563,11 @@ const SignupPage = () => {
           box-shadow: 0 0 0 3px rgba(66, 165, 245, 0.1);
           background: rgba(52, 73, 94, 1);
           color: #ecf0f1;
+        }
+
+        .form-control.error {
+          border-color: #e74c3c;
+          box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
         }
 
         .form-control::placeholder {
@@ -912,8 +929,9 @@ const SignupPage = () => {
                 <div className="form-group">
                   <label htmlFor="displayName" className="form-label">Full Name</label>
                   <input
+                    ref={displayNameRef}
                     type="text"
-                    className="form-control"
+                    className={`form-control ${errors.displayName ? 'error' : ''}`}
                     id="displayName"
                     required
                     value={displayName}
@@ -921,26 +939,30 @@ const SignupPage = () => {
                     placeholder="Enter name as per Aadhaar card"
                     disabled={otpSent}
                   />
+                  {errors.displayName && <div className="error-message">{errors.displayName}</div>}
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="email" className="form-label">Email Address (Optional)</label>
                   <input
+                    ref={emailRef}
                     type="email"
-                    className="form-control"
+                    className={`form-control ${errors.email ? 'error' : ''}`}
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email address"
                     disabled={otpSent}
                   />
+                  {errors.email && <div className="error-message">{errors.email}</div>}
                 </div>
 
                 <div className="form-group">
                   <label htmlFor="phone" className="form-label">Phone Number</label>
                   <input
+                    ref={phoneRef}
                     type="tel"
-                    className="form-control"
+                    className={`form-control ${errors.phone ? 'error' : ''}`}
                     id="phone"
                     required
                     value={phone}
@@ -961,8 +983,9 @@ const SignupPage = () => {
                   <div className="form-group">
                     <label htmlFor="city" className="form-label">City</label>
                     <input
+                      ref={cityRef}
                       type="text"
-                      className="form-control"
+                      className={`form-control ${errors.city ? 'error' : ''}`}
                       id="city"
                       required
                       value={city}
@@ -976,7 +999,8 @@ const SignupPage = () => {
                   <div className="form-group">
                     <label htmlFor="state" className="form-label">State</label>
                     <select
-                      className="form-control"
+                      ref={stateRef}
+                      className={`form-control ${errors.state ? 'error' : ''}`}
                       id="state"
                       required
                       value={state}
@@ -1002,8 +1026,9 @@ const SignupPage = () => {
                 <div className="form-group">
                   <label htmlFor="referralId" className="form-label">Referral ID</label>
                   <input
+                    ref={referralIdRef}
                     type="text"
-                    className="form-control"
+                    className={`form-control ${errors.referralId ? 'error' : ''}`}
                     id="referralId"
                     required
                     value={referralId}
@@ -1051,8 +1076,9 @@ const SignupPage = () => {
                   <label htmlFor="password" className="form-label">Password</label>
                   <div className="input-group">
                     <input
+                      ref={passwordRef}
                       type={showPassword ? "text" : "password"}
-                      className="form-control"
+                      className={`form-control ${errors.password ? 'error' : ''}`}
                       id="password"
                       required
                       value={password}
@@ -1112,8 +1138,9 @@ const SignupPage = () => {
                   <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
                   <div className="input-group">
                     <input
+                      ref={confirmPasswordRef}
                       type={showConfirmPassword ? "text" : "password"}
-                      className="form-control"
+                      className={`form-control ${errors.confirmPassword ? 'error' : ''}`}
                       id="confirmPassword"
                       required
                       value={confirmPassword}
@@ -1143,14 +1170,15 @@ const SignupPage = () => {
                   <div className="form-group">
                     <label htmlFor="otp" className="form-label">Enter OTP</label>
                     <input
+                      ref={otpRef}
                       type="text"
-                      className="form-control"
+                      className={`form-control ${errors.otp ? 'error' : ''}`}
                       id="otp"
                       value={otp}
                       onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                       placeholder="Enter 6-digit OTP sent to your phone"
                       maxLength="6"
-                      style={{ textAlign: 'center', fontSize: '1.2rem', letterSpacing: '0.5rem' }}
+                      style={{ textAlign: 'center', fontSize: '1.2rem' }}
                     />
                     {errors.otp && <div className="error-message">{errors.otp}</div>}
                   </div>

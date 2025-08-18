@@ -38,7 +38,8 @@ const Home = () => {
   const handleLogout = () => {
     localStorage.removeItem("userData");
     localStorage.removeItem('welcomePopupShown'); // Clear welcome popup flag on logout
-    navigate("/login"); // Redirect to login after logout
+    localStorage.removeItem('authToken'); // Clear welcome popup flag on logout
+    navigate("/"); // Redirect to login after logout
   };
 
   const toggleLogoutPopup = () => {
@@ -553,7 +554,7 @@ const Home = () => {
           >
             <img src={image} alt="Play Now" className="enhanced-banner" />
             <div className="enhanced-overlay">
-              <h2 className="banner-title">Open-Close</h2>
+              <h2 className="banner-title">Fruits Game</h2>
               <div className="banner-subtitle">
                 {!isEntryFeePaid ? "Pay Entry Fee to Play" : "Start Your Gaming Adventure"}
               </div>

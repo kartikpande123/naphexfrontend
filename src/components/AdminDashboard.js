@@ -14,8 +14,8 @@ const Home = () => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    localStorage.removeItem("userData");
-    navigate("/login"); // Redirect to login after logout
+    localStorage.removeItem("adminAuthToken");
+    navigate("/"); // Redirect to login after logout
   };
 
   const toggleLogoutPopup = () => {

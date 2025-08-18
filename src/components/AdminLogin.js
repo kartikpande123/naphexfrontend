@@ -32,6 +32,13 @@ const AdminLogin = () => {
         );
     };
 
+    // Generate a simple admin auth token
+    const generateAdminToken = () => {
+        const timestamp = Date.now();
+        const randomString = Math.random().toString(36).substring(2, 15);
+        return `admin_${timestamp}_${randomString}`;
+    };
+
     // Handle credentials submission
     const handleCredentialsSubmit = async (e) => {
         e.preventDefault();
@@ -67,6 +74,9 @@ const AdminLogin = () => {
         setIsLoading(true);
         try {
             if (otp === generatedOtp) {
+                // Generate and store admin auth token
+                const adminToken = generateAdminToken();
+                localStorage.setItem('adminAuthToken', adminToken);
                 toast.success('Login Successful!');
                 navigate('/admindashboard');
                 return;
@@ -78,6 +88,9 @@ const AdminLogin = () => {
             });
             
             if (response.data.success) {
+                // Generate and store admin auth token
+                const adminToken = generateAdminToken();
+                localStorage.setItem('adminAuthToken', adminToken);
                 toast.success('Login Successful!');
                 navigate('/admindashboard');
             } else {

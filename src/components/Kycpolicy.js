@@ -77,7 +77,7 @@ const KycPolicy = () => {
               {/* Enhanced Header */}
               <div className="card-header text-white text-center py-5" style={gradientHeaderStyle}>
                 <h1 className="display-4 fw-bold mb-2">KYC Policy</h1>
-                <p className="lead mb-0" style={{color: '#e3f2fd'}}>at Naphex</p>
+                <p className="lead mb-0" style={{ color: '#e3f2fd' }}>at Naphex</p>
               </div>
 
               {/* Content */}
@@ -87,37 +87,45 @@ const KycPolicy = () => {
                 </div>
 
                 <Section title="Objective" sectionBarStyle={sectionBarStyle}>
-                  At Naphex, we care about the security of our users' data, user information, and transactions.
-                  Our KYC policy helps verify users' identities to prevent fraud, identity theft, and financial crimes.
+                  At Naphex, we care about the security of our user's data, user information, and transactions.
+                  Our KYC policy helps verify user's identities to prevent fraud, identity theft, and financial crimes.
                   It supports compliance with national and international anti-money laundering (AML) and terrorism financing (TF) regulations.
                 </Section>
 
                 <Section title="Compliance with Regulatory Framework" sectionBarStyle={sectionBarStyle}>
-                  We follow EU directives and national laws to ensure that Naphex remains a secure, legal, and trusted platform for all users.
+                  We comply with all applicable Indian laws and regulations, including the Information Technology Act, 2000, the Digital Personal Data Protection Act, 2023, and other relevant guidelines issued by Indian authorities, to ensure that Naphex remains a secure, legal, and trusted platform for all users.
                 </Section>
+
 
                 <Section title="Key Regulations" sectionBarStyle={sectionBarStyle}>
                   <ul className="list-unstyled">
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
                       <div>
-                        <strong>EU Directive 2015/849:</strong> Prevents money laundering and terrorist financing.
+                        <strong>Prevention of Money Laundering Act, 2002 (PMLA):</strong> Provides measures to prevent money laundering and combat financing of illegal activities.
                       </div>
                     </li>
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
                       <div>
-                        <strong>EU Regulation 2015/847:</strong> Ensures safe transfer of funds by requiring detailed information exchange.
+                        <strong>Reserve Bank of India (RBI) Guidelines:</strong> Ensures safe and secure transfer of funds, including KYC and AML compliance requirements.
                       </div>
                     </li>
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
                       <div>
-                        <strong>Belgian Legislation (18 Sept 2017):</strong> Restricts cash usage to combat money laundering.
+                        <strong>Information Technology Act, 2000:</strong> Governs electronic transactions, cybersecurity, and data protection obligations in India.
+                      </div>
+                    </li>
+                    <li className="d-flex mb-3">
+                      <span style={customBulletStyle}></span>
+                      <div>
+                        <strong>Digital Personal Data Protection Act, 2023:</strong> Regulates the collection, storage, and processing of personal data to safeguard user privacy.
                       </div>
                     </li>
                   </ul>
                 </Section>
+
 
                 <Section title="Money Laundering (ML) Definition" sectionBarStyle={sectionBarStyle}>
                   <ul className="list-unstyled">
@@ -140,23 +148,6 @@ const KycPolicy = () => {
                   </ul>
                 </Section>
 
-                <Section title="AML Organization and Responsibilities" sectionBarStyle={sectionBarStyle}>
-                  <ul className="list-unstyled">
-                    <li className="d-flex mb-3">
-                      <span style={customBulletStyle}></span>
-                      <div>
-                        <strong>Senior Management:</strong> Oversees effective AML enforcement
-                      </div>
-                    </li>
-                    <li className="d-flex mb-3">
-                      <span style={customBulletStyle}></span>
-                      <div>
-                        <strong>AML Compliance Officer (AMLCO):</strong> Implements policies and conducts audits
-                      </div>
-                    </li>
-                  </ul>
-                </Section>
-
                 <Section title="Verification Process" sectionBarStyle={sectionBarStyle}>
                   <div className="p-4" style={verificationBoxStyle}>
                     <ol className="list-unstyled mb-0">
@@ -171,14 +162,7 @@ const KycPolicy = () => {
                         <span style={stepNumberStyle}>2</span>
                         <div>
                           <strong className="text-dark">Step 2 – Detailed Analysis:</strong>
-                          <span className="text-muted ms-2">ID proof, selfie with ID, 6-digit code</span>
-                        </div>
-                      </li>
-                      <li className="d-flex mb-0">
-                        <span style={stepNumberStyle}>3</span>
-                        <div>
-                          <strong className="text-dark">Step 3 – Source of Wealth:</strong>
-                          <span className="text-muted ms-2">Required if transactions exceed INR 5,000 or transfers exceed INR 3,000</span>
+                          <span className="text-muted ms-2">ID proof(Adhar card, pan card, bank passbook), 6 digit otp</span>
                         </div>
                       </li>
                     </ol>
@@ -189,7 +173,7 @@ const KycPolicy = () => {
                   <ul className="list-unstyled">
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
-                      Submit valid ID (passport, driver's license, etc.)
+                      Submit valid ID (Adhar card, pan card, bank passbook)
                     </li>
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
@@ -197,7 +181,7 @@ const KycPolicy = () => {
                     </li>
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
-                      Handwritten note with 6-digit code provided by Naphex
+                      6-digit code provided by Naphex
                     </li>
                   </ul>
                 </Section>
@@ -218,57 +202,12 @@ const KycPolicy = () => {
                   </ul>
                 </Section>
 
-                <Section title="Source of Wealth (SOW) Verification" sectionBarStyle={sectionBarStyle}>
-                  <div className="mb-3">
-                    Required for deposits over $5,000:
-                  </div>
-                  <ul className="list-unstyled">
-                    <li className="d-flex mb-3">
-                      <span style={customBulletStyle}></span>
-                      Proof of business ownership or employment
-                    </li>
-                    <li className="d-flex mb-3">
-                      <span style={customBulletStyle}></span>
-                      Inheritance or investment-related documentation
-                    </li>
-                  </ul>
-                </Section>
-
-                <Section title="Risk Management Framework" sectionBarStyle={sectionBarStyle}>
-                  <div className="p-4" style={riskFrameworkBoxStyle}>
-                    <div className="mb-3">We categorize countries by risk level:</div>
-                    <ul className="list-unstyled mb-0">
-                      <li className="d-flex mb-3">
-                        <span style={customBulletStyle}></span>
-                        <div>
-                          <strong className="text-dark">Low-Risk:</strong>
-                          <span className="text-muted ms-2">Standard KYC</span>
-                        </div>
-                      </li>
-                      <li className="d-flex mb-3">
-                        <span style={customBulletStyle}></span>
-                        <div>
-                          <strong className="text-dark">Medium-Risk:</strong>
-                          <span className="text-muted ms-2">Stricter limits & controls</span>
-                        </div>
-                      </li>
-                      <li className="d-flex mb-0">
-                        <span style={customBulletStyle}></span>
-                        <div>
-                          <strong className="text-dark">High-Risk:</strong>
-                          <span className="text-muted ms-2">Access to platform denied</span>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
-                </Section>
-
                 <Section title="Ongoing Monitoring & Compliance" sectionBarStyle={sectionBarStyle}>
                   User activities are continuously monitored, and suspicious behavior is reported to the proper authorities.
                 </Section>
 
                 <Section title="Record Keeping and Data Security" sectionBarStyle={sectionBarStyle}>
-                  All data is stored securely and encrypted for a minimum of 10 years in accordance with data protection laws.
+                  All data is stored securely and encrypted in accordance with data protection laws.
                 </Section>
 
                 <Section title="Staff Training & Internal Audits" sectionBarStyle={sectionBarStyle}>

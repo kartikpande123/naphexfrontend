@@ -98,7 +98,7 @@ const TermsAndConditions = () => {
 
                 <Section title="1. Overview" sectionBarStyle={sectionBarStyle}>
                   <div className="mb-3">
-                    Naphex is a platform meant for online gaming and sports betting. In order to get the most of the site visit, you must be a registered member and adhere to these Terms of Agreement.
+                    Naphex is a platform meant for online gaming and sports gaming. In order to get the most of this site, you must be a registered member and adhere to these Terms of Agreement.
                   </div>
                   <SubSection subtitle="1.1 Agreement Acceptance" subSectionStyle={subSectionStyle}>
                     Your usage of Naphex affirms your acceptance of these Terms.
@@ -114,10 +114,10 @@ const TermsAndConditions = () => {
                       To begin the use of Naphex, you need to create an account. You must offer correct and clear information at the time of registration. Please make certain that the information you provide is updated so that we can offer the best possible service.
                     </SubSection>
                     <SubSection subtitle="2.2 Security Responsibility" subSectionStyle={{...subSectionStyle, background: 'rgba(255,255,255,0.7)'}}>
-                      You are expected to take responsibility for maintaining the integrity of your login credentials. If you feel any unauthorized login or activities in your account, let us know via our support channels.
+                      You are expected to take responsibility for maintaining the integrity of your login credentials. If you feel any unauthorized login or activities in your account, let us know via our support channels and help sections.
                     </SubSection>
                     <SubSection subtitle="2.3 Age Requirement" subSectionStyle={{...subSectionStyle, background: 'rgba(255,255,255,0.7)'}}>
-                      You must be at least 18 years of age or the lawful age in your jurisdiction.
+                      You must be at-least 18 years of age or the lawful age in your jurisdiction.
                     </SubSection>
                   </div>
                 </Section>
@@ -139,7 +139,7 @@ const TermsAndConditions = () => {
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
                       <div>
-                        <strong>Withdrawals:</strong> Withdrawals may take time based on the method and required verification.
+                        <strong>Withdrawals:</strong> Withdrawals may take time based on the method and requires verification, based on the payment method you adapt tax will be deducted.
                       </div>
                     </li>
                     <li className="d-flex mb-3">
@@ -162,7 +162,7 @@ const TermsAndConditions = () => {
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
                       <div>
-                        <strong>Specific Terms:</strong> Every promotion has specific terms, such as wagering requirements or minimum deposits.
+                        <strong>Specific Terms:</strong> Every promotion has specific terms, such as minimum deposits.
                       </div>
                     </li>
                     <li className="d-flex mb-3">
@@ -177,7 +177,7 @@ const TermsAndConditions = () => {
                 <Section title="5. Responsible Gaming" sectionBarStyle={sectionBarStyle}>
                   <div className="p-4" style={responsibleBoxStyle}>
                     <SubSection subtitle="5.1 Gaming Tools" subSectionStyle={{...subSectionStyle, background: 'rgba(255,255,255,0.7)'}}>
-                      We offer tools like deposit limits, self-exclusion, and reminders to help you manage your gaming experience.
+                      We offer tools like Account overview, request for deactivation of the account via our support channel and reminders to help you manage your gaming experience.
                     </SubSection>
                     <SubSection subtitle="5.2 Support Resources" subSectionStyle={{...subSectionStyle, background: 'rgba(255,255,255,0.7)'}}>
                       If your gaming becomes problematic, please reach out to our support team or seek professional help.
@@ -185,24 +185,24 @@ const TermsAndConditions = () => {
                   </div>
                 </Section>
 
-                <Section title="6. Betting and Gaming Rules" sectionBarStyle={sectionBarStyle}>
+                <Section title="6. Gaming Rules" sectionBarStyle={sectionBarStyle}>
                   <ul className="list-unstyled">
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
                       <div>
-                        <strong>Game Policies:</strong> Each game or bet comes with specific rules. Read all game policies before placing bets.
+                        <strong>Game Policies:</strong> Each game comes with specific rules. Read all game policies before playing the game.
                       </div>
                     </li>
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
                       <div>
-                        <strong>Bet Finality:</strong> Bets cannot be reversed once placed.
+                        <strong>Action Finality:</strong> Game Action cannot be reversed once placed.
                       </div>
                     </li>
                     <li className="d-flex mb-3">
                       <span style={customBulletStyle}></span>
                       <div>
-                        <strong>Event Cancellation:</strong> If an event is canceled, we may refund or adjust bets accordingly.
+                        <strong>Event Cancellation:</strong> If an event is canceled, we may refund or adjust the tokens accordingly.
                       </div>
                     </li>
                   </ul>
@@ -241,7 +241,7 @@ const TermsAndConditions = () => {
                     We reserve the right to suspend or terminate accounts that violate terms.
                   </SubSection>
                   <SubSection subtitle="8.2 Voluntary Closure" subSectionStyle={subSectionStyle}>
-                    You may also request voluntary closure through support.
+                    You may also request voluntary closure through help support.
                   </SubSection>
                   <SubSection subtitle="8.3 Refund Policy" subSectionStyle={subSectionStyle}>
                     Refunds will be subject to withdrawal conditions and verification processes.

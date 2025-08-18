@@ -239,13 +239,13 @@ const ResultsDashboard = () => {
                         {result['open-number'] && (
                             <div className="col-lg-6 col-12 mb-3">
                                 <div className="bg-primary-subtle p-3 rounded">
-                                    <h5 className="card-title text-primary">Open Details</h5>
+                                    <h5 className="card-title text-primary">Start Details</h5>
                                     <div className="d-flex align-items-center justify-content-center text-primary fs-5 flex-column">
-                                        <span className="mobile-label">open-number</span>
+                                        <span className="mobile-label">1 Fruit start</span>
                                         {formatNumbers(result['open-number'])}
                                     </div>
                                     <div className="text-primary fs-5 mobile-pana-section">
-                                        <span className="mobile-label">close-pana</span>
+                                        <span className="mobile-label">3 Fruits start</span>
                                         {formatNumbers(result['open-pana'])}
                                     </div>
                                 </div>
@@ -254,13 +254,13 @@ const ResultsDashboard = () => {
                         {result['close-number'] && (
                             <div className="col-lg-6 col-12 mb-3">
                                 <div className="bg-success-subtle p-3 rounded">
-                                    <h5 className="card-title text-success">Close Details</h5>
+                                    <h5 className="card-title text-success">End Details</h5>
                                     <div className="d-flex flex-column align-items-center justify-content-center text-primary fs-5">
-                                        <span className="mobile-label">close-number</span>
+                                        <span className="mobile-label">1 Fruit End</span>
                                         {formatNumbers(result['close-number'])}
                                     </div>
                                     <div className="text-success fs-5 mobile-pana-section">
-                                        <span className="mobile-label">close-pana</span>
+                                        <span className="mobile-label">3 Fruits End</span>
                                         {formatNumbers(result['close-pana'])}
                                     </div>
                                 </div>
@@ -269,7 +269,7 @@ const ResultsDashboard = () => {
                     </div>
                     {result.nums && (
                         <div className="bg-info-subtle p-3 rounded mt-3">
-                            <h5 className="card-title text-info">Full Pictures</h5>
+                            <h5 className="card-title text-info">Full Fruits</h5>
                             <div className="d-flex align-items-center justify-content-center">
                                 {formatNumbers(result.nums, true)}
                             </div>

@@ -455,7 +455,7 @@ const WelcomePopup = ({ isVisible, onClose }) => {
                 <div style={styles.features}>
                   <div style={styles.featureItem}>
                     🎲
-                    <span>Thrilling casino games like <strong>Open Close</strong></span>
+                    <span>Thrilling casino games like <strong>Fruits Game</strong></span>
                   </div>
                   
                   <div style={styles.featureItem}>
