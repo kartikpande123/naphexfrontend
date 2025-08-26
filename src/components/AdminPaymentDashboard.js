@@ -105,7 +105,7 @@ function AdminPaymentDashboard() {
 
     function goAddToken() {
         console.log("Navigate to: /admin/addtoken");
-        // navigate("/admin/addtoken");
+        navigate("/admintokendetails");
     }
     
     function goTransactionHistory() {

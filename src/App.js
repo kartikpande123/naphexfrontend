@@ -44,6 +44,7 @@ import BankDetails from './components/BankDetails';
 import AdminBankVarification from './components/AdminBankVarification';
 import AdminWithdrawReq from './components/AdminWithdrawReq';
 import AdminPaymentDashboard from './components/AdminPaymentDashboard';
+import AdminTokendetails from './components/AdminTokendetails';
 
 // Protected Route Component for Users
 const ProtectedRoute = ({ children }) => {
@@ -245,6 +246,11 @@ function App() {
           <Route path="/bankdetails" element={
             <ProtectedRoute>
               <BankDetails />
+            </ProtectedRoute>
+          } />
+          <Route path="/admintokendetails" element={
+            <ProtectedRoute>
+              <AdminTokendetails />
             </ProtectedRoute>
           } />
         </Routes>

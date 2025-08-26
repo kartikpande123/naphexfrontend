@@ -666,7 +666,7 @@ const AccountStatusChecker = () => {
                     <button 
                       className="btn btn-success"
                       style={{ borderRadius: '10px' }}
-                      onClick={() => navigate("/login")}
+                      onClick={() => navigate("/")}
                     >
                       Login & Pay Registration
                     </button>

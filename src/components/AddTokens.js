@@ -175,7 +175,12 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
     return tokens ? tokens * TOKEN_PRICE : 0;
   };
 
-
+  const calculateNetTokens = () => {
+    const tokens = parseInt(tokenAmount);
+    if (!tokens) return 0;
+    const tax = Math.floor(tokens * 0.28);
+    return tokens - tax;
+  };
 
   return (
     <>
@@ -356,7 +361,7 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                   marginBottom: '0.5rem'
                 }}
               >
-                Enter Token Amount
+                Enter Token Amount to Purchase
               </label>
               <div style={{ position: 'relative' }}>
                 <input
@@ -406,7 +411,7 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                 }}
               >
                 <div style={{ color: '#065f46', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
-                  Total Amount
+                  Total Amount to Pay
                 </div>
                 <div
                   style={{
@@ -419,6 +424,45 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                 </div>
                 <div style={{ color: '#047857', fontSize: '0.8rem' }}>
                   ₹{TOKEN_PRICE} per token
+                </div>
+              </div>
+            )}
+
+            {/* Tax Calculation - Show net tokens after tax */}
+            {tokenAmount && !isNaN(parseInt(tokenAmount)) && calculateNetTokens() > 0 && (
+              <div 
+                style={{
+                  background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+                  border: '2px solid #10b981',
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  marginBottom: '1.5rem'
+                }}
+              >
+                <div style={{ 
+                  display: 'flex', 
+                  justifyContent: 'space-between', 
+                  alignItems: 'center',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#065f46', fontSize: '0.8rem' }}>Purchased</div>
+                    <div style={{ fontWeight: '700', color: '#065f46' }}>
+                      {parseInt(tokenAmount).toLocaleString()}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>Tax (28%)</div>
+                    <div style={{ fontWeight: '700', color: '#dc2626' }}>
+                      -{(parseInt(tokenAmount) - calculateNetTokens()).toLocaleString()}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ color: '#065f46', fontSize: '0.8rem' }}>You Get</div>
+                    <div style={{ fontWeight: '700', color: '#065f46', fontSize: '1.1rem' }}>
+                      {calculateNetTokens().toLocaleString()}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
