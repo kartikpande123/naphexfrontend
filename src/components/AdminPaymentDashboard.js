@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
-import { BarChart3, Users, Trophy, DollarSign, TrendingUp, Settings, Bell, User, Menu, Settings2, Blocks, BlocksIcon, StopCircle } from 'lucide-react';
+import { CreditCard, Plus, History, ArrowDownCircle } from 'lucide-react';
 import logo from "../images/logo-1.png";
 import { useNavigate } from 'react-router-dom';
 
-function AdminOpenClose() {
+function AdminPaymentDashboard() {
+    const navigate = useNavigate()
     useEffect(() => {
         // Add styles to head
         const styleTag = document.createElement('style');
@@ -97,103 +98,40 @@ function AdminOpenClose() {
         };
     }, []);
 
-    const navigate = useNavigate();
-
     // Navigation functions (replace with your actual navigation logic)
-    function goResults() {
-        console.log("Navigate to: /opencloseresult");
-        navigate("/opencloseresult")
+    function goWithdrawals() {
+        navigate("/adminwithdrawreq");
     }
 
-    function goPlayers() {
-        console.log("Navigate to: /adminwhoplayopenclose");
-        navigate("/adminwhoplayopenclose")
+    function goAddToken() {
+        console.log("Navigate to: /admin/addtoken");
+        // navigate("/admin/addtoken");
     }
     
-    function goWinners() { 
-        console.log("Navigate to: /adminwinners");
-        navigate("/adminwinners")
-    }
-    
-    function goAmtBet() {
-        console.log("Navigate to: /adminuseramtplayed");
-        navigate("/adminuseramtplayed") 
-    }
-    
-    function goProfitLoss() {
-        console.log("Navigate to: /adminprofit");
-        navigate("/adminprofit") 
-    }
-
-    function AcceptReject(){
-        navigate("/adminacceptreject")
-    }
-
-    function RejectedUsers(){
-        navigate("/rejectedusers")
-    }
-    function BlockUnblock(){
-        navigate("/blockunblockusers")
-    }
-    function bankverification(){
-        navigate("/adminbankverfication")
+    function goTransactionHistory() {
+        console.log("Navigate to: /admin/transactions");
+        // navigate("/admin/transactions");
     }
 
     const menuItems = [
         {
-            title: 'Results',
-            icon: BarChart3,
-            onClick: goResults,
-            description: 'View game results and analytics'
+            title: 'Withdrawal Requests',
+            icon: ArrowDownCircle,
+            onClick: goWithdrawals,
+            description: 'Process and manage user withdrawal requests'
         },
         {
-            title: 'Players',
-            icon: Users,
-            onClick: goPlayers,
-            description: 'Manage active players'
+            title: 'Add Token Request',
+            icon: Plus,
+            onClick: goAddToken,
+            description: 'Handle token addition requests from users'
         },
         {
-            title: 'Winners',
-            icon: Trophy,
-            onClick: goWinners,
-            description: 'View winners and rankings'
-        },
-        {
-            title: 'Amount Bet',
-            icon: DollarSign,
-            onClick: goAmtBet,
-            description: 'Monitor betting amounts'
-        },
-        {
-            title: 'Profit/Loss',
-            icon: TrendingUp,
-            onClick: goProfitLoss,
-            description: 'Financial performance overview'
-        },
-        {
-            title: 'Accept/Reject Users',
-            icon: Users,
-            onClick: AcceptReject,
-            description: 'Accept Or Reject new user.'
-        },
-        {
-            title: 'Rejected Users',
-            icon: StopCircle,
-            onClick: RejectedUsers,
-            description: 'Accept Or Reject new user.'
-        },
-        {
-            title: 'Block/Unblock Users',
-            icon: Settings,
-            onClick: BlockUnblock,
-            description: 'Accept Or Reject new user.'
-        },
-        {
-            title: 'Bank Verification',
-            icon: Settings,
-            onClick: bankverification,
-            description: 'Accept Or Reject new user.'
-        },
+            title: 'Transaction History',
+            icon: History,
+            onClick: goTransactionHistory,
+            description: 'View complete transaction logs and history'
+        }
     ];
 
     const styles = {
@@ -230,11 +168,13 @@ function AdminOpenClose() {
             transition: 'all 0.3s ease'
         },
         logoImage: {
-            height: '60px',
-            width: '60px',
-            borderRadius: '12px',
-            border: '2px solid rgba(255, 255, 255, 0.3)',
-            transition: 'all 0.3s ease'
+            height: '100%',
+            width: '100%',
+            objectFit: 'contain',
+            transition: 'all 0.3s ease',
+            borderRadius: '8px',
+            maxHeight: '60px',
+            maxWidth: '60px'
         },
         brandContainer: {
             display: 'flex',
@@ -271,56 +211,51 @@ function AdminOpenClose() {
             padding: '40px 32px',
             maxWidth: '1400px',
             margin: '0 auto',
-
-        },
-        pageTitle1: {
-            color: 'white',
-            fontSize: '32px',
-            fontWeight: '700',
-            textAlign: 'center',
-            marginBottom: '48px',
-            textShadow: '0 2px 8px rgba(0,0,0,0.3)',
         },
         grid: {
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: '24px',
-            padding: '20px 0'
+            gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))',
+            gap: '32px',
+            padding: '40px 0',
+            justifyItems: 'center'
         },
         card: {
             background: 'rgba(255, 255, 255, 0.95)',
             borderRadius: '20px',
-            padding: '32px',
+            padding: '40px',
             boxShadow: '0 10px 30px rgba(0, 0, 0, 0.1)',
             border: '1px solid rgba(255, 255, 255, 0.2)',
             transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
             cursor: 'pointer',
             backdropFilter: 'blur(10px)',
             position: 'relative',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            width: '100%',
+            maxWidth: '400px'
         },
         cardIcon: {
-            width: '64px',
-            height: '64px',
+            width: '80px',
+            height: '80px',
             background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            borderRadius: '16px',
+            borderRadius: '20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 20px',
+            margin: '0 auto 24px',
             color: 'white',
-            fontSize: '24px',
-            boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)'
+            fontSize: '32px',
+            boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)',
+            position: 'relative'
         },
         cardTitle: {
-            fontSize: '20px',
+            fontSize: '22px',
             fontWeight: '700',
             color: '#1f2937',
             textAlign: 'center',
-            marginBottom: '8px'
+            marginBottom: '12px'
         },
         cardDescription: {
-            fontSize: '14px',
+            fontSize: '16px',
             color: '#6b7280',
             textAlign: 'center',
             lineHeight: '1.6'
@@ -339,22 +274,19 @@ function AdminOpenClose() {
     };
 
     const handleLogoHover = (e, isEntering) => {
-        const logo = e.currentTarget;
+        const logoContainer = e.currentTarget;
+        const logoImage = logoContainer.querySelector('.logo-image');
         if (isEntering) {
-            logo.style.transform = 'scale(1.05)';
-            logo.querySelector('img').style.transform = 'rotate(5deg)';
+            logoContainer.style.transform = 'scale(1.05)';
+            if (logoImage) {
+                logoImage.style.transform = 'rotate(5deg) scale(1.1)';
+            }
         } else {
-            logo.style.transform = 'scale(1)';
-            logo.querySelector('img').style.transform = 'rotate(0deg)';
+            logoContainer.style.transform = 'scale(1)';
+            if (logoImage) {
+                logoImage.style.transform = 'rotate(0deg) scale(1)';
+            }
         }
-    };
-
-    const handleActionButtonHover = (e, isEntering) => {
-        // Removed - not needed for simplified header
-    };
-
-    const handleProfileHover = (e, isEntering) => {
-        // Removed - not needed for simplified header
     };
 
     return (
@@ -369,11 +301,14 @@ function AdminOpenClose() {
                             onMouseEnter={(e) => handleLogoHover(e, true)}
                             onMouseLeave={(e) => handleLogoHover(e, false)}
                         >
-                            <img 
-                                src={logo} 
-                                alt='NAPHEX Logo' 
-                                style={styles.logoImage}
-                            />
+                            <div style={styles.logoIcon}>
+                                <img 
+                                    src={logo} 
+                                    alt='NAPHEX Logo' 
+                                    style={styles.logoImage}
+                                    className='logo-image'
+                                />
+                            </div>
                             <div style={styles.brandContainer}>
                                 <span style={styles.logoText}>
                                     <strong>NAPHEX</strong>
@@ -386,7 +321,7 @@ function AdminOpenClose() {
                     {/* Center Section - Dashboard Title */}
                     <div style={styles.centerSection}>
                         <h1 style={styles.dashboardTitle}>
-                            <strong>OPEN-CLOSE GAME DASHBOARD</strong>
+                            <strong>PAYMENT MANAGEMENT DASHBOARD</strong>
                         </h1>
                     </div>
                 </nav>
@@ -406,7 +341,7 @@ function AdminOpenClose() {
                                 onMouseLeave={(e) => handleCardHover(e, false)}
                             >
                                 <div style={styles.cardIcon}>
-                                    <IconComponent size={28} />
+                                    <IconComponent size={36} />
                                 </div>
                                 <h3 style={styles.cardTitle}>{item.title}</h3>
                                 <p style={styles.cardDescription}>{item.description}</p>
@@ -419,4 +354,4 @@ function AdminOpenClose() {
     );
 }
 
-export default AdminOpenClose;
+export default AdminPaymentDashboard;

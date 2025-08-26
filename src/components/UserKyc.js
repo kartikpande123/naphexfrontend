@@ -1147,17 +1147,21 @@ const UserKyc = () => {
                     boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.05)',
                     flexWrap: 'wrap'
                   }}>
-                    <span style={{
-                      fontSize: '22px',
+                      <span style={{
+                      fontSize: '20px',
                       fontWeight: '700',
                       color: '#2c3e50',
                       fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
-                      letterSpacing: '1.5px',
-                      padding: '10px 16px',
+                      letterSpacing: '1px',
+                      padding: '12px 20px',
                       backgroundColor: '#f8f9fa',
                       borderRadius: '10px',
                       border: '1px solid #e9ecef',
-                      minWidth: '140px'
+                      textAlign: 'center',
+                      wordBreak: 'break-all',
+                      width: '100%',
+                      maxWidth: '300px',
+                      lineHeight: '1.4'
                     }}>
                       {userId}
                     </span>

@@ -614,9 +614,30 @@ const MyAccount = () => {
                           className="btn btn-primary"
                           onClick={() => navigate("/addtokens")}
                         >
+                          <i className="bi bi-plus-circle me-2"></i>
                           Add Tokens
                         </button>
-                        <button className="btn btn-outline-primary">Withdraw Tokens</button>
+                        <button 
+                          className="btn btn-primary"
+                          onClick={() => navigate("/withdraw")}
+                        >
+                          <i className="bi bi-arrow-down-circle me-2"></i>
+                          Withdraw Tokens
+                        </button>
+                        <button 
+                          className="btn btn-outline-secondary"
+                          onClick={() => navigate("/bankdetails")}
+                        >
+                          <i className="bi bi-bank me-2"></i>
+                          Bank Details
+                        </button>
+                        <button 
+                          className="btn btn-outline-secondary"
+                          onClick={() => navigate("/bankdetails")}
+                        >
+                          <i className="bi bi-bank me-2"></i>
+                          Transaction History
+                        </button>
                       </div>
                     </Card.Body>
                   </Card>
@@ -780,20 +801,64 @@ const MyAccount = () => {
             </Card.Header>
             <Card.Body>
               <Row className="justify-content-center">
-                <Col md={8}>
-                  <div>
-                    <Card style={styles.supportCard}
-                      onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                      onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
-                    >
-                      <Card.Body className="text-center p-4">
-                        <i className="bi bi-book" style={styles.supportIcon}></i>
-                        <h5>Game Rules</h5>
-                        <p>Learn about the rules and how to play our games.</p>
-                        <button className="btn btn-outline-primary" onClick={() => navigate("/rules")}>Read Game Rules</button>
-                      </Card.Body>
-                    </Card>
-                  </div>
+                <Col md={10}>
+                  <Row>
+                    <Col lg={4} md={6} className="mb-4">
+                      <Card style={styles.supportCard}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                      >
+                        <Card.Body className="text-center p-4">
+                          <i className="bi bi-headset" style={styles.supportIcon}></i>
+                          <h5>Get Support</h5>
+                          <p>Need help? Contact support for assistance..</p>
+                          <button 
+                            className="btn btn-outline-primary"
+                            onClick={() => navigate("/help")}
+                          >
+                            Contact Support
+                          </button>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+
+                    <Col lg={4} md={6} className="mb-4">
+                      <Card style={styles.supportCard}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                      >
+                        <Card.Body className="text-center p-4">
+                          <i className="bi bi-book" style={styles.supportIcon}></i>
+                          <h5>Game Rules</h5>
+                          <p>Learn about the rules and how to play our games.</p>
+                          <button 
+                            className="btn btn-outline-primary" 
+                            onClick={() => navigate("/rules")}
+                          >
+                            Read Game Rules
+                          </button>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                    <Col lg={4} md={6} className="mb-4">
+                      <Card style={styles.supportCard}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                      >
+                        <Card.Body className="text-center p-4">
+                          <i className="bi bi-book" style={styles.supportIcon}></i>
+                          <h5>FAQ's</h5>
+                          <p>Know Some Interesting facts about our game.</p>
+                          <button 
+                            className="btn btn-outline-primary" 
+                            onClick={() => navigate("/faqs")}
+                          >
+                            Read FAQ's
+                          </button>
+                        </Card.Body>
+                      </Card>
+                    </Col>
+                  </Row>
                 </Col>
               </Row>
             </Card.Body>

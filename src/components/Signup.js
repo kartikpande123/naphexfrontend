@@ -1221,7 +1221,7 @@ const SignupPage = () => {
           <div className="card-footer">
             <p>
               Already have an account? 
-              <Link to="/login" style={{ marginLeft: '8px' }}>LogIn</Link>
+              <Link to="/" style={{ marginLeft: '8px' }}>LogIn</Link>
             </p>
           </div>
         </div>

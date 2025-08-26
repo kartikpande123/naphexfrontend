@@ -14,7 +14,87 @@ const AccountStatusChecker = () => {
   const [rejectedUsers, setRejectedUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('status'); // 'status' or 'findId'
 
-  const navigate = useNavigate()
+  const navigate = useNavigate();
+
+  // Helper function to get the latest record by date
+  const getLatestRecord = (records, dateField = 'createdAt') => {
+    if (!records || records.length === 0) return null;
+    if (records.length === 1) return records[0];
+    
+    return records.reduce((latest, current) => {
+      const latestDate = new Date(latest[dateField] || latest.createdAt || latest.originalKycSubmittedAt || 0);
+      const currentDate = new Date(current[dateField] || current.createdAt || current.originalKycSubmittedAt || 0);
+      return currentDate > latestDate ? current : latest;
+    });
+  };
+
+  // Helper function to find user by phone with latest record priority
+  const findUserByPhoneNumber = (phoneNum) => {
+    console.log('Searching for phone number:', phoneNum.trim());
+    
+    // Find matching user in main collection (active users)
+    const mainUser = allUsers.find(u => 
+      u.phoneNo && u.phoneNo.toString().includes(phoneNum.trim())
+    );
+    
+    // Find all matching users in rejected collection and get the latest
+    const rejectedMatches = rejectedUsers.filter(u => 
+      u.phoneNo && u.phoneNo.toString().includes(phoneNum.trim())
+    );
+    
+    const latestRejectedUser = getLatestRecord(rejectedMatches, 'rejectedAt');
+    
+    console.log('Main user found:', mainUser);
+    console.log('Rejected matches:', rejectedMatches);
+    console.log('Latest rejected user:', latestRejectedUser);
+    
+    // If user exists in main collection, they are active (not rejected)
+    if (mainUser) {
+      return { type: 'main', user: mainUser };
+    }
+    
+    // If user only exists in rejected collection, show latest rejection
+    if (latestRejectedUser) {
+      return { type: 'rejected', user: latestRejectedUser };
+    }
+    
+    // User not found anywhere
+    return { type: 'not-found', user: null };
+  };
+
+  // Helper function to find user by ID with latest record priority  
+  const findUserById = (userIdToFind) => {
+    console.log('Searching for userId:', userIdToFind.trim());
+    
+    // Find user in main collection by myuserid
+    const mainUser = allUsers.find(u => 
+      u.userIds && u.userIds.myuserid && u.userIds.myuserid === userIdToFind.trim()
+    );
+    
+    // Find all matching users in rejected collection by userId and get the latest
+    const rejectedMatches = rejectedUsers.filter(u => 
+      u.userId === userIdToFind.trim()
+    );
+    
+    const latestRejectedUser = getLatestRecord(rejectedMatches, 'rejectedAt');
+    
+    console.log('Main user found:', mainUser);
+    console.log('Rejected matches:', rejectedMatches);
+    console.log('Latest rejected user:', latestRejectedUser);
+    
+    // If user exists in main collection, they are active (not rejected)
+    if (mainUser) {
+      return { type: 'main', user: mainUser };
+    }
+    
+    // If user only exists in rejected collection, show latest rejection
+    if (latestRejectedUser) {
+      return { type: 'rejected', user: latestRejectedUser };
+    }
+    
+    // User not found anywhere
+    return { type: 'not-found', user: null };
+  };
 
   // Fetch rejected users data
   const fetchRejectedUsers = async () => {
@@ -35,7 +115,6 @@ const AccountStatusChecker = () => {
     
     const eventSource = new EventSource(`${API_BASE_URL}/api/users`);
     
-
     eventSource.onmessage = (event) => {
       try {
         const response = JSON.parse(event.data);
@@ -69,40 +148,32 @@ const AccountStatusChecker = () => {
     
     console.log('Searching for phone number:', phoneNumber.trim());
     
-    // Search in main users collection
-    const user = allUsers.find(u => {
-      return u.phoneNo && u.phoneNo.toString().includes(phoneNumber.trim());
-    });
+    const result = findUserByPhoneNumber(phoneNumber);
     
-    if (user) {
+    if (result.type === 'not-found') {
+      setPhoneResult({
+        type: 'not-found',
+        title: '🔍 User Not Found',
+        message: `No account found with phone number: ${phoneNumber.trim()}. Please check your phone number and try again.`
+      });
+    } else if (result.type === 'main') {
+      // User found in main collection (active user)
       setPhoneResult({
         type: 'success',
         title: '✅ User Found',
         message: 'User found! Here is your User ID:',
-        userId: user.userIds?.myuserid || 'N/A',
-        user: user
+        userId: result.user.userIds?.myuserid || 'N/A',
+        user: result.user
       });
-    } else {
-      // Check in rejected users
-      const rejectedUser = rejectedUsers.find(u => 
-        u.phoneNo && u.phoneNo.toString().includes(phoneNumber.trim())
-      );
-      
-      if (rejectedUser) {
-        setPhoneResult({
-          type: 'found-rejected',
-          title: '⚠️ User Found (Rejected)',
-          message: 'User found but account was rejected:',
-          userId: rejectedUser.userId || 'N/A',
-          user: rejectedUser
-        });
-      } else {
-        setPhoneResult({
-          type: 'not-found',
-          title: '🔍 User Not Found',
-          message: `No account found with phone number: ${phoneNumber.trim()}. Please check your phone number and try again.`
-        });
-      }
+    } else if (result.type === 'rejected') {
+      // User found in rejected collection (most recent is rejected)
+      setPhoneResult({
+        type: 'found-rejected',
+        title: '⚠️ User Found (Rejected)',
+        message: 'User found but most recent account was rejected:',
+        userId: result.user.userId || 'N/A',
+        user: result.user
+      });
     }
     
     setPhoneLoading(false);
@@ -111,7 +182,6 @@ const AccountStatusChecker = () => {
   const copyToClipboard = async (text) => {
     try {
       await navigator.clipboard.writeText(text);
-      // You could add a toast notification here
       alert('User ID copied to clipboard!');
     } catch (err) {
       console.error('Failed to copy: ', err);
@@ -138,23 +208,32 @@ const AccountStatusChecker = () => {
     setLoading(true);
     
     console.log('Searching for userId:', userId.trim());
-    console.log('All users data:', allUsers);
     
-    // Check in main users collection - look for userId in userIds subcollection
-    const user = allUsers.find(u => {
-      console.log('Checking user:', u);
-      console.log('User userIds:', u.userIds);
-      console.log('User myuserid:', u.userIds?.myuserid);
-      return u.userIds && u.userIds.myuserid && u.userIds.myuserid === userId.trim();
-    });
+    const result = findUserById(userId);
     
-    console.log('Found user:', user);
-    
-    if (user) {
+    if (result.type === 'not-found') {
+      // User not found anywhere
+      setStatusResult({
+        type: 'not-found',
+        title: '🔍 User Not Found',
+        message: `No account found with User ID: ${userId.trim()}. Please check your User ID and try again, or contact admin if you believe this is an error.`
+      });
+    } else if (result.type === 'rejected') {
+      // Most recent record is rejected
+      setStatusResult({
+        type: 'rejected',
+        title: '❌ Account Rejected',
+        message: 'Your most recent account/KYC verification has been rejected by admin.',
+        rejectionReason: result.user.rejectionReason,
+        rejectedAt: result.user.rejectedAt,
+        rejectedBy: result.user.rejectedBy,
+        user: result.user
+      });
+    } else if (result.type === 'main') {
+      // User found in main collection - check KYC status
+      const user = result.user;
       console.log('User found - checking KYC status:', user);
-      console.log('User KYC Status:', user.kycStatus);
       
-      // Check if user has KYC status (direct property)
       if (user.kycStatus) {
         // User has KYC data - check status
         if (user.kycStatus === 'accepted') {
@@ -194,28 +273,6 @@ const AccountStatusChecker = () => {
           title: '📋 No KYC Submitted',
           message: 'Your account exists but no KYC verification has been submitted yet. Please submit your KYC documents to proceed.',
           user: user
-        });
-      }
-    } else {
-      // User not found in main collection, check rejected users collection
-      const rejectedUser = rejectedUsers.find(u => u.userId === userId.trim());
-      
-      if (rejectedUser) {
-        setStatusResult({
-          type: 'rejected',
-          title: '❌ Account Rejected',
-          message: 'Your account/KYC verification has been rejected by admin.',
-          rejectionReason: rejectedUser.rejectionReason,
-          rejectedAt: rejectedUser.rejectedAt,
-          rejectedBy: rejectedUser.rejectedBy,
-          user: rejectedUser
-        });
-      } else {
-        // User not found anywhere
-        setStatusResult({
-          type: 'not-found',
-          title: '🔍 User Not Found',
-          message: `No account found with User ID: ${userId.trim()}. Please check your User ID and try again, or contact admin if you believe this is an error.`
         });
       }
     }
@@ -474,7 +531,7 @@ const AccountStatusChecker = () => {
                   </div>
                 )}
 
-                {/* User Details */}
+                {/* User Details - Only Name and Phone Number */}
                 {phoneResult.user && (
                   <div className="mt-4">
                     <h6 className="fw-bold mb-3">Account Information</h6>
@@ -489,18 +546,6 @@ const AccountStatusChecker = () => {
                         <div className="bg-light p-3 rounded-3 mb-3">
                           <small className="text-muted d-block">Phone Number</small>
                           <span className="fw-semibold">{phoneResult.user.phoneNo || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <div className="col-md-6">
-                        <div className="bg-light p-3 rounded-3 mb-3">
-                          <small className="text-muted d-block">City</small>
-                          <span className="fw-semibold">{phoneResult.user.city || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <div className="col-md-6">
-                        <div className="bg-light p-3 rounded-3 mb-3">
-                          <small className="text-muted d-block">State</small>
-                          <span className="fw-semibold">{phoneResult.user.state || 'N/A'}</span>
                         </div>
                       </div>
                     </div>
@@ -567,7 +612,7 @@ const AccountStatusChecker = () => {
                   </div>
                 )}
 
-                {/* User Details */}
+                {/* User Details - Only Name and Phone Number */}
                 {statusResult.user && (
                   <div className="mt-4">
                     <h6 className="fw-bold mb-3">Account Information</h6>
@@ -584,34 +629,8 @@ const AccountStatusChecker = () => {
                           <span className="fw-semibold">{statusResult.user.phoneNo || 'N/A'}</span>
                         </div>
                       </div>
-                      <div className="col-md-6">
-                        <div className="bg-light p-3 rounded-3 mb-3">
-                          <small className="text-muted d-block">City</small>
-                          <span className="fw-semibold">{statusResult.user.city || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <div className="col-md-6">
-                        <div className="bg-light p-3 rounded-3 mb-3">
-                          <small className="text-muted d-block">State</small>
-                          <span className="fw-semibold">{statusResult.user.state || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <div className="col-md-6">
-                        <div className="bg-light p-3 rounded-3 mb-3">
-                          <small className="text-muted d-block">Referral ID</small>
-                          <span className="fw-semibold">{statusResult.user.referralId || statusResult.user.userIds?.myrefrelid || 'N/A'}</span>
-                        </div>
-                      </div>
-                      <div className="col-md-6">
-                        <div className="bg-light p-3 rounded-3 mb-3">
-                          <small className="text-muted d-block">KYC Submitted At</small>
-                          <span className="fw-semibold">
-                            {formatDate(statusResult.user.kycSubmittedAt || statusResult.user.createdAt)}
-                          </span>
-                        </div>
-                      </div>
                       {statusResult.user.kycAcceptedAt && (
-                        <div className="col-md-6">
+                        <div className="col-md-12">
                           <div className="bg-success bg-opacity-10 p-3 rounded-3 mb-3 border border-success">
                             <small className="text-success d-block">KYC Accepted At</small>
                             <span className="fw-semibold text-success">{formatDate(statusResult.user.kycAcceptedAt)}</span>

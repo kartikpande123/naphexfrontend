@@ -40,6 +40,10 @@ import UserKyc from './components/UserKyc';
 import EntryFees from './components/EntryFees';
 import AddTokens from './components/AddTokens';
 import Withdraw from './components/Withdraw';
+import BankDetails from './components/BankDetails';
+import AdminBankVarification from './components/AdminBankVarification';
+import AdminWithdrawReq from './components/AdminWithdrawReq';
+import AdminPaymentDashboard from './components/AdminPaymentDashboard';
 
 // Protected Route Component for Users
 const ProtectedRoute = ({ children }) => {
@@ -164,6 +168,21 @@ function App() {
               <UserProfile />
             </AdminProtectedRoute>
           } />
+          <Route path='/adminbankverfication' element={
+            <AdminProtectedRoute>
+              <AdminBankVarification />
+            </AdminProtectedRoute>
+          } />
+          <Route path='/adminwithdrawreq' element={
+            <AdminProtectedRoute>
+              <AdminWithdrawReq />
+            </AdminProtectedRoute>
+          } />
+          <Route path='/adminpayment' element={
+            <AdminProtectedRoute>
+              <AdminPaymentDashboard />
+            </AdminProtectedRoute>
+          } />
 
 
           {/* ---------------------------------------------------------*/}
@@ -221,6 +240,11 @@ function App() {
           <Route path="/withdraw" element={
             <ProtectedRoute>
               <Withdraw />
+            </ProtectedRoute>
+          } />
+          <Route path="/bankdetails" element={
+            <ProtectedRoute>
+              <BankDetails />
             </ProtectedRoute>
           } />
         </Routes>

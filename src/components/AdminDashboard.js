@@ -127,8 +127,8 @@ const Home = () => {
               <li className="nav-item">
                 <Link
                   className="nav-link enhanced-nav-link"
-                  to="/earnings"
-                  onMouseEnter={() => setIsHovered("earnings")}
+                  to="/adminpayment"
+                  onMouseEnter={() => setIsHovered("adminpayment")}
                   onMouseLeave={() => setIsHovered(null)}
                 >
                   <i className="bi bi-gift nav-icon"></i>
