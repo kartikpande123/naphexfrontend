@@ -544,6 +544,7 @@ const TokenWithdrawal = () => {
                       placeholder="Enter tokens to withdraw"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
+                      onWheel={(e) => e.target.blur()} // Disable scroll wheel
                       disabled={!hasVerified}
                       style={{
                         width: '100%',
@@ -554,7 +555,11 @@ const TokenWithdrawal = () => {
                         outline: 'none',
                         transition: 'all 0.2s ease',
                         backgroundColor: !hasVerified ? '#f9fafb' : '#ffffff',
-                        paddingRight: '4rem'
+                        paddingRight: '4rem',
+                        // Hide spinner arrows
+                        MozAppearance: 'textfield', // Firefox
+                        WebkitAppearance: 'none', // Chrome, Safari, Edge
+                        appearance: 'none'
                       }}
                       onFocus={(e) => e.target.style.borderColor = '#2563eb'}
                       onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
@@ -704,6 +709,17 @@ const TokenWithdrawal = () => {
         @keyframes spin {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
+        }
+        
+        /* Hide number input spinners in all browsers */
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+        
+        input[type="number"] {
+          -moz-appearance: textfield;
         }
       `}</style>
     </>

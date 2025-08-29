@@ -16,17 +16,17 @@ const AuthPage = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-  // Load Font Awesome CSS
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
-  document.head.appendChild(link);
+    // Load Font Awesome CSS
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css';
+    document.head.appendChild(link);
 
-  return () => {
-    // Cleanup
-    document.head.removeChild(link);
-  };
-}, []);
+    return () => {
+      // Cleanup
+      document.head.removeChild(link);
+    };
+  }, []);
 
   // Listen for keypress events to capture secret code
   useEffect(() => {
@@ -87,114 +87,114 @@ const AuthPage = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (failedAttempts >= 10) {
-    setError('You have exceeded the maximum number of login attempts. Please reset your password.');
-    navigate('/forgotpassword');
-    return;
-  }
-
-  if (!validateInputs()) return;
-
-  setLoading(true);
-  setError('');
-
-  try {
-    // Step 1: Pre-check password
-    const testResponse = await fetch(`${API_BASE_URL}/test-password`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNo, password }),
-    });
-
-    const testData = await testResponse.json();
-
-    if (!testResponse.ok || !testData.success || !testData.passwordMatches) {
-      setFailedAttempts(prev => prev + 1);
-      setError(`Invalid phone number or password. Attempts remaining: ${10 - (failedAttempts + 1)}`);
-      setLoading(false);
+    if (failedAttempts >= 10) {
+      setError('You have exceeded the maximum number of login attempts. Please reset your password.');
+      navigate('/forgotpassword');
       return;
     }
 
-    // Step 2: Proceed to full login
-    const loginResponse = await fetch(`${API_BASE_URL}/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ phoneNo, password }),
-    });
+    if (!validateInputs()) return;
 
-    const loginText = await loginResponse.text(); // catch text in case error
-    let loginData = {};
+    setLoading(true);
+    setError('');
 
     try {
-      loginData = JSON.parse(loginText);
-    } catch {
-      // ignore JSON parse errors
-    }
-
-    if (!loginResponse.ok) {
-      if (loginResponse.status === 403) {
-        if (loginText.toLowerCase().includes('blocked')) {
-          setError('Your account is blocked. Please contact help.');
-        } else {
-          setError(loginText);
-        }
-        setLoading(false);
-        return;
-      }
-
-      if (loginResponse.status === 401) {
-        setError("Invalid credentials. Please check your phone number or password.");
-        setLoading(false);
-        return;
-      }
-
-      throw new Error(`Login Failed: ${loginText || loginResponse.statusText}`);
-    }
-
-    // Step 3: Login success
-    if (loginData.success) {
-      setFailedAttempts(0);
-      localStorage.setItem('authToken', loginData.customToken);
-
-      const userDataWithTimestamp = {
-        ...loginData.userData,
-        loginTimestamp: new Date().toISOString(),
-        userids: {
-          myuserid: loginData.userData.userids?.myuserid || '',
-          myrefrelid: loginData.userData.userids?.myrefrelid || ''
-        }
-      };
-
-      localStorage.setItem('userData', JSON.stringify(userDataWithTimestamp));
-      setPhoneNo('');
-      setPassword('');
-
-      navigate("/home", {
-        state: {
-          welcomeMessage: `Welcome back, ${loginData.userData.name}!`
-        }
+      // Step 1: Pre-check password
+      const testResponse = await fetch(`${API_BASE_URL}/test-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNo, password }),
       });
-    } else {
-      setError(loginData.message || 'Login failed. Please verify your credentials.');
+
+      const testData = await testResponse.json();
+
+      if (!testResponse.ok || !testData.success || !testData.passwordMatches) {
+        setFailedAttempts(prev => prev + 1);
+        setError(`Invalid phone number or password. Attempts remaining: ${10 - (failedAttempts + 1)}`);
+        setLoading(false);
+        return;
+      }
+
+      // Step 2: Proceed to full login
+      const loginResponse = await fetch(`${API_BASE_URL}/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phoneNo, password }),
+      });
+
+      const loginText = await loginResponse.text(); // catch text in case error
+      let loginData = {};
+
+      try {
+        loginData = JSON.parse(loginText);
+      } catch {
+        // ignore JSON parse errors
+      }
+
+      if (!loginResponse.ok) {
+        if (loginResponse.status === 403) {
+          if (loginText.toLowerCase().includes('blocked')) {
+            setError('Your account is blocked. Please contact help.');
+          } else {
+            setError(loginText);
+          }
+          setLoading(false);
+          return;
+        }
+
+        if (loginResponse.status === 401) {
+          setError("Invalid credentials. Please check your phone number or password.");
+          setLoading(false);
+          return;
+        }
+
+        throw new Error(`Login Failed: ${loginText || loginResponse.statusText}`);
+      }
+
+      // Step 3: Login success
+      if (loginData.success) {
+        setFailedAttempts(0);
+        localStorage.setItem('authToken', loginData.customToken);
+
+        const userDataWithTimestamp = {
+          ...loginData.userData,
+          loginTimestamp: new Date().toISOString(),
+          userids: {
+            myuserid: loginData.userData.userids?.myuserid || '',
+            myrefrelid: loginData.userData.userids?.myrefrelid || ''
+          }
+        };
+
+        localStorage.setItem('userData', JSON.stringify(userDataWithTimestamp));
+        setPhoneNo('');
+        setPassword('');
+
+        navigate("/home", {
+          state: {
+            welcomeMessage: `Welcome back, ${loginData.userData.name}!`
+          }
+        });
+      } else {
+        setError(loginData.message || 'Login failed. Please verify your credentials.');
+      }
+
+    } catch (error) {
+      console.error('Login process error:', error);
+
+      if (error.message.includes('Network')) {
+        setError('Network error. Please check your internet connection.');
+      } else if (error.message.includes('Failed')) {
+        setError(error.message);
+      } else {
+        setError('User not found. Please sign up and try again.');
+      }
+
+    } finally {
+      setLoading(false);
     }
-
-  } catch (error) {
-    console.error('Login process error:', error);
-
-    if (error.message.includes('Network')) {
-      setError('Network error. Please check your internet connection.');
-    } else if (error.message.includes('Failed')) {
-      setError(error.message);
-    } else {
-      setError('User not found. Please sign up and try again.');
-    }
-
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
 
 
@@ -1288,12 +1288,264 @@ body {
     border: 1px solid #ccc;
   }
 }
+  /* APK Download Section - Top Right */
+.apk-section {
+  position: absolute;
+  top: 5px;
+  right: -115px;
+  z-index: 100;
+}
+
+.apk-download-btn {
+  background: linear-gradient(135deg, #4CAF50 0%, #45a049 50%, #2e7d32 100%);
+  border: 3px solid #ffffff;
+  border-radius: 25px;
+  padding: 12px 20px;
+  cursor: pointer;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  transition: all 0.3s ease;
+  box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4), 0 0 20px rgba(46, 125, 50, 0.3);
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  text-decoration: none;
+  animation: downloadPulse 3s infinite;
+  min-width: 180px;
+  text-align: center;
+}
+
+@keyframes downloadPulse {
+  0% {
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4), 0 0 20px rgba(46, 125, 50, 0.3);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6), 0 0 30px rgba(46, 125, 50, 0.5);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4), 0 0 20px rgba(46, 125, 50, 0.3);
+    transform: scale(1);
+  }
+}
+
+.apk-download-btn:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 12px 35px rgba(76, 175, 80, 0.5), 0 0 35px rgba(46, 125, 50, 0.4);
+  background: linear-gradient(135deg, #45a049 0%, #3d8b40 50%, #2e7d32 100%);
+  animation: none;
+  text-decoration: none;
+  color: white;
+}
+
+.apk-download-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(76, 175, 80, 0.3), 0 8px 25px rgba(76, 175, 80, 0.4);
+  text-decoration: none;
+  color: white;
+}
+
+.apk-download-btn:active {
+  transform: translateY(-1px) scale(1.02);
+  text-decoration: none;
+  color: white;
+}
+
+/* Add download icon */
+.apk-download-btn::before {
+  content: '📱';
+  font-size: 16px;
+  animation: bounce 2s infinite;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(-2px);
+  }
+}
+
+/* Add shimmer effect */
+.apk-download-btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.2), 
+    transparent);
+  transition: left 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-radius: 25px;
+}
+
+.apk-download-btn:hover::after {
+  left: 100%;
+}
+
+/* Mobile Responsiveness for APK button */
+@media (max-width: 768px) {
+  .apk-section {
+    top: 10px;
+    right: 10px;
+  }
+  
+  .apk-download-btn {
+    padding: 10px 16px;
+    font-size: 13px;
+    min-width: 160px;
+    border-radius: 20px;
+  }
+  
+  .apk-download-btn::before {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .apk-section {
+    top: 8px;
+    right: 8px;
+  }
+  
+  .apk-download-btn {
+    padding: 8px 14px;
+    font-size: 12px;
+    min-width: 140px;
+    gap: 8px;
+    border-radius: 18px;
+  }
+  
+  .apk-download-btn::before {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  .apk-section {
+    top: 5px;
+    right: 5px;
+  }
+  
+  .apk-download-btn {
+    padding: 6px 12px;
+    font-size: 11px;
+    min-width: 120px;
+    gap: 6px;
+    border-radius: 15px;
+  }
+  
+  .apk-download-btn::before {
+    font-size: 11px;
+  }
+}
+
+/* Ensure proper positioning relative to logo */
+@media (max-width: 768px) {
+  .logo-section {
+    top: -15px;
+    left: 10px;
+    position: absolute;
+  }
+  
+  .apk-section {
+    top: 10px;
+    right: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-section {
+    top: 15px;
+    left: 15px;
+  }
+  
+  .apk-section {
+    top: 15px;
+    right: 15px;
+  }
+
+  .header-title {
+    margin-top: 30px;
+    padding-top:10px
+  }
+}
+
+/* Additional styling for better visual hierarchy */
+.apk-download-btn {
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+/* Glowing effect for premium look */
+@keyframes apkGlow {
+  0%, 100% {
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.4), 0 0 20px rgba(46, 125, 50, 0.3);
+  }
+  50% {
+    box-shadow: 0 8px 25px rgba(76, 175, 80, 0.6), 0 0 30px rgba(46, 125, 50, 0.5);
+  }
+}
+
+/* Ensure APK button doesn't interfere with other elements */
+.login-container {
+  position: relative;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .apk-download-btn {
+    border: 3px solid #000000;
+    background: #4CAF50;
+    color: #000000;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .apk-download-btn,
+  .apk-download-btn::before,
+  .apk-download-btn::after {
+    animation: none;
+  }
+  
+  .apk-download-btn:hover {
+    transform: none;
+  }
+}
+
+/* Print styles */
+@media print {
+  .apk-section {
+    display: none;
+  }
+}
       `}</style>
       {/* Logo Section */}
       <div className="logo-section">
         <div className="company-logo">
           <img src={logo} alt='logo' />
         </div>
+      </div>
+
+      {/* APK Section */}
+      <div className="apk-section">
+        <a href="/naphex.apk" download className="apk-download-btn">
+          Download Android App
+        </a>
       </div>
 
       {/* Help Icon */}

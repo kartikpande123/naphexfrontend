@@ -633,7 +633,7 @@ const MyAccount = () => {
                         </button>
                         <button 
                           className="btn btn-outline-secondary"
-                          onClick={() => navigate("/bankdetails")}
+                          onClick={() => navigate("/transactions")}
                         >
                           <i className="bi bi-bank me-2"></i>
                           Transaction History

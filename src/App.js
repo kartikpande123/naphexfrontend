@@ -45,6 +45,11 @@ import AdminBankVarification from './components/AdminBankVarification';
 import AdminWithdrawReq from './components/AdminWithdrawReq';
 import AdminPaymentDashboard from './components/AdminPaymentDashboard';
 import AdminTokendetails from './components/AdminTokendetails';
+import TransactionHistory from './components/TransactionHistory';
+import AdminTransactionDashboard from './components/AdminTransactionDashboard';
+import AdminWithdrawTransactions from './components/AdminWithdraw';
+import AdminTokenDeposits from './components/AdminDeposit';
+import AdminTaxDetails from './components/AdminTexDetails';
 
 // Protected Route Component for Users
 const ProtectedRoute = ({ children }) => {
@@ -184,6 +189,31 @@ function App() {
               <AdminPaymentDashboard />
             </AdminProtectedRoute>
           } />
+            <Route path="/admintokendetails" element={
+            <AdminProtectedRoute>
+              <AdminTokendetails />
+            </AdminProtectedRoute>
+          } />
+            <Route path="/admintransactionsdashboard" element={
+            <AdminProtectedRoute>
+              <AdminTransactionDashboard />
+            </AdminProtectedRoute>
+          } />
+            <Route path="/adminwithdrawtransaction" element={
+            <AdminProtectedRoute>
+              <AdminWithdrawTransactions />
+            </AdminProtectedRoute>
+          } />
+            <Route path="/admintokendepositedetails" element={
+            <AdminProtectedRoute>
+              <AdminTokenDeposits />
+            </AdminProtectedRoute>
+          } />
+            <Route path="/admintaxdetails" element={
+            <AdminProtectedRoute>
+              <AdminTaxDetails />
+            </AdminProtectedRoute>
+          } />
 
 
           {/* ---------------------------------------------------------*/}
@@ -248,11 +278,12 @@ function App() {
               <BankDetails />
             </ProtectedRoute>
           } />
-          <Route path="/admintokendetails" element={
+          <Route path="/transactions" element={
             <ProtectedRoute>
-              <AdminTokendetails />
+              <TransactionHistory />
             </ProtectedRoute>
           } />
+        
         </Routes>
       </div>
     </Router>

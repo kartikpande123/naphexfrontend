@@ -32,7 +32,7 @@ const NaphexHelpSection = () => {
   };
 
   const handleWhatsAppRedirect = () => {
-    window.open(`https://wa.me/917022852377`, '_blank');
+    window.open(`https://wa.me/919019842426`, '_blank');
   };
 
   const handleSubmit = async (e) => {

@@ -3,7 +3,7 @@ import { CreditCard, Plus, History, ArrowDownCircle } from 'lucide-react';
 import logo from "../images/logo-1.png";
 import { useNavigate } from 'react-router-dom';
 
-function AdminPaymentDashboard() {
+function AdminTransactionDashboard() {
     const navigate = useNavigate()
     useEffect(() => {
         // Add styles to head
@@ -100,36 +100,35 @@ function AdminPaymentDashboard() {
 
     // Navigation functions (replace with your actual navigation logic)
     function goWithdrawals() {
-        navigate("/adminwithdrawreq");
+        navigate("/adminwithdrawtransaction");
     }
 
     function goAddToken() {
-        console.log("Navigate to: /admin/addtoken");
-        navigate("/admintokendetails");
+        navigate("/admintokendepositedetails");
     }
     
     function goTransactionHistory() {
-        navigate("/admintransactionsdashboard");
+        navigate("/admintaxdetails");
     }
 
     const menuItems = [
         {
-            title: 'Withdrawal Requests',
+            title: 'Withdrawal Transactions',
             icon: ArrowDownCircle,
             onClick: goWithdrawals,
-            description: 'Process and manage user withdrawal requests'
+            description: 'View user withdrawal details'
         },
         {
-            title: 'Add Token Request',
+            title: 'Token Deposit Transactions',
             icon: Plus,
             onClick: goAddToken,
-            description: 'Handle token addition requests from users'
+            description: 'Handle token addition details'
         },
         {
-            title: 'Transaction History',
+            title: 'Tax Overview',
             icon: History,
             onClick: goTransactionHistory,
-            description: 'View complete transaction logs and history'
+            description: 'View Tax overview of all users transactions'
         }
     ];
 
@@ -320,7 +319,7 @@ function AdminPaymentDashboard() {
                     {/* Center Section - Dashboard Title */}
                     <div style={styles.centerSection}>
                         <h1 style={styles.dashboardTitle}>
-                            <strong>PAYMENT MANAGEMENT DASHBOARD</strong>
+                            <strong>TRANSACTIONS AND TAX DASHBOARD</strong>
                         </h1>
                     </div>
                 </nav>
@@ -353,4 +352,4 @@ function AdminPaymentDashboard() {
     );
 }
 
-export default AdminPaymentDashboard;
+export default AdminTransactionDashboard;
