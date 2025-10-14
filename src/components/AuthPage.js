@@ -59,6 +59,15 @@ const AuthPage = () => {
     };
   }, [navigate]);
 
+  const handleDownloadAPK = () => {
+    const link = document.createElement('a');
+    link.href = '/naphex.apk';
+    link.download = 'naphex.apk';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Reset secret code after 3 seconds of inactivity
   useEffect(() => {
     if (secretCode) {
@@ -214,6 +223,10 @@ const AuthPage = () => {
       <div className="links-header">Quick Links</div>
 
       <div className="nav-links">
+        <button onClick={handleDownloadAPK} className="nav-link download-apk-link">
+          <span className="link-icon">📱</span>
+          <span className="link-text">Download Android App</span>
+        </button>
         <Link to="/statuscheck" className="nav-link">
           <span className="link-icon">📊</span>
           <span className="link-text">Check account status</span>
@@ -515,7 +528,7 @@ body {
     rgba(44, 62, 80, 0.9) 100%);
   border: 2px solid transparent;
   border-radius: 16px;
-  color: #ecf0f1;
+  color: #ecf0f1 !important;
   text-decoration: none;
   font-weight: 600;
   font-size: 1rem;
@@ -531,6 +544,12 @@ body {
   font-family: inherit;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
+
+.nav-link:visited, .check-status-link:visited,
+.nav-link:visited .link-text, .check-status-link:visited .status-text {
+  color: #ecf0f1 !important;
+}
+
 
 /* Individual color themes for each link */
 .nav-link:nth-child(1) { /* Terms & Conditions */
