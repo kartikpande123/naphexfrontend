@@ -638,6 +638,20 @@ const MyAccount = () => {
                           <i className="bi bi-bank me-2"></i>
                           Transaction History
                         </button>
+                             <button 
+                          className="btn btn-outline-secondary"
+                          onClick={() => navigate("/transactions")}
+                        >
+                          <i className="bi bi-receipt me-2"></i>
+                          Transaction History
+                        </button>
+                        <button 
+                          className="btn btn-outline-secondary"
+                          onClick={() => navigate("/userwins")}
+                        >
+                          <i className="bi bi-trophy me-2"></i>
+                          Wins
+                        </button>
                       </div>
                     </Card.Body>
                   </Card>

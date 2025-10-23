@@ -155,7 +155,7 @@ const ForgotPassword = () => {
             
             // Navigate to login page after a delay
             setTimeout(() => {
-                navigate('/login');
+                navigate('/');
             }, 2000);
         }
     } catch (error) {

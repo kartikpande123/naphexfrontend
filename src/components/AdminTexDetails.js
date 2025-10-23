@@ -13,7 +13,8 @@ import {
   Database,
   Loader,
   PieChart,
-  BarChart3
+  BarChart3,
+  Tag
 } from 'lucide-react';
 
 export default function AdminTaxDetails() {
@@ -44,22 +45,25 @@ export default function AdminTaxDetails() {
                     createdAt: new Date(w.createdAt).toLocaleString(),
                     amount: w.requestedTokens,
                     tax: w.tax,
+                    type: 'withdrawal'
                   });
                 }
               });
             }
 
-            // Deposit Tax
+            // Deposit Tax - Include both tokens and entry_fee
             if (user.orders) {
               Object.keys(user.orders).forEach((oid) => {
                 const order = user.orders[oid];
-                if (order.type === "tokens" && order.status === "paid" && order.taxAmount > 0) {
+                if ((order.type === "tokens" || order.type === "entry_fee") && order.status === "paid" && order.taxAmount > 0) {
                   allDeposits.push({
                     userId: user.userIds?.myuserid || user.userId,
                     name: user.name,
+                    orderId: oid,
                     createdAt: new Date(order.processedAt).toLocaleString(),
                     amount: order.amountPaid,
                     tax: order.taxAmount,
+                    type: order.type === 'entry_fee' ? 'entry_fee' : 'tokens'
                   });
                 }
               });
@@ -262,6 +266,14 @@ export default function AdminTaxDetails() {
                     Name
                   </div>
                 </th>
+                {activeTab === 'deposit' && (
+                  <th className="px-4 py-3" style={styles.tableCell}>
+                    <div className="d-flex align-items-center justify-content-center">
+                      <Tag size={16} className="me-2" />
+                      Type
+                    </div>
+                  </th>
+                )}
                 <th className="px-4 py-3" style={styles.tableCell}>
                   <div className="d-flex align-items-center justify-content-center">
                     <DollarSign size={16} className="me-2" />
@@ -301,6 +313,13 @@ export default function AdminTaxDetails() {
                   <td className="px-4 py-3" style={styles.tableCell}>
                     <strong>{t.name}</strong>
                   </td>
+                  {activeTab === 'deposit' && (
+                    <td className="px-4 py-3" style={styles.tableCell}>
+                      <span className={`badge ${t.type === 'entry_fee' ? 'bg-info' : 'bg-success'}`}>
+                        {t.type === 'entry_fee' ? 'Entry Fee' : 'Tokens'}
+                      </span>
+                    </td>
+                  )}
                   <td className="px-4 py-3" style={{...styles.tableCell, ...styles.amountCell}}>
                     ₹{t.amount}
                   </td>

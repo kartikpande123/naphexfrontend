@@ -50,6 +50,9 @@ import AdminTransactionDashboard from './components/AdminTransactionDashboard';
 import AdminWithdrawTransactions from './components/AdminWithdraw';
 import AdminTokenDeposits from './components/AdminDeposit';
 import AdminTaxDetails from './components/AdminTexDetails';
+import AdminEntryFeeVerification from './components/AdminEntryfees';
+import UserTokenRequest from './components/UserTokenRequest';
+import UserWIns from './components/UserWIns';
 
 // Protected Route Component for Users
 const ProtectedRoute = ({ children }) => {
@@ -214,6 +217,11 @@ function App() {
               <AdminTaxDetails />
             </AdminProtectedRoute>
           } />
+            <Route path="/adminentryfeeverification" element={
+            <AdminProtectedRoute>
+              <AdminEntryFeeVerification />
+            </AdminProtectedRoute>
+          } />
 
 
           {/* ---------------------------------------------------------*/}
@@ -283,6 +291,17 @@ function App() {
               <TransactionHistory />
             </ProtectedRoute>
           } />
+          <Route path="/usertokenrequest" element={
+            <ProtectedRoute>
+              <UserTokenRequest />
+            </ProtectedRoute>
+          } />
+          <Route path="/userwins" element={
+            <ProtectedRoute>
+              <UserWIns />
+            </ProtectedRoute>
+          } />
+        
         
         </Routes>
       </div>

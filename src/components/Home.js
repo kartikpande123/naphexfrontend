@@ -24,6 +24,11 @@ const Home = () => {
 
   const navigate = useNavigate();
 
+  // Helper function to create unique winner ID from composite key
+  const createWinnerId = (winner) => {
+    return `${winner.date}_${winner.session}_${winner.userId}_${winner.gameId}`;
+  };
+
   // Check if welcome popup should be shown on component mount
   useEffect(() => {
     const userData = JSON.parse(localStorage.getItem("userData"));
@@ -160,32 +165,39 @@ const Home = () => {
 
         // Use the specific user endpoint for better performance
         const response = await axios.get(`${API_BASE_URL}/get-user-winners/${userData.phoneNo}`);
-        const unshownWinners = response.data;
+        
+        if (response.data.success && response.data.winners) {
+          const unshownWinners = response.data.winners;
 
-        if (unshownWinners.length > 0) {
-          console.log(`Found ${unshownWinners.length} unshown winners`);
+          if (unshownWinners.length > 0) {
+            console.log(`Found ${unshownWinners.length} unshown winners`);
 
-          // Filter out already processed winners (in case of timing issues)
-          const newWinners = unshownWinners.filter(winner =>
-            !processedWinnerIds.has(winner.id)
-          );
-
-          if (newWinners.length > 0) {
-            // Add to processed set
-            setProcessedWinnerIds(prev => {
-              const newSet = new Set(prev);
-              newWinners.forEach(winner => newSet.add(winner.id));
-              return newSet;
+            // Filter out already processed winners (in case of timing issues)
+            const newWinners = unshownWinners.filter(winner => {
+              const winnerId = createWinnerId(winner);
+              return !processedWinnerIds.has(winnerId);
             });
 
-            // Sort winners by timestamp if available (oldest first)
-            const sortedWinners = newWinners.sort((a, b) => {
-              return (a.timestamp || 0) - (b.timestamp || 0);
-            });
+            if (newWinners.length > 0) {
+              // Add to processed set
+              setProcessedWinnerIds(prev => {
+                const newSet = new Set(prev);
+                newWinners.forEach(winner => {
+                  const winnerId = createWinnerId(winner);
+                  newSet.add(winnerId);
+                });
+                return newSet;
+              });
 
-            setWinnerDetails(sortedWinners);
-            setCurrentWinnerIndex(0);
-            setShowWinnerPopup(true);
+              // Sort winners by timestamp if available (oldest first)
+              const sortedWinners = newWinners.sort((a, b) => {
+                return (a.timestamp || 0) - (b.timestamp || 0);
+              });
+
+              setWinnerDetails(sortedWinners);
+              setCurrentWinnerIndex(0);
+              setShowWinnerPopup(true);
+            }
           }
         }
       } catch (error) {
@@ -202,7 +214,7 @@ const Home = () => {
         fetchUserTokens();
         checkForWinners();
       }
-    }, 30000);
+    }, 2000);
 
     // Cleanup on component unmount
     return () => {
@@ -216,12 +228,14 @@ const Home = () => {
   // Improved close winner popup function
   const closeWinnerPopup = async () => {
     try {
-      // Mark current winner as claimed using the winner ID
+      // Mark current winner as claimed using the composite key
       const currentWinner = winnerDetails[currentWinnerIndex];
 
-      if (currentWinner && currentWinner.id) {
-        console.log(`Marking winner ${currentWinner.id} as claimed`);
-        await axios.post(`${API_BASE_URL}/mark-winner-claimed/${currentWinner.id}`);
+      if (currentWinner) {
+        const { date, session, userId, gameId } = currentWinner;
+        console.log(`Marking winner as claimed: ${date}/${session}/${userId}/${gameId}`);
+        
+        await axios.post(`${API_BASE_URL}/mark-winner-claimed/${date}/${session}/${userId}/${gameId}`);
       }
 
       // If there are more winners, show the next one
@@ -358,7 +372,7 @@ const Home = () => {
             </div>
             <p className="winner-popup-message">
               You won <strong>{winnerDetails[currentWinnerIndex].amountWon}</strong> tokens in
-              the Open-Close game ({winnerDetails[currentWinnerIndex].winType})!
+              the Fruits game ({winnerDetails[currentWinnerIndex].winType})!
             </p>
             <div className="winner-popup-buttons">
               <button

@@ -11,11 +11,20 @@ const Home = () => {
   const [showAdminKeyPopup, setShowAdminKeyPopup] = useState(false);
   const [adminKey, setAdminKey] = useState("");
   const [adminKeyError, setAdminKeyError] = useState("");
+  const [counts, setCounts] = useState({
+    pendingWithdrawals: 0,
+    pendingTokenRequests: 0,
+    pendingEntryFees: 0,
+    pendingKYC: 0,
+    pendingBankDetails: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [sseConnected, setSseConnected] = useState(false);
   const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem("adminAuthToken");
-    navigate("/"); // Redirect to login after logout
+    navigate("/");
   };
 
   const toggleLogoutPopup = () => {
@@ -33,7 +42,6 @@ const Home = () => {
     }
   };
 
-  // Handle Enter key press for admin key submission
   const handleAdminKeyEnter = (e) => {
     if (e.key === "Enter") {
       handleAdminKeySubmit();
@@ -44,31 +52,147 @@ const Home = () => {
     setShowAdminKeyPopup(true);
   };
 
-  // Function to handle automatic logout after 15 minutes (900000 ms) of inactivity
+  // Calculate pending counts from user data
+  const calculatePendingCounts = (users) => {
+    let withdrawalCount = 0;
+    let tokenRequestCount = 0;
+    let entryFeeCount = 0;
+    let kycCount = 0;
+    let bankDetailsCount = 0;
+
+    users.forEach(user => {
+      // Count pending withdrawals
+      if (user.withdrawals) {
+        Object.values(user.withdrawals).forEach(withdrawal => {
+          if (withdrawal.status === 'pending') {
+            withdrawalCount++;
+          }
+        });
+      }
+
+      // Count pending token requests
+      if (user.tokenRequestHistory) {
+        Object.values(user.tokenRequestHistory).forEach(request => {
+          if (request.status === 'pending') {
+            tokenRequestCount++;
+          }
+        });
+      }
+
+      // Count pending entry fees
+      if (user.entryFeeSubmittedAt && user.entryFee !== 'paid') {
+        entryFeeCount++;
+      }
+
+      // Count pending KYC
+      if (user.kycSubmittedAt && user.kycStatus !== 'accepted') {
+        kycCount++;
+      }
+
+      // Count unverified bank details
+      // Check both possible field names: bankingDetails and bankDetails
+      const bankData = user.bankingDetails || user.bankDetails;
+      if (bankData) {
+        Object.values(bankData).forEach(bankDetail => {
+          // Count as pending if status is not "verified" or status key doesn't exist
+          if (!bankDetail.status || bankDetail.status !== 'verified') {
+            bankDetailsCount++;
+          }
+        });
+      }
+    });
+
+    return {
+      pendingWithdrawals: withdrawalCount,
+      pendingTokenRequests: tokenRequestCount,
+      pendingEntryFees: entryFeeCount,
+      pendingKYC: kycCount,
+      pendingBankDetails: bankDetailsCount
+    };
+  };
+
+  // Setup SSE connection to fetch pending counts
+  useEffect(() => {
+    let eventSource = null;
+
+    const setupSSE = () => {
+      try {
+        // Create SSE connection
+        eventSource = new EventSource('http://localhost:3200/api/api/users');
+        
+        eventSource.onopen = () => {
+          console.log('SSE Connection established');
+          setSseConnected(true);
+          setLoading(true);
+        };
+
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            if (data.success && data.data) {
+              const newCounts = calculatePendingCounts(data.data);
+              setCounts(newCounts);
+              setLoading(false);
+            }
+          } catch (err) {
+            console.error('Error parsing SSE data:', err);
+          }
+        };
+
+        eventSource.onerror = (error) => {
+          console.error('SSE Error:', error);
+          setSseConnected(false);
+          setLoading(false);
+          
+          // Close the connection
+          if (eventSource) {
+            eventSource.close();
+          }
+          
+          // Attempt to reconnect after 5 seconds
+          setTimeout(() => {
+            console.log('Attempting to reconnect SSE...');
+            setupSSE();
+          }, 5000);
+        };
+
+      } catch (err) {
+        console.error('Error setting up SSE:', err);
+        setLoading(false);
+      }
+    };
+
+    setupSSE();
+
+    // Cleanup on component unmount
+    return () => {
+      if (eventSource) {
+        console.log('Closing SSE connection');
+        eventSource.close();
+      }
+    };
+  }, []);
+
+  // Auto logout after 15 minutes of inactivity
   useEffect(() => {
     let logoutTimer;
 
-    // Function to start the logout timer
     const startLogoutTimer = () => {
       logoutTimer = setTimeout(() => {
-        handleLogout(); // Logout after 15 minutes
+        handleLogout();
       }, 900000);
     };
 
-    // Function to reset the logout timer
     const resetLogoutTimer = () => {
-      clearTimeout(logoutTimer); // Clear the previous timer
-      startLogoutTimer(); // Start a new timer
+      clearTimeout(logoutTimer);
+      startLogoutTimer();
     };
 
-    // Listen for user activity
     window.addEventListener("mousemove", resetLogoutTimer);
     window.addEventListener("keydown", resetLogoutTimer);
-
-    // Start the logout timer initially
     startLogoutTimer();
 
-    // Cleanup on component unmount (remove event listeners and clear timeout)
     return () => {
       clearTimeout(logoutTimer);
       window.removeEventListener("mousemove", resetLogoutTimer);
@@ -79,6 +203,44 @@ const Home = () => {
   const handleClickGame1 = () => {
     navigate("/adminopenclose");
   };
+
+  const pendingCards = [
+    {
+      title: 'Pending Withdrawals',
+      count: counts.pendingWithdrawals,
+      icon: 'bi-cash-coin',
+      bgColor: '#ff6b6b',
+      textColor: '#fff'
+    },
+    {
+      title: 'Pending Token Requests',
+      count: counts.pendingTokenRequests,
+      icon: 'bi-credit-card-2-front',
+      bgColor: '#4ecdc4',
+      textColor: '#fff'
+    },
+    {
+      title: 'Pending Entry Fees',
+      count: counts.pendingEntryFees,
+      icon: 'bi-receipt',
+      bgColor: '#a29bfe',
+      textColor: '#fff'
+    },
+    {
+      title: 'Pending KYC',
+      count: counts.pendingKYC,
+      icon: 'bi-person-check',
+      bgColor: '#fd79a8',
+      textColor: '#fff'
+    },
+    {
+      title: 'Pending Bank Details',
+      count: counts.pendingBankDetails,
+      icon: 'bi-bank',
+      bgColor: '#55efc4',
+      textColor: '#fff'
+    }
+  ];
 
   return (
     <div className="enhanced-layout">
@@ -215,20 +377,111 @@ const Home = () => {
       </nav>
 
       <div className="enhanced-content">
-        <div className="enhanced-banner-row">
-          {/* Only Game 1 Banner (Open-Close) */}
-          <div
-            className="enhanced-banner-container enhanced-banner-container-single"
-            onMouseEnter={() => setIsHovered("banner1")}
-            onMouseLeave={() => setIsHovered(null)}
-          >
-            <img src={image} alt="Play Now" className="enhanced-banner" />
-            <div className="enhanced-overlay">
-              <h2 className="banner-title">Open-Close</h2>
-              <div className="banner-subtitle">Start Your Gaming Adventure</div>
-              <button className="play-button" onClick={handleClickGame1}>
-                <i className="bi bi-play-fill"></i> Show Details
-              </button>
+        <div className="container-fluid px-4 py-3">
+          <div className="row g-3">
+            {/* Left Side - Banner */}
+            <div className="col-lg-7">
+              <div
+                className="enhanced-banner-container"
+                onMouseEnter={() => setIsHovered("banner1")}
+                onMouseLeave={() => setIsHovered(null)}
+                style={{ height: '480px', borderRadius: '15px', overflow: 'hidden', position: 'relative' }}
+              >
+                <img src={image} alt="Play Now" className="enhanced-banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div className="enhanced-overlay">
+                  <h2 className="banner-title">Open-Close</h2>
+                  <div className="banner-subtitle">Start Your Gaming Adventure</div>
+                  <button className="play-button" onClick={handleClickGame1}>
+                    <i className="bi bi-play-fill"></i> Show Details
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Side - Pending Requests Dashboard */}
+            <div className="col-lg-5">
+              <div className="card shadow border-0" style={{ borderRadius: '15px', height: '480px', display: 'flex', flexDirection: 'column' }}>
+                <div className="card-header bg-gradient text-white" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', borderRadius: '15px 15px 0 0', padding: '12px 16px' }}>
+                  <div className="d-flex justify-content-between align-items-center">
+                    <h6 className="mb-0" style={{ fontSize: '1rem', fontWeight: '600' }}>
+                      <i className="bi bi-bell-fill me-2"></i>
+                      Pending Requests
+                    </h6>
+                    <div>
+                      {sseConnected ? (
+                        <span className="badge bg-success" style={{ fontSize: '0.75rem' }}>
+                          <i className="bi bi-circle-fill" style={{ fontSize: '0.45rem' }}></i> Live
+                        </span>
+                      ) : (
+                        <span className="badge bg-danger" style={{ fontSize: '0.75rem' }}>
+                          <i className="bi bi-circle-fill" style={{ fontSize: '0.45rem' }}></i> Offline
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <div className="card-body p-2" style={{ flex: '1', overflowY: 'auto' }}>
+                  {loading ? (
+                    <div className="text-center d-flex flex-column justify-content-center align-items-center" style={{ height: '100%' }}>
+                      <div className="spinner-border text-primary" role="status" style={{ width: '2.5rem', height: '2.5rem' }}>
+                        <span className="visually-hidden">Loading...</span>
+                      </div>
+                      <p className="mt-3 text-muted mb-0" style={{ fontSize: '0.9rem' }}>Connecting to live updates...</p>
+                    </div>
+                  ) : (
+                    <div className="row g-2 p-2">
+                      {pendingCards.map((card, index) => (
+                        <div key={index} className="col-12">
+                          <div 
+                            className="card border-0 shadow-sm"
+                            style={{
+                              background: card.bgColor,
+                              borderRadius: '10px',
+                              transition: 'all 0.3s ease',
+                              cursor: 'pointer'
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.transform = 'translateY(-3px)';
+                              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.transform = 'translateY(0)';
+                              e.currentTarget.style.boxShadow = '';
+                            }}
+                          >
+                            <div className="card-body p-2 px-3">
+                              <div className="d-flex justify-content-between align-items-center">
+                                <div className="flex-grow-1">
+                                  <p className="mb-0" style={{ color: card.textColor, fontSize: '0.85rem', fontWeight: '600', lineHeight: '1.2' }}>
+                                    {card.title}
+                                  </p>
+                                  <h4 className="mb-0 mt-1" style={{ color: card.textColor, fontWeight: '700', fontSize: '1.5rem' }}>
+                                    {card.count}
+                                  </h4>
+                                </div>
+                                <div 
+                                  className="d-flex align-items-center justify-content-center ms-2"
+                                  style={{
+                                    width: '42px',
+                                    height: '42px',
+                                    borderRadius: '50%',
+                                    background: 'rgba(255, 255, 255, 0.25)',
+                                    flexShrink: 0
+                                  }}
+                                >
+                                  <i className={`bi ${card.icon}`} style={{ fontSize: '1.3rem', color: card.textColor }}></i>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div className="card-footer bg-light text-center py-2" style={{ borderRadius: '0 0 15px 15px' }}>
+                </div>
+              </div>
             </div>
           </div>
         </div>

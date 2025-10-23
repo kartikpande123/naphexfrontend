@@ -1,38 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { load } from '@cashfreepayments/cashfree-js';
 import API_BASE_URL from './ApiConfig';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 const EntryFees = ({ onContinue }) => {
-  const [cashfreeReady, setCashfreeReady] = useState(false);
-  const [cashfreeInstance, setCashfreeInstance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
-  const [paymentSuccess, setPaymentSuccess] = useState(false);
+  const [showOrderIdInput, setShowOrderIdInput] = useState(false);
+  const [orderId, setOrderId] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [entryFeeStatus, setEntryFeeStatus] = useState('checking'); // checking, unpaid, pending, paid
 
-  // ✅ Use phone number from userData in localStorage
+  // Get user data from localStorage
   const userDataRaw = localStorage.getItem("userData");
   const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
   const phoneNo = userData?.phoneNo || "";
 
-  useEffect(() => {
-    const initializeCashfree = async () => {
-      try {
-        const cashfree = await load({ mode: 'sandbox' }); // change to 'production' in prod
-        setCashfreeInstance(cashfree);
-        setCashfreeReady(true);
-      } catch (err) {
-        console.error("SDK Load Error:", err);
-        alert("❌ Failed to load payment SDK");
-      }
-    };
+  const RAZORPAY_LINK = "https://razorpay.me/@mohammedadilbetageri?amount=zgioswZa9n4qt5x9yD7i%2BQ%3D%3D";
 
-    initializeCashfree();
+  useEffect(() => {
+    // Check entry fee status on component mount
+    checkEntryFeeStatus();
 
     // Prevent closing popup with Escape key
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && !paymentSuccess) {
+      if (e.key === 'Escape' && entryFeeStatus !== 'paid') {
         e.preventDefault();
         e.stopPropagation();
         return false;
@@ -41,7 +34,7 @@ const EntryFees = ({ onContinue }) => {
 
     // Prevent browser back button
     const handlePopState = (e) => {
-      if (!paymentSuccess) {
+      if (entryFeeStatus !== 'paid') {
         e.preventDefault();
         window.history.pushState(null, null, window.location.pathname);
         alert("🚫 Payment required to continue. Please complete the entry fee.");
@@ -50,7 +43,7 @@ const EntryFees = ({ onContinue }) => {
 
     // Prevent page refresh/close
     const handleBeforeUnload = (e) => {
-      if (!paymentSuccess) {
+      if (entryFeeStatus !== 'paid') {
         e.preventDefault();
         e.returnValue = "Payment is required to continue. Are you sure you want to leave?";
         return "Payment is required to continue. Are you sure you want to leave?";
@@ -71,7 +64,39 @@ const EntryFees = ({ onContinue }) => {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
-  }, [paymentSuccess]);
+  }, [entryFeeStatus]);
+
+  // Check if user has already paid entry fee
+  const checkEntryFeeStatus = async () => {
+    if (!phoneNo) {
+      setEntryFeeStatus('unpaid');
+      return;
+    }
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/check-entry-fee`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phoneNo })
+      });
+
+      const data = await res.json();
+      
+      if (data.success && data.entryFee === 'paid') {
+        setEntryFeeStatus('paid');
+        // Auto-continue to dashboard
+        setTimeout(() => onContinue(), 1000);
+      } else if (data.success && data.entryFee === 'pending') {
+        setEntryFeeStatus('pending');
+        setVerificationStatus('Your payment is under verification. Please wait for admin approval.');
+      } else {
+        setEntryFeeStatus('unpaid');
+      }
+    } catch (err) {
+      console.error("Error checking entry fee status:", err);
+      setEntryFeeStatus('unpaid');
+    }
+  };
 
   const handleLogout = () => {
     // Clear localStorage and navigate to login page
@@ -79,83 +104,111 @@ const EntryFees = ({ onContinue }) => {
     window.location.href = "/";
   };
 
-  const handlePayment = async () => {
+  const handlePayNow = () => {
+    // Open Razorpay payment link in new tab
+    window.open(RAZORPAY_LINK, '_blank');
+    
+    // Show order ID input after opening payment link
+    setShowOrderIdInput(true);
+    setPaymentStatus('Please complete the payment and copy your Order ID from Razorpay');
+  };
+
+  const handleSubmitOrderId = async () => {
+    if (!orderId.trim()) {
+      alert("❌ Please enter the Order ID");
+      return;
+    }
+
     if (!phoneNo) {
-      alert("❌ Phone number not found in localStorage");
+      alert("❌ Phone number not found");
       return;
     }
 
-    if (!cashfreeInstance || !cashfreeReady) {
-      alert("Cashfree SDK not ready");
-      return;
-    }
-
-    setLoading(true);
-    setPaymentStatus("Creating payment order...");
+    setIsVerifying(true);
+    setVerificationStatus('Submitting order ID for verification...');
 
     try {
-      const res = await fetch(`${API_BASE_URL}/create-order`, {
+      const res = await fetch(`${API_BASE_URL}/submit-order-id`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phoneNo, amount: 500, orderNote: "Entry Fee" })
-      });
-
-      const data = await res.json();
-      if (!data.success) throw new Error(data.error || "Failed to create order");
-
-      const { paymentSessionId, orderId } = data;
-
-      setPaymentStatus("Opening payment window...");
-
-      const result = await cashfreeInstance.checkout({
-        paymentSessionId,
-        redirectTarget: '_modal'
-      });
-
-      if (result.error) {
-        throw new Error(`Payment failed: ${result.error.message || result.error}`);
-      }
-
-      setPaymentStatus("Verifying payment...");
-
-      const verifyRes = await fetch(`${API_BASE_URL}/verify-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId })
-      });
-
-      const verifyData = await verifyRes.json();
-      if (!verifyData.success || verifyData.status !== 'PAID') {
-        throw new Error(`Payment verification failed: ${verifyData.status}`);
-      }
-
-      setPaymentStatus("Recording entry fee...");
-
-      const entryFeeRes = await fetch(`${API_BASE_URL}/pay-entry-fee`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phoneNo,
-          orderId,
-          paymentDetails: verifyData.paymentDetails
+        body: JSON.stringify({ 
+          phoneNo, 
+          orderId: orderId.trim(),
+          amount: 500
         })
       });
 
-      const entryFeeData = await entryFeeRes.json();
-      if (!entryFeeData.success) {
-        throw new Error("Failed to record entry fee");
+      const data = await res.json();
+      
+      if (data.success) {
+        setEntryFeeStatus('pending');
+        setVerificationStatus('✅ Order ID submitted successfully! Your payment is under verification. Admin will verify your payment soon.');
+        setShowOrderIdInput(false);
+      } else {
+        throw new Error(data.error || 'Failed to submit order ID');
       }
-
-      setPaymentStatus("🎉 Payment successful! You got 200 tokens. Congratulations!");
-
-      setPaymentSuccess(true);
     } catch (err) {
-      console.error("Payment Flow Error:", err);
-      setPaymentStatus(`❌ Error: ${err.message}`);
+      console.error("Error submitting order ID:", err);
+      setVerificationStatus(`❌ Error: ${err.message}`);
     } finally {
-      setLoading(false);
+      setIsVerifying(false);
     }
   };
+
+  // Render different states
+  if (entryFeeStatus === 'checking') {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          zIndex: 1050,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: '1.2rem'
+        }}
+      >
+        <div className="text-center">
+          <div className="spinner-border text-primary mb-3" role="status">
+            <span className="visually-hidden">Loading...</span>
+          </div>
+          <p>Checking payment status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (entryFeeStatus === 'paid') {
+    return (
+      <div
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          zIndex: 1050,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          color: 'white',
+          fontSize: '1.2rem'
+        }}
+      >
+        <div className="text-center">
+          <div className="text-success mb-3" style={{ fontSize: '3rem' }}>✅</div>
+          <p>Payment verified! Redirecting to dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -172,7 +225,7 @@ const EntryFees = ({ onContinue }) => {
           userSelect: 'none',
           pointerEvents: 'all'
         }}
-        onContextMenu={(e) => e.preventDefault()} // Disable right-click
+        onContextMenu={(e) => e.preventDefault()}
       />
       
       <div
@@ -186,9 +239,9 @@ const EntryFees = ({ onContinue }) => {
         }}
         data-bs-backdrop="static"
         data-bs-keyboard="false"
-        onContextMenu={(e) => e.preventDefault()} // Disable right-click
+        onContextMenu={(e) => e.preventDefault()}
       >
-        <div className="modal-dialog modal-dialog-centered" role="document">
+        <div className="modal-dialog modal-dialog-centered" role="document" style={{ maxHeight: '90vh', overflow: 'auto' }}>
           <div
             className="modal-content p-0"
             style={{
@@ -197,11 +250,11 @@ const EntryFees = ({ onContinue }) => {
               backdropFilter: 'blur(15px)',
               border: '2px solid #007bff',
               boxShadow: '0 0 30px rgba(0,123,255,0.4)',
-              overflow: 'hidden',
+              overflow: 'visible',
               userSelect: 'none',
               position: 'relative'
             }}
-            onContextMenu={(e) => e.preventDefault()} // Disable right-click
+            onContextMenu={(e) => e.preventDefault()}
           >
             {/* Invisible overlay to prevent any bypass attempts */}
             <div
@@ -240,68 +293,168 @@ const EntryFees = ({ onContinue }) => {
               </button>
             </div>
 
-            <div className="modal-body text-center p-4">
-              <h4 className="text-primary mb-3">Join the Game Room</h4>
-              <p style={{ fontSize: '0.95rem' }} className="text-muted">
-                Unlock your access to play and compete. Entry fee is ₹500.
-              </p>
+            <div className="modal-body text-center p-4" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+              {entryFeeStatus === 'pending' ? (
+                // Pending Verification Status
+                <>
+                  <div className="mb-4">
+                    <div className="spinner-border text-warning mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
+                      <span className="visually-hidden">Loading...</span>
+                    </div>
+                    <h4 className="text-warning mb-3">⏳ Payment Under Verification</h4>
+                    <p style={{ fontSize: '0.95rem' }} className="text-muted">
+                      Your payment is currently under verification by our admin team. This process typically takes between 4 to 24 hours. Please try logging in again after some time.
+                    </p>
+                  </div>
 
-              <div
-                className="alert alert-info mt-3"
-                style={{
-                  fontSize: '0.9rem',
-                  backgroundColor: '#e6f2ff',
-                  color: '#004085',
-                  border: '1px solid #b8daff'
-                }}
-              >
-                🎁 <strong>Bonus:</strong> Unlock 200 tokens instantly upon completing the entry fee!
-              </div>
+                  {verificationStatus && (
+                    <div
+                      className="alert alert-warning my-3 text-start"
+                      style={{
+                        fontSize: '0.9rem',
+                        backgroundColor: '#fff3cd',
+                        color: '#856404',
+                        borderLeft: '4px solid #ffc107'
+                      }}
+                    >
+                      {verificationStatus}
+                    </div>
+                  )}
 
-              {paymentStatus && (
-                <div
-                  className="alert alert-secondary my-3 text-start"
-                  style={{
-                    fontSize: '0.9rem',
-                    backgroundColor: '#f5faff',
-                    color: '#003366',
-                    borderLeft: '4px solid #007bff',
-                    transition: 'all 0.3s ease'
-                  }}
-                >
-                  <span role="img" aria-label="status">
-                    {paymentStatus.includes('✅') ? '✅' : paymentStatus.includes('❌') ? '❌' : '⏳'}
-                  </span> {paymentStatus}
-                </div>
-              )}
-
-              {!paymentSuccess ? (
-                <button
-                  className="btn btn-primary w-100 mt-3 py-2"
-                  onClick={handlePayment}
-                  disabled={loading || !cashfreeReady}
-                  style={{
-                    fontWeight: '600',
-                    fontSize: '1rem',
-                    borderRadius: '10px',
-                    boxShadow: '0 4px 12px rgba(0,123,255,0.2)'
-                  }}
-                >
-                  {loading ? 'Processing Payment...' : 'Pay ₹500 Now'}
-                </button>
+                  <button
+                    className="btn btn-secondary w-100 mt-3 py-2"
+                    onClick={checkEntryFeeStatus}
+                    style={{
+                      fontWeight: '600',
+                      fontSize: '1rem',
+                      borderRadius: '10px'
+                    }}
+                  >
+                    🔄 Refresh Status
+                  </button>
+                </>
               ) : (
-                <button
-                  className="btn btn-success w-100 mt-3 py-2"
-                  onClick={onContinue}
-                  style={{
-                    fontWeight: '600',
-                    fontSize: '1rem',
-                    borderRadius: '10px',
-                    boxShadow: '0 4px 12px rgba(40,167,69,0.3)'
-                  }}
-                >
-                  ✅ Continue to Dashboard
-                </button>
+                // Unpaid Status - Show Payment Flow
+                <>
+                  <h4 className="text-primary mb-3">Join the Game Room</h4>
+                  <p style={{ fontSize: '0.95rem' }} className="text-muted">
+                    Unlock your access to play and compete. Entry fee is ₹500.
+                  </p>
+
+                  <div
+                    className="alert alert-info mt-3"
+                    style={{
+                      fontSize: '0.9rem',
+                      backgroundColor: '#e6f2ff',
+                      color: '#004085',
+                      border: '1px solid #b8daff'
+                    }}
+                  >
+                    🎁 <strong>Bonus:</strong> Unlock 200 tokens instantly upon completing the entry fee!
+                  </div>
+
+                  {paymentStatus && (
+                    <div
+                      className="alert alert-secondary my-3 text-start"
+                      style={{
+                        fontSize: '0.9rem',
+                        backgroundColor: '#f5faff',
+                        color: '#003366',
+                        borderLeft: '4px solid #007bff',
+                        transition: 'all 0.3s ease'
+                      }}
+                    >
+                      ℹ️ {paymentStatus}
+                    </div>
+                  )}
+
+                  {!showOrderIdInput ? (
+                    <button
+                      className="btn btn-primary w-100 mt-3 py-2"
+                      onClick={handlePayNow}
+                      disabled={loading}
+                      style={{
+                        fontWeight: '600',
+                        fontSize: '1rem',
+                        borderRadius: '10px',
+                        boxShadow: '0 4px 12px rgba(0,123,255,0.2)'
+                      }}
+                    >
+                      💳 Pay ₹500 Now
+                    </button>
+                  ) : (
+                    <div className="mt-4">
+                      <div
+                        className="alert alert-warning text-start"
+                        style={{
+                          fontSize: '0.85rem',
+                          backgroundColor: '#fff3cd',
+                          color: '#856404',
+                          border: '1px solid #ffc107'
+                        }}
+                      >
+                        <strong>⚠️ Important:</strong> After completing payment on Razorpay, copy the <strong>Order ID</strong> and paste it below.
+                      </div>
+
+                      <label htmlFor="orderIdInput" className="form-label text-start w-100 mb-2" style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                        Enter Order ID <span className="text-danger">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="orderIdInput"
+                        className="form-control mb-3"
+                        placeholder="e.g., order_abc123xyz"
+                        value={orderId}
+                        onChange={(e) => setOrderId(e.target.value)}
+                        disabled={isVerifying}
+                        style={{
+                          fontSize: '0.95rem',
+                          padding: '10px 15px',
+                          borderRadius: '8px',
+                          border: '2px solid #007bff'
+                        }}
+                      />
+
+                      {verificationStatus && (
+                        <div
+                          className={`alert ${verificationStatus.includes('✅') ? 'alert-success' : 'alert-danger'} my-3 text-start`}
+                          style={{
+                            fontSize: '0.9rem'
+                          }}
+                        >
+                          {verificationStatus}
+                        </div>
+                      )}
+
+                      <button
+                        className="btn btn-success w-100 py-2"
+                        onClick={handleSubmitOrderId}
+                        disabled={isVerifying || !orderId.trim()}
+                        style={{
+                          fontWeight: '600',
+                          fontSize: '1rem',
+                          borderRadius: '10px',
+                          boxShadow: '0 4px 12px rgba(40,167,69,0.3)'
+                        }}
+                      >
+                        {isVerifying ? 'Submitting...' : '✅ Submit Order ID'}
+                      </button>
+
+                      <button
+                        className="btn btn-link text-primary mt-2"
+                        onClick={() => {
+                          setShowOrderIdInput(false);
+                          setOrderId('');
+                          setVerificationStatus('');
+                          setPaymentStatus('');
+                        }}
+                        style={{ fontSize: '0.85rem' }}
+                      >
+                        ← Back to Payment
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -314,7 +467,7 @@ const EntryFees = ({ onContinue }) => {
                 borderTop: '1px solid #dee2e6'
               }}
             >
-              🔐 Secure Payment by <strong>Cashfree</strong>
+              🔐 Secure Payment by <strong>Razorpay</strong>
             </div>
           </div>
         </div>

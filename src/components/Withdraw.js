@@ -14,6 +14,8 @@ const TokenWithdrawal = () => {
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [netAmount, setNetAmount] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [canWithdraw, setCanWithdraw] = useState(false);
+  const [withdrawalMessage, setWithdrawalMessage] = useState("");
 
   const navigate = useNavigate();
 
@@ -27,6 +29,60 @@ const TokenWithdrawal = () => {
       setLoading(false);
     }
   }, []);
+
+  const checkWithdrawalEligibility = (userDataObj) => {
+    const currentDate = new Date();
+    const currentDay = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
+    const currentTimestamp = currentDate.getTime();
+
+    // Check if today is Sunday
+    const isSunday = currentDay === 0;
+
+    // Check for recent wins within 48 hours
+    let hasRecentWin = false;
+    let latestWinTime = null;
+
+    if (userDataObj.game1 && userDataObj.game1.wins) {
+      const wins = userDataObj.game1.wins;
+      const winsArray = Object.values(wins);
+
+      // Find the most recent win
+      winsArray.forEach((win) => {
+        if (win.timestamp) {
+          const winTime = win.timestamp;
+          const timeDiff = currentTimestamp - winTime;
+          const hoursDiff = timeDiff / (1000 * 60 * 60);
+
+          if (hoursDiff <= 48) {
+            hasRecentWin = true;
+            if (!latestWinTime || winTime > latestWinTime) {
+              latestWinTime = winTime;
+            }
+          }
+        }
+      });
+    }
+
+    // Determine eligibility and message
+    if (isSunday) {
+      setCanWithdraw(true);
+      setWithdrawalMessage("✅ Today is Sunday! You can withdraw your tokens.");
+    } else if (hasRecentWin && latestWinTime) {
+      setCanWithdraw(true);
+      const hoursLeft = 48 - ((currentTimestamp - latestWinTime) / (1000 * 60 * 60));
+      const hoursLeftRounded = Math.ceil(hoursLeft);
+      setWithdrawalMessage(
+        `✅ Congratulations on your recent win! You have ${hoursLeftRounded} hours left to withdraw.`
+      );
+    } else {
+      setCanWithdraw(false);
+      // Calculate days until next Sunday
+      const daysUntilSunday = (7 - currentDay) % 7 || 7;
+      setWithdrawalMessage(
+        `⏰ Withdrawals are only allowed on Sundays or within 48 hours of a win. Next Sunday is in ${daysUntilSunday} day${daysUntilSunday > 1 ? 's' : ''}.`
+      );
+    }
+  };
 
   const fetchUserProfile = async (phoneNo) => {
     try {
@@ -42,6 +98,9 @@ const TokenWithdrawal = () => {
         if (parsed.success) {
           setUserData(parsed.userData);
           setTokens(parsed.tokens);
+
+          // Check withdrawal eligibility
+          checkWithdrawalEligibility(parsed.userData);
 
           if (parsed.userData.bankingDetails) {
             const details = Object.values(parsed.userData.bankingDetails);
@@ -74,6 +133,11 @@ const TokenWithdrawal = () => {
   }, [withdrawAmount]);
 
   const handleWithdraw = async () => {
+    if (!canWithdraw) {
+      toast.error("Withdrawals are not allowed at this time. Please check the withdrawal schedule.");
+      return;
+    }
+
     if (!withdrawAmount || parseInt(withdrawAmount) <= 0) {
       toast.warning("Please enter a valid amount");
       return;
@@ -133,7 +197,6 @@ const TokenWithdrawal = () => {
   if (loading) {
     return (
       <>
-        {/* Background Image with Blur */}
         <div
           style={{
             position: 'fixed',
@@ -150,7 +213,6 @@ const TokenWithdrawal = () => {
           }}
         />
         
-        {/* Overlay */}
         <div
           style={{
             position: 'fixed',
@@ -190,7 +252,6 @@ const TokenWithdrawal = () => {
   if (error) {
     return (
       <>
-        {/* Background Image with Blur */}
         <div
           style={{
             position: 'fixed',
@@ -207,7 +268,6 @@ const TokenWithdrawal = () => {
           }}
         />
         
-        {/* Overlay */}
         <div
           style={{
             position: 'fixed',
@@ -255,7 +315,6 @@ const TokenWithdrawal = () => {
 
   return (
     <>
-      {/* Background Image with Blur */}
       <div
         style={{
           position: 'fixed',
@@ -272,7 +331,6 @@ const TokenWithdrawal = () => {
         }}
       />
 
-      {/* Overlay */}
       <div
         style={{
           position: 'fixed',
@@ -295,7 +353,6 @@ const TokenWithdrawal = () => {
           }
         }}
       >
-        {/* Main Container */}
         <div
           style={{
             width: '100%',
@@ -311,7 +368,6 @@ const TokenWithdrawal = () => {
             margin: 'auto'
           }}
         >
-          {/* Header - Fixed */}
           <div
             style={{
               background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
@@ -322,7 +378,6 @@ const TokenWithdrawal = () => {
               flexShrink: 0
             }}
           >
-            {/* Back Button */}
             <button
               onClick={() => navigate('/home')}
               disabled={submitting}
@@ -360,7 +415,6 @@ const TokenWithdrawal = () => {
             </h2>
           </div>
 
-          {/* Scrollable Content */}
           <div 
             style={{ 
               padding: '1.5rem', 
@@ -390,6 +444,50 @@ const TokenWithdrawal = () => {
                 }}
               >
                 {tokens.toLocaleString()} tokens
+              </div>
+            </div>
+
+            {/* Withdrawal Eligibility Notice */}
+            <div 
+              style={{
+                background: canWithdraw 
+                  ? 'linear-gradient(135deg, #f0fdf4, #dcfce7)'
+                  : 'linear-gradient(135deg, #fef2f2, #fee2e2)',
+                border: `2px solid ${canWithdraw ? '#10b981' : '#ef4444'}`,
+                borderRadius: '12px',
+                padding: '1rem',
+                marginBottom: '1.5rem'
+              }}
+            >
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'flex-start',
+                gap: '0.75rem' 
+              }}>
+                <div style={{ 
+                  fontSize: '1.5rem',
+                  flexShrink: 0,
+                  marginTop: '0.1rem'
+                }}>
+                  {canWithdraw ? '✅' : '⏰'}
+                </div>
+                <div>
+                  <div style={{ 
+                    fontWeight: '600', 
+                    color: canWithdraw ? '#065f46' : '#991b1b', 
+                    fontSize: '0.9rem',
+                    marginBottom: '0.5rem' 
+                  }}>
+                    {canWithdraw ? 'Withdrawal Available' : 'Withdrawal Restricted'}
+                  </div>
+                  <div style={{ 
+                    color: canWithdraw ? '#065f46' : '#991b1b', 
+                    fontSize: '0.85rem', 
+                    lineHeight: '1.4' 
+                  }}>
+                    {withdrawalMessage}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -457,12 +555,12 @@ const TokenWithdrawal = () => {
                             }`,
                             borderRadius: '12px',
                             padding: '1rem',
-                            cursor: isVerified ? 'pointer' : 'not-allowed',
-                            opacity: isVerified ? 1 : 0.6,
+                            cursor: isVerified && canWithdraw ? 'pointer' : 'not-allowed',
+                            opacity: isVerified && canWithdraw ? 1 : 0.6,
                             transition: 'all 0.2s ease',
                             background: selectedOption === value ? '#eff6ff' : '#ffffff'
                           }}
-                          onClick={isVerified ? () => setSelectedOption(value) : undefined}
+                          onClick={isVerified && canWithdraw ? () => setSelectedOption(value) : undefined}
                         >
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             <input
@@ -470,7 +568,7 @@ const TokenWithdrawal = () => {
                               id={value}
                               value={value}
                               checked={selectedOption === value}
-                              disabled={!isVerified}
+                              disabled={!isVerified || !canWithdraw}
                               onChange={(e) => setSelectedOption(e.target.value)}
                               style={{ marginRight: '0.75rem', transform: 'scale(1.2)' }}
                             />
@@ -544,8 +642,8 @@ const TokenWithdrawal = () => {
                       placeholder="Enter tokens to withdraw"
                       value={withdrawAmount}
                       onChange={(e) => setWithdrawAmount(e.target.value)}
-                      onWheel={(e) => e.target.blur()} // Disable scroll wheel
-                      disabled={!hasVerified}
+                      onWheel={(e) => e.target.blur()}
+                      disabled={!hasVerified || !canWithdraw}
                       style={{
                         width: '100%',
                         padding: '0.875rem',
@@ -554,11 +652,10 @@ const TokenWithdrawal = () => {
                         borderRadius: '12px',
                         outline: 'none',
                         transition: 'all 0.2s ease',
-                        backgroundColor: !hasVerified ? '#f9fafb' : '#ffffff',
+                        backgroundColor: (!hasVerified || !canWithdraw) ? '#f9fafb' : '#ffffff',
                         paddingRight: '4rem',
-                        // Hide spinner arrows
-                        MozAppearance: 'textfield', // Firefox
-                        WebkitAppearance: 'none', // Chrome, Safari, Edge
+                        MozAppearance: 'textfield',
+                        WebkitAppearance: 'none',
                         appearance: 'none'
                       }}
                       onFocus={(e) => e.target.style.borderColor = '#2563eb'}
@@ -619,7 +716,7 @@ const TokenWithdrawal = () => {
                 {/* Withdraw Button */}
                 <button
                   onClick={handleWithdraw}
-                  disabled={!hasVerified || submitting || !withdrawAmount}
+                  disabled={!hasVerified || !canWithdraw || submitting || !withdrawAmount}
                   style={{
                     width: '100%',
                     padding: '0.875rem',
@@ -627,13 +724,13 @@ const TokenWithdrawal = () => {
                     fontWeight: '600',
                     borderRadius: '12px',
                     border: 'none',
-                    background: (!hasVerified || submitting || !withdrawAmount) 
+                    background: (!hasVerified || !canWithdraw || submitting || !withdrawAmount) 
                       ? '#9ca3af' 
                       : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
                     color: 'white',
-                    cursor: (!hasVerified || submitting || !withdrawAmount) ? 'not-allowed' : 'pointer',
+                    cursor: (!hasVerified || !canWithdraw || submitting || !withdrawAmount) ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s ease',
-                    boxShadow: (!hasVerified || submitting || !withdrawAmount) ? 'none' : '0 4px 20px rgba(37, 99, 235, 0.3)'
+                    boxShadow: (!hasVerified || !canWithdraw || submitting || !withdrawAmount) ? 'none' : '0 4px 20px rgba(37, 99, 235, 0.3)'
                   }}
                 >
                   {submitting ? (
@@ -693,7 +790,10 @@ const TokenWithdrawal = () => {
                     fontSize: '0.85rem', 
                     lineHeight: '1.4' 
                   }}>
-                    30% tax is automatically deducted from all withdrawals. Only verified payment methods can be used for withdrawals.
+                    • Withdrawals are available only on Sundays<br/>
+                    • Winners can withdraw within 48 hours of their win<br/>
+                    • 30% tax is automatically deducted from all withdrawals<br/>
+                    • Only verified payment methods can be used
                   </div>
                 </div>
               </div>

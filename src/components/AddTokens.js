@@ -1,16 +1,17 @@
 import React, { useEffect, useState } from 'react';
-import { load } from '@cashfreepayments/cashfree-js';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import API_BASE_URL from './ApiConfig';
 import payBgImage from '../images/pay-bg.png';
 
 const AddTokens = ({ onClose, onTokensUpdated }) => {
-  const [cashfreeReady, setCashfreeReady] = useState(false);
-  const [cashfreeInstance, setCashfreeInstance] = useState(null);
   const [loading, setLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
+  const [showPaymentIdInput, setShowPaymentIdInput] = useState(false);
+  const [paymentId, setPaymentId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [tokenAmount, setTokenAmount] = useState('');
   const [userTokens, setUserTokens] = useState(0);
+  const [toasts, setToasts] = useState([]);
 
   // Get user data from localStorage
   const userDataRaw = localStorage.getItem("userData");
@@ -19,21 +20,29 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
 
   // Token price (₹1 per token)
   const TOKEN_PRICE = 1;
+  const GST_RATE = 0.28; // 28% GST
+  const PAYMENT_GATEWAY_FEE = 0.025; // 2.5% Razorpay fee
+
+  // Payment link - Razorpay payment link
+  const RAZORPAY_PAYMENT_LINK = "https://razorpay.me/@mohammedadilbetageri?amount=tEDHZxxCtz0rKFL9kTzhOw%3D%3D";
+
+  // Toast notification function
+  const showToast = (message, type = 'success', duration = 5000) => {
+    const id = Date.now();
+    const toast = { id, message, type };
+    setToasts(prev => [...prev, toast]);
+
+    // Auto remove after duration
+    setTimeout(() => {
+      setToasts(prev => prev.filter(t => t.id !== id));
+    }, duration);
+  };
+
+  const removeToast = (id) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  };
 
   useEffect(() => {
-    const initializeCashfree = async () => {
-      try {
-        const cashfree = await load({ mode: 'sandbox' }); // change to 'production' in prod
-        setCashfreeInstance(cashfree);
-        setCashfreeReady(true);
-      } catch (err) {
-        console.error("SDK Load Error:", err);
-        setPaymentStatus("❌ Failed to load payment SDK");
-      }
-    };
-
-    initializeCashfree();
-    
     // Load current user tokens
     if (userData?.tokens) {
       setUserTokens(userData.tokens);
@@ -49,137 +58,121 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
     }
   };
 
-  const handlePurchase = async () => {
+  const calculateGST = () => {
     const tokens = parseInt(tokenAmount);
-    
-    if (!tokens || tokens < 1) {
-      setPaymentStatus("❌ Please enter a valid token amount (minimum 1)");
-      return;
-    }
-
-    if (tokens > 10000) {
-      setPaymentStatus("❌ Maximum 10,000 tokens allowed per transaction");
-      return;
-    }
-
-    if (!phoneNo) {
-      setPaymentStatus("❌ Phone number not found");
-      return;
-    }
-
-    if (!cashfreeInstance || !cashfreeReady) {
-      setPaymentStatus("❌ Payment system not ready");
-      return;
-    }
-
-    setLoading(true);
-    setPaymentStatus("Creating payment order...");
-
-    try {
-      const amount = tokens * TOKEN_PRICE;
-
-      // Step 1: Create Order
-      const createOrderRes = await fetch(`${API_BASE_URL}/create-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          phoneNo, 
-          amount, 
-          orderNote: `Purchase ${tokens} tokens`
-        })
-      });
-
-      const orderData = await createOrderRes.json();
-      if (!orderData.success) {
-        throw new Error(orderData.error || "Failed to create order");
-      }
-
-      const { paymentSessionId, orderId } = orderData;
-      setPaymentStatus("Opening payment window...");
-
-      // Step 2: Open Cashfree Checkout
-      const result = await cashfreeInstance.checkout({
-        paymentSessionId,
-        redirectTarget: '_modal'
-      });
-
-      if (result.error) {
-        throw new Error(`Payment failed: ${result.error.message || result.error}`);
-      }
-
-      setPaymentStatus("Verifying payment...");
-
-      // Step 3: Verify Payment
-      const verifyRes = await fetch(`${API_BASE_URL}/verify-order`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId })
-      });
-
-      const verifyData = await verifyRes.json();
-      if (!verifyData.success || verifyData.status !== 'PAID') {
-        throw new Error(`Payment verification failed: ${verifyData.status}`);
-      }
-
-      setPaymentStatus("Adding tokens to your account...");
-
-      // Step 4: Add Tokens
-      const addTokensRes = await fetch(`${API_BASE_URL}/add-tokens`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          phoneNo,
-          orderId,
-          amount: tokens
-        })
-      });
-
-      const tokensData = await addTokensRes.json();
-      if (!tokensData.success) {
-        throw new Error("Failed to add tokens to account");
-      }
-
-      // Update local state and localStorage
-      const newTokenBalance = tokensData.tokens;
-      setUserTokens(newTokenBalance);
-      
-      // Update localStorage
-      const updatedUserData = { ...userData, tokens: newTokenBalance };
-      localStorage.setItem("userData", JSON.stringify(updatedUserData));
-
-      setPaymentStatus(`✅ Success! ${tokens} tokens added to your account!`);
-      
-      // Clear input after successful payment
-      setTokenAmount('');
-      
-      // Notify parent component
-      if (onTokensUpdated) {
-        onTokensUpdated(newTokenBalance);
-      }
-
-      // Auto close after 3 seconds
-      setTimeout(() => {
-        if (onClose) onClose();
-      }, 3000);
-
-    } catch (err) {
-      console.error("Purchase Error:", err);
-      setPaymentStatus(`❌ Error: ${err.message}`);
-    } finally {
-      setLoading(false);
-    }
+    if (!tokens) return 0;
+    return parseFloat((tokens * GST_RATE).toFixed(2));
   };
 
-  const calculateAmount = () => {
+  const calculatePaymentGatewayFee = () => {
     const tokens = parseInt(tokenAmount);
-    return tokens ? tokens * TOKEN_PRICE : 0;
+    if (!tokens) return 0;
+    const amount = tokens * TOKEN_PRICE;
+    return parseFloat((amount * PAYMENT_GATEWAY_FEE).toFixed(2));
   };
 
   const calculateNetTokens = () => {
     const tokens = parseInt(tokenAmount);
     if (!tokens) return 0;
-    const tax = Math.floor(tokens * 0.28);
-    return tokens - tax;
+    // Net tokens = Total - GST - Gateway Fee
+    const gst = calculateGST();
+    const gatewayFee = calculatePaymentGatewayFee();
+    return parseFloat((tokens - gst - gatewayFee).toFixed(2));
+  };
+
+  const calculateTotalAmount = () => {
+    // User wants to recharge for X tokens
+    // They need to pay X amount (₹1 per token)
+    const tokens = parseInt(tokenAmount);
+    if (!tokens) return 0;
+    return tokens * TOKEN_PRICE;
+  };
+
+  const handlePayNow = () => {
+    const tokens = parseInt(tokenAmount);
+    
+    if (!tokens || tokens < 1) {
+      showToast("Please enter a valid token amount (minimum 1)", "error");
+      return;
+    }
+
+    if (!phoneNo) {
+      showToast("Phone number not found", "error");
+      return;
+    }
+
+    // Open Razorpay payment link in new tab
+    window.open(RAZORPAY_PAYMENT_LINK, '_blank');
+    
+    // Show payment ID input after opening payment link
+    setShowPaymentIdInput(true);
+    setPaymentStatus('Please complete the payment and copy your Payment ID from Razorpay');
+  };
+
+  const handleSubmitPaymentId = async () => {
+    if (!paymentId.trim()) {
+      showToast("Please enter the Payment ID", "error");
+      return;
+    }
+
+    if (!phoneNo) {
+      showToast("Phone number not found", "error");
+      return;
+    }
+
+    const tokens = parseInt(tokenAmount);
+    if (!tokens) {
+      showToast("Invalid token amount", "error");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setPaymentStatus('Submitting token request for verification...');
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/submit-token-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ 
+          phoneNo, 
+          paymentId: paymentId.trim(),
+          requestedTokens: tokens,
+          netTokens: calculateNetTokens(),
+          amountPaid: calculateTotalAmount(),
+          gstAmount: calculateGST(),
+          gatewayFee: calculatePaymentGatewayFee()
+        })
+      });
+
+      const data = await res.json();
+      
+      if (data.success) {
+        // Show success toast with detailed info
+        showToast(
+          `Token Request Submitted! Your payment is under verification. Admin will add ${calculateNetTokens().toLocaleString()} tokens to your account within 24-48 hours. Payment ID: ${paymentId.trim()}`,
+          "success",
+          8000
+        );
+        
+        setShowPaymentIdInput(false);
+        setTokenAmount('');
+        setPaymentId('');
+        setPaymentStatus('');
+
+        // Close modal after short delay
+        setTimeout(() => {
+          if (onClose) onClose();
+        }, 1000);
+      } else {
+        throw new Error(data.error || 'Failed to submit token request');
+      }
+    } catch (err) {
+      console.error("Error submitting payment ID:", err);
+      showToast(err.message, "error");
+      setPaymentStatus('');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -277,8 +270,48 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                 whiteSpace: 'nowrap'
               }}
             >
-              <span style={{ fontSize: '16px' }}>←</span>
               <span>Back</span>
+            </button>
+
+            {/* View Old Token Requests Button */}
+            <button
+              onClick={() => window.location.href = '/usertokenrequest'}
+              disabled={loading}
+              style={{
+                position: 'absolute',
+                top: '15px',
+                right: '10px',
+                background: 'rgba(255, 255, 255, 0.25)',
+                border: '2px solid rgba(255, 255, 255, 0.4)',
+                borderRadius: '8px',
+                height: '40px',
+                padding: '0 12px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '6px',
+                color: 'white',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'all 0.3s ease',
+                fontSize: '13px',
+                fontWeight: 'bold',
+                opacity: loading ? 0.5 : 1,
+                boxShadow: '0 4px 15px rgba(0, 0, 0, 0.2)',
+                backdropFilter: 'blur(10px)',
+                whiteSpace: 'nowrap'
+              }}
+              onMouseOver={(e) => {
+                if (!loading) {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.35)';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!loading) {
+                  e.target.style.background = 'rgba(255, 255, 255, 0.25)';
+                }
+              }}
+            >
+              <span>Previous Requests</span>
             </button>
 
             {/* Close Button */}
@@ -350,256 +383,366 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
               </div>
             </div>
 
-            {/* Token Input */}
-            <div style={{ marginBottom: '1.5rem' }}>
-              <label
-                style={{
+            {!showPaymentIdInput ? (
+              <>
+                {/* Token Input */}
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label
+                    style={{
+                      display: 'block',
+                      fontSize: '0.95rem',
+                      fontWeight: '600',
+                      color: '#374151',
+                      marginBottom: '0.5rem'
+                    }}
+                  >
+                    Enter Token Amount to Purchase
+                  </label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      value={tokenAmount}
+                      onChange={handleTokenAmountChange}
+                      placeholder="e.g., 100"
+                      disabled={loading}
+                      style={{
+                        width: '100%',
+                        padding: '0.875rem',
+                        fontSize: '1rem',
+                        border: '2px solid #e5e7eb',
+                        borderRadius: '12px',
+                        outline: 'none',
+                        transition: 'all 0.2s ease',
+                        backgroundColor: loading ? '#f9fafb' : '#ffffff'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = '#2563eb'}
+                      onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
+                    />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        right: '0.875rem',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        color: '#9ca3af',
+                        fontSize: '0.95rem'
+                      }}
+                    >
+                      tokens
+                    </div>
+                  </div>
+                </div>
+
+                {/* Price Breakdown */}
+                {tokenAmount && !isNaN(parseInt(tokenAmount)) && (
+                  <>
+                    <div
+                      style={{
+                        background: 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+                        border: '2px solid #3b82f6',
+                        borderRadius: '12px',
+                        padding: '1rem',
+                        marginBottom: '1rem',
+                        textAlign: 'center'
+                      }}
+                    >
+                      <div style={{ color: '#1e40af', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                        Total Amount to Pay
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '2rem',
+                          fontWeight: '700',
+                          color: '#1e40af'
+                        }}
+                      >
+                        ₹{calculateTotalAmount().toLocaleString()}
+                      </div>
+                      <div style={{ color: '#3b82f6', fontSize: '0.8rem', marginTop: '0.25rem' }}>
+                        for {parseInt(tokenAmount).toLocaleString()} tokens recharge
+                      </div>
+                    </div>
+
+                    <div
+                      style={{
+                        background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
+                        border: '2px solid #10b981',
+                        borderRadius: '12px',
+                        padding: '1rem',
+                        marginBottom: '1rem'
+                      }}
+                    >
+                      <div style={{ fontSize: '0.85rem', color: '#065f46', marginBottom: '0.75rem' }}>
+                        <strong>💰 Breakdown (from ₹{calculateTotalAmount().toLocaleString()})</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                        <span style={{ color: '#065f46' }}>Base Recharge</span>
+                        <span style={{ fontWeight: '600', color: '#065f46' }}>₹{calculateTotalAmount().toLocaleString()}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                        <span style={{ color: '#dc2626' }}>- GST (28%)</span>
+                        <span style={{ fontWeight: '600', color: '#dc2626' }}>-₹{calculateGST().toLocaleString()}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
+                        <span style={{ color: '#dc2626' }}>- Gateway Fee (2.5%)</span>
+                        <span style={{ fontWeight: '600', color: '#dc2626' }}>-₹{calculatePaymentGatewayFee().toLocaleString()}</span>
+                      </div>
+                      <div style={{ borderTop: '2px solid #10b981', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                          <span style={{ color: '#065f46', fontWeight: '700' }}>You Will Get</span>
+                          <span style={{ fontWeight: '700', color: '#065f46', fontSize: '1.2rem' }}>{calculateNetTokens().toLocaleString()} tokens</span>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Important Information */}
+                <div
+                  style={{
+                    background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
+                    border: '2px solid #f59e0b',
+                    borderRadius: '12px',
+                    padding: '1rem',
+                    marginBottom: '1.5rem'
+                  }}
+                >
+                  <div style={{ color: '#92400e', fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                    📋 Important Information
+                  </div>
+                  <div style={{ color: '#92400e', fontSize: '0.8rem', lineHeight: '1.4' }}>
+                    • Payment will be verified by admin within 4-24 hours
+                    <br />
+                    • You will receive tokens after successful verification
+                    <br />
+                    • Keep your Payment ID safe for reference
+                    <br />
+                    • 28% GST + 2.5% gateway fee will be deducted from recharge amount
+                    <br />
+                    • Example: ₹100 recharge = ₹100 - ₹28 (GST) - ₹2.5 (fee) = ~69.5 tokens
+                    <br />
+                    • No maximum limit - you can purchase any amount of tokens
+                  </div>
+                </div>
+
+                {/* Payment Status */}
+                {paymentStatus && (
+                  <div
+                    style={{
+                      background: paymentStatus.includes('❌') 
+                        ? 'linear-gradient(135deg, #fef2f2, #fee2e2)'
+                        : paymentStatus.includes('✅')
+                        ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)'
+                        : 'linear-gradient(135deg, #eff6ff, #dbeafe)',
+                      border: `2px solid ${
+                        paymentStatus.includes('❌') 
+                          ? '#f87171'
+                          : paymentStatus.includes('✅')
+                          ? '#10b981'
+                          : '#3b82f6'
+                      }`,
+                      borderRadius: '12px',
+                      padding: '0.875rem',
+                      marginBottom: '1.5rem',
+                      fontSize: '0.9rem',
+                      fontWeight: '500',
+                      color: paymentStatus.includes('❌') 
+                        ? '#dc2626'
+                        : paymentStatus.includes('✅')
+                        ? '#065f46'
+                        : '#1e40af',
+                      textAlign: 'center'
+                    }}
+                  >
+                    {paymentStatus}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                  {onClose && (
+                    <button
+                      onClick={onClose}
+                      disabled={loading}
+                      style={{
+                        flex: 1,
+                        background: 'transparent',
+                        border: '2px solid #d1d5db',
+                        color: '#6b7280',
+                        padding: '0.75rem',
+                        borderRadius: '12px',
+                        fontSize: '1rem',
+                        fontWeight: '600',
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s ease',
+                        opacity: loading ? 0.5 : 1
+                      }}
+                      onMouseOver={(e) => {
+                        if (!loading) {
+                          e.target.style.backgroundColor = '#f3f4f6';
+                          e.target.style.borderColor = '#9ca3af';
+                        }
+                      }}
+                      onMouseOut={(e) => {
+                        if (!loading) {
+                          e.target.style.backgroundColor = 'transparent';
+                          e.target.style.borderColor = '#d1d5db';
+                        }
+                      }}
+                    >
+                      Cancel
+                    </button>
+                  )}
+                  
+                  <button
+                    onClick={handlePayNow}
+                    disabled={loading || !tokenAmount || !parseInt(tokenAmount)}
+                    style={{
+                      flex: 2,
+                      background: (tokenAmount && parseInt(tokenAmount) > 0)
+                        ? 'linear-gradient(135deg, #2563eb, #1d4ed8)'
+                        : '#9ca3af',
+                      border: 'none',
+                      color: 'white',
+                      padding: '0.75rem',
+                      borderRadius: '12px',
+                      fontSize: '1rem',
+                      fontWeight: '600',
+                      cursor: (tokenAmount && parseInt(tokenAmount) > 0 && !loading) ? 'pointer' : 'not-allowed',
+                      transition: 'all 0.2s ease',
+                      boxShadow: (tokenAmount && parseInt(tokenAmount) > 0)
+                        ? '0 4px 20px rgba(37, 99, 235, 0.3)'
+                        : 'none'
+                    }}
+                  >
+                    {tokenAmount && parseInt(tokenAmount) > 0 ? (
+                      `💳 Pay ₹${calculateTotalAmount().toLocaleString()}`
+                    ) : (
+                      'Enter Amount'
+                    )}
+                  </button>
+                </div>
+              </>
+            ) : (
+              // Payment ID Input Section
+              <div>
+                <div
+                  className="alert alert-warning text-start"
+                  style={{
+                    fontSize: '0.85rem',
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    border: '1px solid #ffc107',
+                    marginBottom: '1rem'
+                  }}
+                >
+                  <strong>⚠️ Important:</strong> After completing payment on Razorpay, copy the <strong>Payment ID</strong> and paste it below.
+                </div>
+
+                <label style={{ 
                   display: 'block',
                   fontSize: '0.95rem',
                   fontWeight: '600',
                   color: '#374151',
                   marginBottom: '0.5rem'
-                }}
-              >
-                Enter Token Amount to Purchase
-              </label>
-              <div style={{ position: 'relative' }}>
+                }}>
+                  Enter Payment ID <span style={{ color: '#dc2626' }}>*</span>
+                </label>
                 <input
                   type="text"
-                  value={tokenAmount}
-                  onChange={handleTokenAmountChange}
-                  placeholder="e.g., 100"
-                  disabled={loading}
+                  value={paymentId}
+                  onChange={(e) => setPaymentId(e.target.value)}
+                  placeholder="e.g., pay_ABC123xyz"
+                  disabled={isSubmitting}
                   style={{
                     width: '100%',
                     padding: '0.875rem',
                     fontSize: '1rem',
-                    border: '2px solid #e5e7eb',
+                    border: '2px solid #2563eb',
                     borderRadius: '12px',
                     outline: 'none',
-                    transition: 'all 0.2s ease',
-                    backgroundColor: loading ? '#f9fafb' : '#ffffff'
+                    marginBottom: '1rem'
                   }}
-                  onFocus={(e) => e.target.style.borderColor = '#2563eb'}
-                  onBlur={(e) => e.target.style.borderColor = '#e5e7eb'}
                 />
-                <div
-                  style={{
-                    position: 'absolute',
-                    right: '0.875rem',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    color: '#9ca3af',
-                    fontSize: '0.95rem'
-                  }}
-                >
-                  tokens
-                </div>
-              </div>
-            </div>
 
-            {/* Price Display */}
-            {tokenAmount && !isNaN(parseInt(tokenAmount)) && (
-              <div
-                style={{
-                  background: 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
-                  border: '2px solid #10b981',
-                  borderRadius: '12px',
-                  padding: '1rem',
-                  marginBottom: '1.5rem',
-                  textAlign: 'center'
-                }}
-              >
-                <div style={{ color: '#065f46', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
-                  Total Amount to Pay
-                </div>
-                <div
-                  style={{
-                    fontSize: '1.5rem',
-                    fontWeight: '700',
-                    color: '#065f46'
-                  }}
-                >
-                  ₹{calculateAmount().toLocaleString()}
-                </div>
-                <div style={{ color: '#047857', fontSize: '0.8rem' }}>
-                  ₹{TOKEN_PRICE} per token
-                </div>
-              </div>
-            )}
-
-            {/* Tax Calculation - Show net tokens after tax */}
-            {tokenAmount && !isNaN(parseInt(tokenAmount)) && calculateNetTokens() > 0 && (
-              <div 
-                style={{
-                  background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
-                  border: '2px solid #10b981',
-                  borderRadius: '12px',
-                  padding: '1rem',
-                  marginBottom: '1.5rem'
-                }}
-              >
                 <div style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  textAlign: 'center'
-                }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: '#065f46', fontSize: '0.8rem' }}>Purchased</div>
-                    <div style={{ fontWeight: '700', color: '#065f46' }}>
-                      {parseInt(tokenAmount).toLocaleString()}
-                    </div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>Tax (28%)</div>
-                    <div style={{ fontWeight: '700', color: '#dc2626' }}>
-                      -{(parseInt(tokenAmount) - calculateNetTokens()).toLocaleString()}
-                    </div>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ color: '#065f46', fontSize: '0.8rem' }}>You Get</div>
-                    <div style={{ fontWeight: '700', color: '#065f46', fontSize: '1.1rem' }}>
-                      {calculateNetTokens().toLocaleString()}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Tax Information */}
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
-                border: '2px solid #f59e0b',
-                borderRadius: '12px',
-                padding: '1rem',
-                marginBottom: '1.5rem'
-              }}
-            >
-              <div style={{ color: '#92400e', fontSize: '0.9rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                📋 Important Tax Information
-              </div>
-              <div style={{ color: '#92400e', fontSize: '0.8rem', lineHeight: '1.4' }}>
-                • <strong>GST:</strong> 28% GST is applicable on all token purchases as per Indian tax regulations
-                <br />
-                • <strong>Processing Fee:</strong> Cashfree may charge up to 2% processing fee depending on your payment method
-                <br />
-                • <strong>Final Amount:</strong> The exact total will be confirmed at checkout
-              </div>
-            </div>
-
-            {/* Payment Status */}
-            {paymentStatus && (
-              <div
-                style={{
-                  background: paymentStatus.includes('❌') 
-                    ? 'linear-gradient(135deg, #fef2f2, #fee2e2)'
-                    : paymentStatus.includes('✅')
-                    ? 'linear-gradient(135deg, #ecfdf5, #d1fae5)'
-                    : 'linear-gradient(135deg, #eff6ff, #dbeafe)',
-                  border: `2px solid ${
-                    paymentStatus.includes('❌') 
-                      ? '#f87171'
-                      : paymentStatus.includes('✅')
-                      ? '#10b981'
-                      : '#3b82f6'
-                  }`,
+                  background: '#f0fdf4',
+                  padding: '1rem',
                   borderRadius: '12px',
-                  padding: '0.875rem',
-                  marginBottom: '1.5rem',
-                  fontSize: '0.9rem',
-                  fontWeight: '500',
-                  color: paymentStatus.includes('❌') 
-                    ? '#dc2626'
-                    : paymentStatus.includes('✅')
-                    ? '#065f46'
-                    : '#1e40af',
-                  textAlign: 'center'
-                }}
-              >
-                {paymentStatus}
-              </div>
-            )}
+                  marginBottom: '1rem',
+                  fontSize: '0.85rem',
+                  color: '#065f46'
+                }}>
+                  <div><strong>Requested Tokens:</strong> {parseInt(tokenAmount).toLocaleString()}</div>
+                  <div><strong>You Will Get:</strong> {calculateNetTokens().toLocaleString()} tokens</div>
+                  <div><strong>Amount Paid:</strong> ₹{calculateTotalAmount().toLocaleString()}</div>
+                </div>
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
-              {onClose && (
+                {paymentStatus && (
+                  <div
+                    style={{
+                      background: paymentStatus.includes('❌') 
+                        ? 'linear-gradient(135deg, #fef2f2, #fee2e2)'
+                        : 'linear-gradient(135deg, #ecfdf5, #d1fae5)',
+                      border: `2px solid ${paymentStatus.includes('❌') ? '#f87171' : '#10b981'}`,
+                      borderRadius: '12px',
+                      padding: '0.875rem',
+                      marginBottom: '1rem',
+                      fontSize: '0.9rem',
+                      color: paymentStatus.includes('❌') ? '#dc2626' : '#065f46',
+                      textAlign: 'center'
+                    }}
+                  >
+                    {paymentStatus}
+                  </div>
+                )}
+
                 <button
-                  onClick={onClose}
-                  disabled={loading}
+                  onClick={handleSubmitPaymentId}
+                  disabled={isSubmitting || !paymentId.trim()}
                   style={{
-                    flex: 1,
+                    width: '100%',
+                    background: (paymentId.trim() && !isSubmitting)
+                      ? 'linear-gradient(135deg, #10b981, #059669)'
+                      : '#9ca3af',
+                    border: 'none',
+                    color: 'white',
+                    padding: '0.75rem',
+                    borderRadius: '12px',
+                    fontSize: '1rem',
+                    fontWeight: '600',
+                    cursor: (paymentId.trim() && !isSubmitting) ? 'pointer' : 'not-allowed',
+                    marginBottom: '0.5rem',
+                    boxShadow: (paymentId.trim() && !isSubmitting)
+                      ? '0 4px 20px rgba(16, 185, 129, 0.3)'
+                      : 'none'
+                  }}
+                >
+                  {isSubmitting ? 'Submitting...' : '✅ Submit Payment ID'}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowPaymentIdInput(false);
+                    setPaymentId('');
+                    setPaymentStatus('');
+                  }}
+                  style={{
+                    width: '100%',
                     background: 'transparent',
                     border: '2px solid #d1d5db',
                     color: '#6b7280',
                     padding: '0.75rem',
                     borderRadius: '12px',
-                    fontSize: '1rem',
+                    fontSize: '0.9rem',
                     fontWeight: '600',
-                    cursor: loading ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s ease',
-                    opacity: loading ? 0.5 : 1
-                  }}
-                  onMouseOver={(e) => {
-                    if (!loading) {
-                      e.target.style.backgroundColor = '#f3f4f6';
-                      e.target.style.borderColor = '#9ca3af';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!loading) {
-                      e.target.style.backgroundColor = 'transparent';
-                      e.target.style.borderColor = '#d1d5db';
-                    }
+                    cursor: 'pointer'
                   }}
                 >
-                  Cancel
+                  ← Back to Token Selection
                 </button>
-              )}
-              
-              <button
-                onClick={handlePurchase}
-                disabled={loading || !tokenAmount || !cashfreeReady || !parseInt(tokenAmount)}
-                style={{
-                  flex: 2,
-                  background: (tokenAmount && parseInt(tokenAmount) > 0)
-                    ? 'linear-gradient(135deg, #2563eb, #1d4ed8)'
-                    : '#9ca3af',
-                  border: 'none',
-                  color: 'white',
-                  padding: '0.75rem',
-                  borderRadius: '12px',
-                  fontSize: '1rem',
-                  fontWeight: '600',
-                  cursor: (tokenAmount && parseInt(tokenAmount) > 0 && !loading) ? 'pointer' : 'not-allowed',
-                  transition: 'all 0.2s ease',
-                  boxShadow: (tokenAmount && parseInt(tokenAmount) > 0)
-                    ? '0 4px 20px rgba(37, 99, 235, 0.3)'
-                    : 'none'
-                }}
-              >
-                {loading ? (
-                  <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-                    <div
-                      style={{
-                        width: '18px',
-                        height: '18px',
-                        border: '2px solid transparent',
-                        borderTop: '2px solid white',
-                        borderRadius: '50%',
-                        animation: 'spin 1s linear infinite'
-                      }}
-                    />
-                    Processing...
-                  </span>
-                ) : tokenAmount && parseInt(tokenAmount) > 0 ? (
-                  `Proceed to Pay`
-                ) : (
-                  'Enter Amount'
-                )}
-              </button>
-            </div>
+              </div>
+            )}
 
             {/* Security Info */}
             <div
@@ -612,12 +755,13 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                 background: '#f8fafc',
                 borderRadius: '8px',
                 fontSize: '0.8rem',
-                color: '#64748b'
+                color: '#64748b',
+                marginTop: '1rem'
               }}
             >
               <div style={{ fontSize: '1rem' }}>🔒</div>
               <div>
-                <strong>Secure Payment</strong> powered by Cashfree Payments
+                <strong>Secure Payment</strong> powered by Razorpay
               </div>
             </div>
           </div>
@@ -630,7 +774,97 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
         }
+
+        @keyframes slideIn {
+          from {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(0);
+            opacity: 1;
+          }
+        }
+
+        @keyframes slideOut {
+          from {
+            transform: translateX(0);
+            opacity: 1;
+          }
+          to {
+            transform: translateX(100%);
+            opacity: 0;
+          }
+        }
       `}</style>
+
+      {/* Toast Container */}
+      <div
+        style={{
+          position: 'fixed',
+          top: '20px',
+          right: '20px',
+          zIndex: 10000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '10px',
+          maxWidth: '400px'
+        }}
+      >
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            style={{
+              background: toast.type === 'success' 
+                ? 'linear-gradient(135deg, #10b981, #059669)'
+                : toast.type === 'error'
+                ? 'linear-gradient(135deg, #ef4444, #dc2626)'
+                : 'linear-gradient(135deg, #3b82f6, #2563eb)',
+              color: 'white',
+              padding: '16px 20px',
+              borderRadius: '12px',
+              boxShadow: '0 10px 40px rgba(0, 0, 0, 0.3)',
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: '12px',
+              animation: 'slideIn 0.3s ease-out',
+              fontSize: '0.9rem',
+              lineHeight: '1.5',
+              maxWidth: '100%',
+              wordWrap: 'break-word'
+            }}
+          >
+            <div style={{ flexShrink: 0, fontSize: '1.2rem' }}>
+              {toast.type === 'success' ? '✅' : toast.type === 'error' ? '❌' : 'ℹ️'}
+            </div>
+            <div style={{ flex: 1 }}>
+              {toast.message}
+            </div>
+            <button
+              onClick={() => removeToast(toast.id)}
+              style={{
+                background: 'rgba(255, 255, 255, 0.2)',
+                border: 'none',
+                color: 'white',
+                borderRadius: '50%',
+                width: '24px',
+                height: '24px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                fontSize: '14px',
+                flexShrink: 0,
+                transition: 'background 0.2s ease'
+              }}
+              onMouseOver={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.3)'}
+              onMouseOut={(e) => e.target.style.background = 'rgba(255, 255, 255, 0.2)'}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
+      </div>
     </>
   );
 };

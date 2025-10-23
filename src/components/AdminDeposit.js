@@ -35,7 +35,7 @@ export default function AdminTokenDeposits() {
             if (user.orders) {
               Object.keys(user.orders).forEach((oid) => {
                 const order = user.orders[oid];
-                if (order.type === "tokens" && order.status === "paid") {
+                if ((order.type === "tokens" || order.type === "entry_fee") && order.status === "paid") {
                   allDeposits.push({
                     userId: user.userIds?.myuserid || user.userId,
                     name: user.name,
@@ -43,7 +43,8 @@ export default function AdminTokenDeposits() {
                     createdAt: new Date(order.processedAt).toLocaleString(),
                     amountPaid: order.amountPaid,
                     tax: order.taxAmount,
-                    creditedTokens: order.creditedTokens,
+                    creditedTokens: order.creditedTokens || 0,
+                    type: order.type,
                   });
                 }
               });
@@ -276,6 +277,12 @@ export default function AdminTokenDeposits() {
                           Tax
                         </div>
                       </th>
+                      <th className="px-4 py-3" style={styles.tableCell}>
+                        <div className="d-flex align-items-center justify-content-center">
+                          <FileText size={16} className="me-2" />
+                          Type
+                        </div>
+                      </th>
                       <th className="px-4 py-3" style={styles.lastColumn}>
                         <div className="d-flex align-items-center justify-content-center">
                           <Coins size={16} className="me-2" />
@@ -317,8 +324,13 @@ export default function AdminTokenDeposits() {
                         <td className="px-4 py-3" style={{...styles.tableCell, ...styles.amountCell}}>
                           ₹{d.tax}
                         </td>
+                        <td className="px-4 py-3" style={styles.tableCell}>
+                          <span className={`badge ${d.type === 'entry_fee' ? 'bg-info' : 'bg-success'}`}>
+                            {d.type === 'entry_fee' ? 'Entry Fee' : 'Tokens'}
+                          </span>
+                        </td>
                         <td className="px-4 py-3" style={{...styles.lastColumn, ...styles.tokenCell}}>
-                          {d.creditedTokens}
+                          {d.creditedTokens || '-'}
                         </td>
                       </tr>
                     ))}

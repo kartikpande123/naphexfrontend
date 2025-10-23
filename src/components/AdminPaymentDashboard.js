@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { CreditCard, Plus, History, ArrowDownCircle } from 'lucide-react';
 import logo from "../images/logo-1.png";
 import { useNavigate } from 'react-router-dom';
+import { FaMoneyCheck } from 'react-icons/fa';
 
 function AdminPaymentDashboard() {
     const navigate = useNavigate()
@@ -112,6 +113,10 @@ function AdminPaymentDashboard() {
         navigate("/admintransactionsdashboard");
     }
 
+    function goEntryFeesVarification(){
+        navigate("/adminentryfeeverification")
+    }
+
     const menuItems = [
         {
             title: 'Withdrawal Requests',
@@ -130,6 +135,12 @@ function AdminPaymentDashboard() {
             icon: History,
             onClick: goTransactionHistory,
             description: 'View complete transaction logs and history'
+        },
+        {
+            title: 'Entry Fees Varification',
+            icon: FaMoneyCheck,
+            onClick: goEntryFeesVarification,
+            description: 'User Entry Fees Varifications'
         }
     ];
 
