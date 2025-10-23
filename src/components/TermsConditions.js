@@ -296,6 +296,7 @@ const Section = ({ title, children, sectionBarStyle }) => (
   </div>
 );
 
+
 const SubSection = ({ subtitle, children, subSectionStyle }) => (
   <div className="mb-4 p-3" style={subSectionStyle}>
     <h6 className="fw-semibold text-dark mb-2">{subtitle}</h6>

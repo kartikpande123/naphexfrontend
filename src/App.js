@@ -53,6 +53,7 @@ import AdminTaxDetails from './components/AdminTexDetails';
 import AdminEntryFeeVerification from './components/AdminEntryfees';
 import UserTokenRequest from './components/UserTokenRequest';
 import UserWIns from './components/UserWIns';
+import CancellationRefundPolicy from './components/CancellationAndRefund';
 
 // Protected Route Component for Users
 const ProtectedRoute = ({ children }) => {
@@ -96,6 +97,7 @@ function App() {
           <Route path="/statuscheck" element={<AccountStatusCheck />} />
           <Route path='/opencloseresult' element={<AdminOpenCloseResults />} />
           <Route path='/adminlogin' element={<AdminLogin />} />
+          <Route path='/cancellationrefundpolicy' element={<CancellationRefundPolicy />} />
 
 
           {/* ---------------------------------------------------------*/}
