@@ -84,8 +84,7 @@ const EntryFees = ({ onContinue }) => {
       
       if (data.success && data.entryFee === 'paid') {
         setEntryFeeStatus('paid');
-        // Auto-continue to dashboard
-        setTimeout(() => onContinue(), 1000);
+        setTimeout(() => onContinue(), 100);
       } else if (data.success && data.entryFee === 'pending') {
         setEntryFeeStatus('pending');
         setVerificationStatus('Your payment is under verification. Please wait for admin approval.');

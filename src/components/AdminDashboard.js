@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "bootstrap-icons/font/bootstrap-icons.css";
-import image from "../images/Banner-7.png";
+import image from "../images/naphex_web_banner_final_1.png";
 import logo from "../images/logo-1.png";
 import "./Home.css";
+import API_BASE_URL from './ApiConfig';
 
 const Home = () => {
   const [isHovered, setIsHovered] = useState(null);
@@ -118,7 +119,7 @@ const Home = () => {
     const setupSSE = () => {
       try {
         // Create SSE connection
-        eventSource = new EventSource('http://localhost:3200/api/api/users');
+        eventSource = new EventSource(`${API_BASE_URL}/api/users`);
         
         eventSource.onopen = () => {
           console.log('SSE Connection established');
@@ -389,8 +390,8 @@ const Home = () => {
               >
                 <img src={image} alt="Play Now" className="enhanced-banner" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <div className="enhanced-overlay">
-                  <h2 className="banner-title">Open-Close</h2>
-                  <div className="banner-subtitle">Start Your Gaming Adventure</div>
+                  <h2 className="banner-title">Fruits Game</h2>
+                  <div className="banner-subtitle">Admin Dashboard</div>
                   <button className="play-button" onClick={handleClickGame1}>
                     <i className="bi bi-play-fill"></i> Show Details
                   </button>

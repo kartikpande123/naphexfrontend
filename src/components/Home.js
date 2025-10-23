@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios"; // For making API calls
 import "bootstrap-icons/font/bootstrap-icons.css";
-import image from "../images/Banner-7.png";
+import image from "../images/naphex_web_banner_final_1.png";
 import logo from "../images/logo-1.png";
 import "./Home.css";
 import API_BASE_URL from "./ApiConfig";
