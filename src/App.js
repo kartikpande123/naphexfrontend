@@ -54,6 +54,7 @@ import AdminEntryFeeVerification from './components/AdminEntryfees';
 import UserTokenRequest from './components/UserTokenRequest';
 import UserWIns from './components/UserWIns';
 import CancellationRefundPolicy from './components/CancellationAndRefund';
+import AdminRejectedTokens from './components/AdminRejectedToken';
 
 // Protected Route Component for Users
 const ProtectedRoute = ({ children }) => {
@@ -222,6 +223,11 @@ function App() {
             <Route path="/adminentryfeeverification" element={
             <AdminProtectedRoute>
               <AdminEntryFeeVerification />
+            </AdminProtectedRoute>
+          } />
+            <Route path="/adminrejectedrequests" element={
+            <AdminProtectedRoute>
+              <AdminRejectedTokens />
             </AdminProtectedRoute>
           } />
 

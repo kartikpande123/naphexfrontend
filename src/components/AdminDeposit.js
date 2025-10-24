@@ -15,12 +15,16 @@ import {
   Coins,
   TrendingUp,
   Database,
-  Loader
+  Loader,
+  Filter,
+  X
 } from 'lucide-react';
 
 export default function AdminTokenDeposits() {
   const [deposits, setDeposits] = useState([]);
   const [visibleCount, setVisibleCount] = useState(30);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [filteredDeposits, setFilteredDeposits] = useState([]);
 
   useEffect(() => {
     const eventSource = new EventSource(`${API_BASE_URL}/api/users`);
@@ -41,6 +45,7 @@ export default function AdminTokenDeposits() {
                     name: user.name,
                     orderId: oid,
                     createdAt: new Date(order.processedAt).toLocaleString(),
+                    rawDate: new Date(order.processedAt),
                     amountPaid: order.amountPaid,
                     tax: order.taxAmount,
                     creditedTokens: order.creditedTokens || 0,
@@ -52,9 +57,10 @@ export default function AdminTokenDeposits() {
           });
 
           // Sort latest first
-          allDeposits.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          allDeposits.sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
 
           setDeposits(allDeposits);
+          setFilteredDeposits(allDeposits);
         }
       } catch (err) {
         console.error("Error parsing event data:", err);
@@ -71,8 +77,28 @@ export default function AdminTokenDeposits() {
     };
   }, []);
 
+  // Filter deposits by selected date
+  useEffect(() => {
+    if (selectedDate) {
+      const filtered = deposits.filter(deposit => {
+        const depositDate = new Date(deposit.rawDate);
+        const selected = new Date(selectedDate);
+        
+        return depositDate.toDateString() === selected.toDateString();
+      });
+      setFilteredDeposits(filtered);
+    } else {
+      setFilteredDeposits(deposits);
+    }
+    setVisibleCount(30); // Reset visible count when filter changes
+  }, [selectedDate, deposits]);
+
   const loadMore = () => {
     setVisibleCount((prev) => prev + 30);
+  };
+
+  const clearFilter = () => {
+    setSelectedDate('');
   };
 
   const styles = {
@@ -105,6 +131,38 @@ export default function AdminTokenDeposits() {
       color: 'rgba(255,255,255,0.9)',
       fontSize: '1.1rem',
       fontWeight: '400'
+    },
+    filterSection: {
+      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+      padding: '1.5rem',
+      borderBottom: '1px solid #dee2e6'
+    },
+    filterCard: {
+      background: '#ffffff',
+      borderRadius: '12px',
+      padding: '1.5rem',
+      boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+      border: '1px solid #e0e6ed'
+    },
+    filterButton: {
+      background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '10px 20px',
+      fontWeight: '600',
+      color: 'white',
+      boxShadow: '0 4px 15px rgba(40, 167, 69, 0.3)',
+      transition: 'all 0.3s ease'
+    },
+    clearButton: {
+      background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '10px 20px',
+      fontWeight: '600',
+      color: 'white',
+      boxShadow: '0 4px 15px rgba(108, 117, 125, 0.3)',
+      transition: 'all 0.3s ease'
     },
     statsContainer: {
       background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
@@ -201,34 +259,102 @@ export default function AdminTokenDeposits() {
             </div>
           </div>
 
+          {/* Date Filter Section */}
+          <div style={styles.filterSection}>
+            <div className="container">
+              <div style={styles.filterCard}>
+                <div className="row align-items-center">
+                  <div className="col-md-8">
+                    <div className="d-flex align-items-center">
+                      <Filter size={20} className="text-success me-2" />
+                      <h5 className="mb-0 me-3">Filter by Date:</h5>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        style={{
+                          maxWidth: '200px',
+                          border: '2px solid #28a745',
+                          borderRadius: '8px',
+                          padding: '8px 12px'
+                        }}
+                      />
+                      {selectedDate && (
+                        <button
+                          style={styles.clearButton}
+                          onClick={clearFilter}
+                          className="ms-3 d-flex align-items-center"
+                          onMouseEnter={(e) => {
+                            e.target.style.transform = 'translateY(-2px)';
+                            e.target.style.boxShadow = '0 6px 20px rgba(108, 117, 125, 0.4)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = '0 4px 15px rgba(108, 117, 125, 0.3)';
+                          }}
+                        >
+                          <X size={16} className="me-1" />
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="col-md-4 text-end">
+                    <div className="d-flex align-items-center justify-content-end">
+                      <Calendar size={18} className="text-muted me-2" />
+                      <span className="text-muted">
+                        {selectedDate 
+                          ? `Showing deposits for: ${new Date(selectedDate).toLocaleDateString()}`
+                          : 'Showing all deposits'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Stats Section */}
           <div style={styles.statsContainer}>
-            <div className="row g-3">
-              <div className="col-md-4">
-                <div style={styles.statCard}>
-                  <div className="d-flex align-items-center justify-content-center mb-2">
-                    <Database size={24} className="me-2" />
-                    <h5 className="mb-0">Total Records</h5>
+            <div className="container">
+              <div className="row g-3">
+                <div className="col-md-3">
+                  <div style={styles.statCard}>
+                    <div className="d-flex align-items-center justify-content-center mb-2">
+                      <Database size={24} className="me-2" />
+                      <h5 className="mb-0">Total Records</h5>
+                    </div>
+                    <h3 className="mb-0">{deposits.length}</h3>
                   </div>
-                  <h3 className="mb-0">{deposits.length}</h3>
                 </div>
-              </div>
-              <div className="col-md-4">
-                <div style={styles.statCard}>
-                  <div className="d-flex align-items-center justify-content-center mb-2">
-                    <Eye size={24} className="me-2" />
-                    <h5 className="mb-0">Showing</h5>
+                <div className="col-md-3">
+                  <div style={styles.statCard}>
+                    <div className="d-flex align-items-center justify-content-center mb-2">
+                      <Eye size={24} className="me-2" />
+                      <h5 className="mb-0">Showing</h5>
+                    </div>
+                    <h3 className="mb-0">{Math.min(visibleCount, filteredDeposits.length)}</h3>
                   </div>
-                  <h3 className="mb-0">{Math.min(visibleCount, deposits.length)}</h3>
                 </div>
-              </div>
-              <div className="col-md-4">
-                <div style={styles.statCard}>
-                  <div className="d-flex align-items-center justify-content-center mb-2">
-                    <Activity size={24} className="me-2" />
-                    <h5 className="mb-0">Live Updates</h5>
+                <div className="col-md-3">
+                  <div style={styles.statCard}>
+                    <div className="d-flex align-items-center justify-content-center mb-2">
+                      <Filter size={24} className="me-2" />
+                      <h5 className="mb-0">Filtered</h5>
+                    </div>
+                    <h3 className="mb-0">{filteredDeposits.length}</h3>
                   </div>
-                  <h3 className="mb-0">Active</h3>
+                </div>
+                <div className="col-md-3">
+                  <div style={styles.statCard}>
+                    <div className="d-flex align-items-center justify-content-center mb-2">
+                      <Activity size={24} className="me-2" />
+                      <h5 className="mb-0">Live Updates</h5>
+                    </div>
+                    <h3 className="mb-0">Active</h3>
+                  </div>
                 </div>
               </div>
             </div>
@@ -236,7 +362,7 @@ export default function AdminTokenDeposits() {
 
           {/* Enhanced Table */}
           <div style={styles.tableContainer}>
-            {deposits.length > 0 ? (
+            {filteredDeposits.length > 0 ? (
               <div className="table-responsive">
                 <table className="table table-hover mb-0" style={{ border: '2px solid #dee2e6' }}>
                   <thead>
@@ -292,7 +418,7 @@ export default function AdminTokenDeposits() {
                     </tr>
                   </thead>
                   <tbody>
-                    {deposits.slice(0, visibleCount).map((d, idx) => (
+                    {filteredDeposits.slice(0, visibleCount).map((d, idx) => (
                       <tr
                         key={idx}
                         style={idx % 2 === 0 ? styles.tableRow : {...styles.tableRow, ...styles.alternateRow}}
@@ -341,12 +467,31 @@ export default function AdminTokenDeposits() {
               <div style={styles.noDataCard}>
                 <div className="d-flex flex-column align-items-center">
                   <Database size={48} className="text-muted mb-3" />
-                  <h4 className="text-muted mb-3">No Data Available</h4>
-                  <p className="text-muted">Waiting for token deposit transactions...</p>
-                  <div className="d-flex align-items-center mt-3">
-                    <Loader className="spinner-border-sm me-2" />
-                    <span className="text-success">Loading...</span>
-                  </div>
+                  <h4 className="text-muted mb-3">
+                    {selectedDate ? 'No Data for Selected Date' : 'No Data Available'}
+                  </h4>
+                  <p className="text-muted">
+                    {selectedDate 
+                      ? `No deposit transactions found for ${new Date(selectedDate).toLocaleDateString()}`
+                      : 'Waiting for token deposit transactions...'
+                    }
+                  </p>
+                  {selectedDate && (
+                    <button
+                      style={styles.clearButton}
+                      onClick={clearFilter}
+                      className="mt-2 d-flex align-items-center"
+                    >
+                      <X size={16} className="me-1" />
+                      Clear Filter
+                    </button>
+                  )}
+                  {!selectedDate && (
+                    <div className="d-flex align-items-center mt-3">
+                      <Loader className="spinner-border-sm me-2" />
+                      <span className="text-success">Loading...</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -354,7 +499,7 @@ export default function AdminTokenDeposits() {
         </div>
 
         {/* Enhanced Load More Button */}
-        {visibleCount < deposits.length && (
+        {visibleCount < filteredDeposits.length && (
           <div className="text-center mt-4">
             <button
               style={styles.loadMoreBtn}
@@ -372,7 +517,7 @@ export default function AdminTokenDeposits() {
               <TrendingUp size={20} className="me-2" />
               Load More Records
               <span className="ms-2 badge bg-light text-success">
-                +{Math.min(30, deposits.length - visibleCount)}
+                +{Math.min(30, filteredDeposits.length - visibleCount)}
               </span>
             </button>
           </div>

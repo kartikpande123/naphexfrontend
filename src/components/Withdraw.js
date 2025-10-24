@@ -125,7 +125,7 @@ const TokenWithdrawal = () => {
   useEffect(() => {
     if (withdrawAmount && parseInt(withdrawAmount) > 0) {
       const amt = parseInt(withdrawAmount);
-      const tax = Math.floor(amt * 0.3);
+      const tax = Math.floor(amt * 0.28); // Updated to 28%
       setNetAmount(amt - tax);
     } else {
       setNetAmount(0);
@@ -180,7 +180,7 @@ const TokenWithdrawal = () => {
         toast.error(data.error || "Withdrawal failed");
       } else {
         toast.success(
-          `Withdrawal successful! Requested: ${withdrawAmount}, After Tax (30%): ${netAmount}`
+          `Withdrawal successful! Requested: ${withdrawAmount}, After Tax (28%): ${netAmount}`
         );
         setTokens((prev) => prev - parseInt(withdrawAmount));
         setWithdrawAmount("");
@@ -674,7 +674,7 @@ const TokenWithdrawal = () => {
                   </div>
                 </div>
 
-                {/* Tax Calculation */}
+                {/* Tax Calculation - Updated to 28% */}
                 {withdrawAmount && netAmount > 0 && (
                   <div 
                     style={{
@@ -698,7 +698,7 @@ const TokenWithdrawal = () => {
                         </div>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>Tax (30%)</div>
+                        <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>Tax (28%)</div>
                         <div style={{ fontWeight: '700', color: '#dc2626' }}>
                           -{(parseInt(withdrawAmount) - netAmount).toLocaleString()}
                         </div>
@@ -754,7 +754,7 @@ const TokenWithdrawal = () => {
               </>
             )}
 
-            {/* Info Section */}
+            {/* Info Section - Updated tax info */}
             <div 
               style={{
                 background: 'linear-gradient(135deg, #fffbeb, #fef3c7)',
@@ -792,7 +792,7 @@ const TokenWithdrawal = () => {
                   }}>
                     • Withdrawals are available only on Sundays<br/>
                     • Winners can withdraw within 48 hours of their win<br/>
-                    • 30% tax is automatically deducted from all withdrawals<br/>
+                    • 28% tax is automatically deducted from all withdrawals<br/>
                     • Only verified payment methods can be used
                   </div>
                 </div>

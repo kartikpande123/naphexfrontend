@@ -171,7 +171,7 @@ function AdminOpenClose() {
             description: 'Financial performance overview'
         },
         {
-            title: 'Accept/Reject Users',
+            title: 'KYC Check (Accept/Reject Users)',
             icon: Users,
             onClick: AcceptReject,
             description: 'Accept Or Reject new user.'

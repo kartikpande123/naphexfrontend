@@ -719,16 +719,6 @@ const TransactionHistory = () => {
           </div>
         </div>
 
-        <div style={styles.searchSection}>
-          <button 
-            className="refresh-btn"
-            style={styles.refreshBtn} 
-            onClick={fetchUserData}
-          >
-            🔄 Refresh Transactions
-          </button>
-        </div>
-
         {userData && (
           <div style={styles.balanceInfo}>
             <strong>Current Balance: {userData.tokens || 0} Tokens</strong>

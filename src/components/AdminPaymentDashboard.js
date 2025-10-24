@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { CreditCard, Plus, History, ArrowDownCircle } from 'lucide-react';
 import logo from "../images/logo-1.png";
 import { useNavigate } from 'react-router-dom';
-import { FaMoneyCheck } from 'react-icons/fa';
+import { FaMoneyCheck, FaRegObjectGroup, FaRegObjectUngroup } from 'react-icons/fa';
 
 function AdminPaymentDashboard() {
     const navigate = useNavigate()
@@ -117,6 +117,10 @@ function AdminPaymentDashboard() {
         navigate("/adminentryfeeverification")
     }
 
+    function goRejectedTokens(){
+        navigate("/adminrejectedrequests")
+    }
+
     const menuItems = [
         {
             title: 'Withdrawal Requests',
@@ -140,6 +144,12 @@ function AdminPaymentDashboard() {
             title: 'Entry Fees Varification',
             icon: FaMoneyCheck,
             onClick: goEntryFeesVarification,
+            description: 'User Entry Fees Varifications'
+        },
+        {
+            title: 'Rejected Token Requests',
+            icon: FaRegObjectUngroup,
+            onClick: goRejectedTokens,
             description: 'User Entry Fees Varifications'
         }
     ];

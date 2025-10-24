@@ -1,17 +1,22 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import API_BASE_URL from './ApiConfig';
 import payBgImage from '../images/pay-bg.png';
+import upiQrCode from '../images/upi_bar.jpg';
 
 const AddTokens = ({ onClose, onTokensUpdated }) => {
   const [loading, setLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
-  const [showPaymentIdInput, setShowPaymentIdInput] = useState(false);
-  const [paymentId, setPaymentId] = useState('');
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [transactionId, setTransactionId] = useState('');
+  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
+  const [screenshotPreview, setScreenshotPreview] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [tokenAmount, setTokenAmount] = useState('');
   const [userTokens, setUserTokens] = useState(0);
   const [toasts, setToasts] = useState([]);
+
+  const qrCodeRef = useRef(null);
 
   // Get user data from localStorage
   const userDataRaw = localStorage.getItem("userData");
@@ -20,11 +25,9 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
 
   // Token price (₹1 per token)
   const TOKEN_PRICE = 1;
-  const GST_RATE = 0.28; // 28% GST
-  const PAYMENT_GATEWAY_FEE = 0.025; // 2.5% Razorpay fee
+  const GST_RATE = 0.28; // 28% GST only
 
-  // Payment link - Razorpay payment link
-  const RAZORPAY_PAYMENT_LINK = "https://razorpay.me/@mohammedadilbetageri?amount=tEDHZxxCtz0rKFL9kTzhOw%3D%3D";
+  const UPI_ID = "9019842426-2@ybl";
 
   // Toast notification function
   const showToast = (message, type = 'success', duration = 5000) => {
@@ -64,20 +67,12 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
     return parseFloat((tokens * GST_RATE).toFixed(2));
   };
 
-  const calculatePaymentGatewayFee = () => {
-    const tokens = parseInt(tokenAmount);
-    if (!tokens) return 0;
-    const amount = tokens * TOKEN_PRICE;
-    return parseFloat((amount * PAYMENT_GATEWAY_FEE).toFixed(2));
-  };
-
   const calculateNetTokens = () => {
     const tokens = parseInt(tokenAmount);
     if (!tokens) return 0;
-    // Net tokens = Total - GST - Gateway Fee
+    // Net tokens = Total - GST (28% only)
     const gst = calculateGST();
-    const gatewayFee = calculatePaymentGatewayFee();
-    return parseFloat((tokens - gst - gatewayFee).toFixed(2));
+    return parseFloat((tokens - gst).toFixed(2));
   };
 
   const calculateTotalAmount = () => {
@@ -101,22 +96,58 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
       return;
     }
 
-    // Open Razorpay payment link in new tab
-    window.open(RAZORPAY_PAYMENT_LINK, '_blank');
+    // Show payment form with QR code
+    setShowPaymentForm(true);
+    setPaymentStatus('Scan the QR code or use the UPI ID to make payment');
     
-    // Show payment ID input after opening payment link
-    setShowPaymentIdInput(true);
-    setPaymentStatus('Please complete the payment and copy your Payment ID from Razorpay');
+    // Scroll to QR code after a short delay to ensure DOM is updated
+    setTimeout(() => {
+      if (qrCodeRef.current) {
+        qrCodeRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }, 100);
   };
 
-  const handleSubmitPaymentId = async () => {
-    if (!paymentId.trim()) {
-      showToast("Please enter the Payment ID", "error");
+  const handleScreenshotChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("❌ File size should be less than 5MB");
+        e.target.value = '';
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        alert("❌ Please upload an image file");
+        e.target.value = '';
+        return;
+      }
+
+      setPaymentScreenshot(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setScreenshotPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    showToast("✅ UPI ID copied to clipboard!", "success");
+  };
+
+  const handleSubmitPayment = async () => {
+    if (!paymentScreenshot) {
+      showToast("❌ Please upload payment screenshot", "error");
       return;
     }
 
     if (!phoneNo) {
-      showToast("Phone number not found", "error");
+      showToast("❌ Phone number not found", "error");
       return;
     }
 
@@ -130,18 +161,18 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
     setPaymentStatus('Submitting token request for verification...');
 
     try {
+      const formData = new FormData();
+      formData.append('phoneNo', phoneNo);
+      formData.append('transactionId', transactionId.trim() || 'N/A');
+      formData.append('requestedTokens', tokens);
+      formData.append('netTokens', calculateNetTokens());
+      formData.append('amountPaid', calculateTotalAmount());
+      formData.append('gstAmount', calculateGST());
+      formData.append('screenshot', paymentScreenshot);
+
       const res = await fetch(`${API_BASE_URL}/submit-token-request`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          phoneNo, 
-          paymentId: paymentId.trim(),
-          requestedTokens: tokens,
-          netTokens: calculateNetTokens(),
-          amountPaid: calculateTotalAmount(),
-          gstAmount: calculateGST(),
-          gatewayFee: calculatePaymentGatewayFee()
-        })
+        body: formData
       });
 
       const data = await res.json();
@@ -149,29 +180,46 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
       if (data.success) {
         // Show success toast with detailed info
         showToast(
-          `Token Request Submitted! Your payment is under verification. Admin will add ${calculateNetTokens().toLocaleString()} tokens to your account within 24-48 hours. Payment ID: ${paymentId.trim()}`,
+          `Token Request Submitted Successfully! Admin team will update tokens within 4 to 24 hours. Please check request status in previous requests page.`,
           "success",
           8000
         );
         
-        setShowPaymentIdInput(false);
+        // Clear form and close modal
+        setShowPaymentForm(false);
         setTokenAmount('');
-        setPaymentId('');
+        setTransactionId('');
+        setPaymentScreenshot(null);
+        setScreenshotPreview('');
         setPaymentStatus('');
 
         // Close modal after short delay
         setTimeout(() => {
           if (onClose) onClose();
-        }, 1000);
+        }, 2000);
       } else {
         throw new Error(data.error || 'Failed to submit token request');
       }
     } catch (err) {
-      console.error("Error submitting payment ID:", err);
-      showToast(err.message, "error");
+      console.error("Error submitting payment:", err);
+      showToast(`❌ Error: ${err.message}`, "error");
       setPaymentStatus('');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const clearPaymentForm = () => {
+    setShowPaymentForm(false);
+    setTransactionId('');
+    setPaymentScreenshot(null);
+    setScreenshotPreview('');
+    setPaymentStatus('');
+    
+    // Clear file input if it exists
+    const fileInput = document.getElementById('screenshotInput');
+    if (fileInput) {
+      fileInput.value = '';
     }
   };
 
@@ -383,7 +431,7 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
               </div>
             </div>
 
-            {!showPaymentIdInput ? (
+            {!showPaymentForm ? (
               <>
                 {/* Token Input */}
                 <div style={{ marginBottom: '1.5rem' }}>
@@ -483,10 +531,6 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                         <span style={{ color: '#dc2626' }}>- GST (28%)</span>
                         <span style={{ fontWeight: '600', color: '#dc2626' }}>-₹{calculateGST().toLocaleString()}</span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem', fontSize: '0.85rem' }}>
-                        <span style={{ color: '#dc2626' }}>- Gateway Fee (2.5%)</span>
-                        <span style={{ fontWeight: '600', color: '#dc2626' }}>-₹{calculatePaymentGatewayFee().toLocaleString()}</span>
-                      </div>
                       <div style={{ borderTop: '2px solid #10b981', paddingTop: '0.5rem', marginTop: '0.5rem' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
                           <span style={{ color: '#065f46', fontWeight: '700' }}>You Will Get</span>
@@ -515,11 +559,11 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                     <br />
                     • You will receive tokens after successful verification
                     <br />
-                    • Keep your Payment ID safe for reference
+                    • Keep your transaction details safe for reference
                     <br />
-                    • 28% GST + 2.5% gateway fee will be deducted from recharge amount
+                    • 28% GST will be deducted from recharge amount
                     <br />
-                    • Example: ₹100 recharge = ₹100 - ₹28 (GST) - ₹2.5 (fee) = ~69.5 tokens
+                    • Example: ₹100 recharge = ₹100 - ₹28 (GST) = 72 tokens
                     <br />
                     • No maximum limit - you can purchase any amount of tokens
                   </div>
@@ -624,8 +668,40 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                 </div>
               </>
             ) : (
-              // Payment ID Input Section
+              // Payment Form Section (QR Code + Screenshot Upload)
               <div>
+                {/* QR Code Section */}
+                <div ref={qrCodeRef} className="mb-4 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '12px' }}>
+                  <h6 className="mb-3 text-center" style={{ fontWeight: '600', color: '#1e40af' }}>Scan QR Code to Pay</h6>
+                  <div className="text-center">
+                    <img 
+                      src={upiQrCode} 
+                      alt="UPI QR Code" 
+                      style={{ 
+                        maxWidth: '250px', 
+                        width: '100%', 
+                        border: '3px solid #007bff',
+                        borderRadius: '12px',
+                        boxShadow: '0 4px 12px rgba(0,123,255,0.2)'
+                      }}
+                    />
+                  </div>
+                  
+                  <div className="mt-3 p-2" style={{ backgroundColor: 'white', borderRadius: '8px' }}>
+                    <small className="text-muted d-block mb-1 text-center">Or use UPI ID:</small>
+                    <div className="d-flex align-items-center justify-content-center gap-2">
+                      <strong style={{ fontSize: '1rem', color: '#007bff' }}>{UPI_ID}</strong>
+                      <button 
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() => copyToClipboard(UPI_ID)}
+                        style={{ padding: '2px 10px', fontSize: '0.75rem' }}
+                      >
+                        📋 Copy
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
                 <div
                   className="alert alert-warning text-start"
                   style={{
@@ -636,35 +712,72 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                     marginBottom: '1rem'
                   }}
                 >
-                  <strong>⚠️ Important:</strong> After completing payment on Razorpay, copy the <strong>Payment ID</strong> and paste it below.
+                  <strong>⚠️ Important:</strong> After completing payment, upload the screenshot below and optionally provide transaction ID.
                 </div>
 
-                <label style={{ 
-                  display: 'block',
-                  fontSize: '0.95rem',
-                  fontWeight: '600',
-                  color: '#374151',
-                  marginBottom: '0.5rem'
-                }}>
-                  Enter Payment ID <span style={{ color: '#dc2626' }}>*</span>
-                </label>
-                <input
-                  type="text"
-                  value={paymentId}
-                  onChange={(e) => setPaymentId(e.target.value)}
-                  placeholder="e.g., pay_ABC123xyz"
-                  disabled={isSubmitting}
-                  style={{
-                    width: '100%',
-                    padding: '0.875rem',
-                    fontSize: '1rem',
-                    border: '2px solid #2563eb',
-                    borderRadius: '12px',
-                    outline: 'none',
-                    marginBottom: '1rem'
-                  }}
-                />
+                {/* Transaction ID - Optional */}
+                <div className="mb-3 text-start">
+                  <label htmlFor="transactionIdInput" className="form-label" style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                    Transaction ID <span className="text-muted">(Optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="transactionIdInput"
+                    className="form-control"
+                    placeholder="e.g., TXN123456789"
+                    value={transactionId}
+                    onChange={(e) => setTransactionId(e.target.value)}
+                    disabled={isSubmitting}
+                    style={{
+                      fontSize: '0.95rem',
+                      padding: '10px 15px',
+                      borderRadius: '8px',
+                      border: '2px solid #ced4da'
+                    }}
+                  />
+                </div>
 
+                {/* Payment Screenshot - Required */}
+                <div className="mb-3 text-start">
+                  <label htmlFor="screenshotInput" className="form-label" style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                    Payment Screenshot <span className="text-danger">*</span>
+                  </label>
+                  <input
+                    type="file"
+                    id="screenshotInput"
+                    className="form-control"
+                    accept="image/*"
+                    onChange={handleScreenshotChange}
+                    disabled={isSubmitting}
+                    style={{
+                      fontSize: '0.95rem',
+                      padding: '10px 15px',
+                      borderRadius: '8px',
+                      border: '2px solid #007bff'
+                    }}
+                  />
+                  <small className="text-muted">Max size: 5MB | Formats: JPG, PNG, JPEG</small>
+                </div>
+
+                {/* Screenshot Preview */}
+                {screenshotPreview && (
+                  <div className="mb-3 text-center">
+                    <img 
+                      src={screenshotPreview} 
+                      alt="Payment Screenshot Preview" 
+                      style={{ 
+                        maxWidth: '200px', 
+                        maxHeight: '200px',
+                        border: '2px solid #28a745',
+                        borderRadius: '8px',
+                        objectFit: 'contain'
+                      }}
+                    />
+                    <p className="text-success mt-2 mb-0" style={{ fontSize: '0.85rem' }}>✅ Screenshot uploaded</p>
+                  </div>
+                )}
+
+                {/* Order Summary */}
                 <div style={{ 
                   background: '#f0fdf4',
                   padding: '1rem',
@@ -676,6 +789,7 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                   <div><strong>Requested Tokens:</strong> {parseInt(tokenAmount).toLocaleString()}</div>
                   <div><strong>You Will Get:</strong> {calculateNetTokens().toLocaleString()} tokens</div>
                   <div><strong>Amount Paid:</strong> ₹{calculateTotalAmount().toLocaleString()}</div>
+                  <div><strong>GST (28%):</strong> ₹{calculateGST().toLocaleString()}</div>
                 </div>
 
                 {paymentStatus && (
@@ -698,11 +812,11 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                 )}
 
                 <button
-                  onClick={handleSubmitPaymentId}
-                  disabled={isSubmitting || !paymentId.trim()}
+                  onClick={handleSubmitPayment}
+                  disabled={isSubmitting || !paymentScreenshot}
                   style={{
                     width: '100%',
-                    background: (paymentId.trim() && !isSubmitting)
+                    background: (paymentScreenshot && !isSubmitting)
                       ? 'linear-gradient(135deg, #10b981, #059669)'
                       : '#9ca3af',
                     border: 'none',
@@ -711,22 +825,18 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
                     borderRadius: '12px',
                     fontSize: '1rem',
                     fontWeight: '600',
-                    cursor: (paymentId.trim() && !isSubmitting) ? 'pointer' : 'not-allowed',
+                    cursor: (paymentScreenshot && !isSubmitting) ? 'pointer' : 'not-allowed',
                     marginBottom: '0.5rem',
-                    boxShadow: (paymentId.trim() && !isSubmitting)
+                    boxShadow: (paymentScreenshot && !isSubmitting)
                       ? '0 4px 20px rgba(16, 185, 129, 0.3)'
                       : 'none'
                   }}
                 >
-                  {isSubmitting ? 'Submitting...' : '✅ Submit Payment ID'}
+                  {isSubmitting ? 'Submitting...' : '✅ Submit Payment Details'}
                 </button>
 
                 <button
-                  onClick={() => {
-                    setShowPaymentIdInput(false);
-                    setPaymentId('');
-                    setPaymentStatus('');
-                  }}
+                  onClick={clearPaymentForm}
                   style={{
                     width: '100%',
                     background: 'transparent',
@@ -761,7 +871,7 @@ const AddTokens = ({ onClose, onTokensUpdated }) => {
             >
               <div style={{ fontSize: '1rem' }}>🔒</div>
               <div>
-                <strong>Secure Payment</strong> powered by Razorpay
+                <strong>Secure UPI Payment</strong>
               </div>
             </div>
           </div>

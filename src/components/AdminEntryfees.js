@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import 'bootstrap/dist/css/bootstrap.min.css';
 import { 
   CreditCard, 
   User, 
@@ -13,9 +12,12 @@ import {
   Loader,
   FileText,
   DollarSign,
-  Calendar
+  Calendar,
+  Image,
+  ExternalLink
 } from 'lucide-react';
-import API_BASE_URL from "./ApiConfig"
+import API_BASE_URL from './ApiConfig';
+
 const AdminEntryFeeVerification = () => {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -94,10 +96,21 @@ const AdminEntryFeeVerification = () => {
     setAction('');
   };
 
+  const handleOpenImageInNewTab = (imageUrl) => {
+    window.open(imageUrl, '_blank');
+  };
+
   const handleVerifyPayment = async () => {
     if (!selectedUser) return;
 
     const orderId = selectedUser.entryFeeOrderId;
+    
+    if (!orderId) {
+      alert('Invalid request: Missing order ID in user data');
+      console.error('User data missing entryFeeOrderId:', selectedUser);
+      return;
+    }
+
     setProcessing(prev => ({ ...prev, [orderId]: true }));
 
     try {
@@ -106,23 +119,27 @@ const AdminEntryFeeVerification = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           orderId,
+          userKey: selectedUser.userId || selectedUser.id,
+          phoneNo: selectedUser.phoneNo,
           approved: action === 'approve',
-          adminNote: adminNote || (action === 'approve' ? 'Payment verified and approved' : 'Payment verification failed')
+          adminNote: adminNote || (action === 'approve'
+            ? 'Payment verified and approved'
+            : 'Payment verification failed')
         })
       });
 
       const data = await response.json();
 
-      if (data.success) {
+      if (response.ok && data.success) {
         alert(`${data.message}`);
-        handleCloseModal();
         setUsers(prev => prev.filter(u => u.entryFeeOrderId !== orderId));
+        handleCloseModal();
       } else {
-        alert(`Error: ${data.error}`);
+        alert(`Error: ${data.error || 'Unexpected server response'}`);
       }
     } catch (err) {
       console.error('Verification error:', err);
-      alert('Failed to verify payment. Please try again.');
+      alert('Network or server error while verifying payment.');
     } finally {
       setProcessing(prev => ({ ...prev, [orderId]: false }));
     }
@@ -136,217 +153,267 @@ const AdminEntryFeeVerification = () => {
     });
   };
 
-  // Filter users based on search query
   const filteredUsers = users.filter(user => {
     if (!searchQuery) return true;
     
     const query = searchQuery.toLowerCase();
     const nameMatch = user.name?.toLowerCase().includes(query);
     const phoneMatch = user.phoneNo?.toLowerCase().includes(query);
+    const transactionIdMatch = user.entryFeeTransactionId?.toLowerCase().includes(query);
     const orderIdMatch = user.entryFeeOrderId?.toLowerCase().includes(query);
     
-    return nameMatch || phoneMatch || orderIdMatch;
+    return nameMatch || phoneMatch || transactionIdMatch || orderIdMatch;
   });
 
   if (loading) {
     return (
-      <div className="min-vh-100 d-flex align-items-center justify-content-center bg-white">
-        <div className="text-center">
-          <Loader className="text-primary mb-3" size={48} />
-          <p className="fs-5 text-muted">Loading pending requests...</p>
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white' }}>
+        <div style={{ textAlign: 'center' }}>
+          <Loader style={{ color: '#0d6efd', marginBottom: '1rem' }} size={48} />
+          <p style={{ fontSize: '1.25rem', color: '#6c757d' }}>Loading pending requests...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-vh-100 bg-white">
-      <div className="container-fluid py-4">
+    <div style={{ minHeight: '100vh', background: 'white', padding: '2rem 1rem' }}>
+      <div style={{ maxWidth: '1400px', margin: '0 auto' }}>
         {/* Header */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="card border-0 shadow-sm">
-              <div className="card-body p-4" style={{ background: '#2563eb' }}>
-                <div className="d-flex justify-content-between align-items-center">
-                  <div className="d-flex align-items-center gap-3">
-                    <div className="bg-white rounded-3 p-2 shadow-sm">
-                      <CreditCard size={32} className="text-primary" />
-                    </div>
-                    <div>
-                      <h2 className="text-white mb-1 fw-bold">Entry Fee Verification</h2>
-                      <p className="text-white mb-0" style={{ opacity: 0.9 }}>Manage and verify pending payment requests</p>
-                    </div>
-                  </div>
-                  <div className="text-end">
-                    <div className="bg-white text-primary px-4 py-3 rounded-3 shadow-sm">
-                      <div className="fw-bold" style={{ fontSize: '1.5rem' }}>{users.length}</div>
-                      <div className="small text-muted">Pending</div>
-                    </div>
-                  </div>
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ background: '#2563eb', borderRadius: '12px', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
+                <div style={{ background: 'white', borderRadius: '12px', padding: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+                  <CreditCard size={32} style={{ color: '#0d6efd' }} />
                 </div>
+                <div>
+                  <h2 style={{ color: 'white', marginBottom: '0.25rem', fontWeight: 'bold', fontSize: '1.75rem' }}>Entry Fee Verification</h2>
+                  <p style={{ color: 'white', marginBottom: 0, opacity: 0.9 }}>Manage and verify pending payment requests</p>
+                </div>
+              </div>
+              <div style={{ background: 'white', color: '#2563eb', padding: '1rem 2rem', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+                <div style={{ fontWeight: 'bold', fontSize: '2rem' }}>{users.length}</div>
+                <div style={{ fontSize: '0.875rem', color: '#6c757d' }}>Pending</div>
               </div>
             </div>
           </div>
         </div>
 
         {/* Search Bar */}
-        <div className="row mb-4">
-          <div className="col-12">
-            <div className="card border-0 shadow-sm">
-              <div className="card-body p-4">
-                <div className="position-relative">
-                  <Search 
-                    className="position-absolute top-50 start-0 translate-middle-y ms-3 text-muted" 
-                    size={20}
-                  />
-                  <input
-                    type="text"
-                    className="form-control form-control-lg ps-5"
-                    placeholder="Search by name, phone number, or order ID..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{ 
-                      borderRadius: '10px', 
-                      border: '2px solid #e5e7eb',
-                      paddingLeft: '3rem'
-                    }}
-                  />
-                </div>
-                {searchQuery && (
-                  <div className="mt-3">
-                    <small className="text-muted">
-                      Found {filteredUsers.length} requests
-                      {filteredUsers.length !== users.length && (
-                        <button 
-                          className="btn btn-link btn-sm p-0 ms-2"
-                          onClick={() => setSearchQuery('')}
-                        >
-                          Clear search
-                        </button>
-                      )}
-                    </small>
-                  </div>
-                )}
-              </div>
+        <div style={{ marginBottom: '2rem' }}>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+            <div style={{ position: 'relative' }}>
+              <Search 
+                style={{ position: 'absolute', top: '50%', left: '1rem', transform: 'translateY(-50%)', color: '#6c757d' }} 
+                size={20}
+              />
+              <input
+                type="text"
+                placeholder="Search by name, phone, transaction ID, or order ID..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                style={{ 
+                  width: '100%',
+                  padding: '1rem 1rem 1rem 3rem',
+                  borderRadius: '10px', 
+                  border: '2px solid #e5e7eb',
+                  fontSize: '1.1rem',
+                  outline: 'none'
+                }}
+              />
             </div>
+            {searchQuery && (
+              <div style={{ marginTop: '1rem' }}>
+                <small style={{ color: '#6c757d' }}>
+                  Found {filteredUsers.length} requests
+                  {filteredUsers.length !== users.length && (
+                    <button 
+                      onClick={() => setSearchQuery('')}
+                      style={{ background: 'none', border: 'none', color: '#0d6efd', cursor: 'pointer', padding: '0 0 0 0.5rem', textDecoration: 'underline' }}
+                    >
+                      Clear search
+                    </button>
+                  )}
+                </small>
+              </div>
+            )}
           </div>
         </div>
 
         {users.length === 0 ? (
-          <div className="row">
-            <div className="col-12">
-              <div className="card border-0 shadow-sm">
-                <div className="card-body text-center py-5">
-                  <CheckCircle className="text-success mb-4" size={64} />
-                  <h4 className="text-dark mb-2">All Clear!</h4>
-                  <p className="text-muted mb-0">No pending entry fee requests at the moment.</p>
-                </div>
-              </div>
-            </div>
+          <div style={{ background: 'white', borderRadius: '12px', padding: '4rem 2rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', textAlign: 'center' }}>
+            <CheckCircle style={{ color: '#198754', marginBottom: '1.5rem' }} size={64} />
+            <h4 style={{ color: '#212529', marginBottom: '0.5rem' }}>All Clear!</h4>
+            <p style={{ color: '#6c757d', marginBottom: 0 }}>No pending entry fee requests at the moment.</p>
           </div>
         ) : (
-          <div className="row">
-            {filteredUsers.map((user) => (
-              <div key={user.userId} className="col-12 mb-4">
-                <div className="card border-0 shadow-sm h-100">
-                  {/* Card Header */}
-                  <div className="card-header border-0 p-4" style={{ background: '#2563eb' }}>
-                    <div className="d-flex justify-content-between align-items-center">
-                      <div className="d-flex align-items-center gap-3">
-                        <div className="bg-white rounded-circle d-flex align-items-center justify-content-center" style={{ width: '50px', height: '50px' }}>
-                          <User className="text-primary" size={24} />
+          <div>
+            {filteredUsers.map((user) => {
+              const orderId = user.entryFeeOrderId;
+              return (
+                <div key={orderId || user.userId} style={{ marginBottom: '2rem' }}>
+                  <div style={{ background: 'white', borderRadius: '12px', boxShadow: '0 1px 3px rgba(0,0,0,0.1)', overflow: 'hidden' }}>
+                    {/* Card Header */}
+                    <div style={{ background: '#2563eb', padding: '1.5rem 2rem' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                          <div style={{ background: 'white', borderRadius: '50%', width: '50px', height: '50px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <User style={{ color: '#0d6efd' }} size={24} />
+                          </div>
+                          <div>
+                            <h5 style={{ color: 'white', marginBottom: 0, fontWeight: 'bold' }}>{user.name || 'N/A'}</h5>
+                            <small style={{ color: 'white', opacity: 0.9 }}>{user.phoneNo || 'N/A'}</small>
+                          </div>
                         </div>
-                        <div>
-                          <h5 className="text-white mb-0 fw-bold">{user.name || 'N/A'}</h5>
-                          <small className="text-white" style={{ opacity: 0.9 }}>{user.phoneNo || 'N/A'}</small>
-                        </div>
+                        <span style={{ background: '#ffc107', color: '#212529', padding: '0.5rem 1rem', borderRadius: '6px', display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontWeight: '500' }}>
+                          <Clock size={16} />
+                          Pending
+                        </span>
                       </div>
-                      <span className="badge bg-warning text-dark px-3 py-2 d-flex align-items-center gap-2">
-                        <Clock size={16} />
-                        Pending
-                      </span>
                     </div>
-                  </div>
 
-                  {/* Card Body */}
-                  <div className="card-body p-4">
-                    {/* User Info Row */}
-                    <div className="row g-3 mb-4">
-                      <div className="col-md-4">
-                        <div className="p-3 h-100 border rounded">
-                          <div className="d-flex align-items-center gap-2 mb-2">
-                            <Mail size={16} className="text-muted" />
-                            <small className="text-muted">Email</small>
+                    {/* Card Body */}
+                    <div style={{ padding: '2rem' }}>
+                      {/* User Info Row */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
+                        <div style={{ padding: '1rem', border: '1px solid #dee2e6', borderRadius: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <Mail size={16} style={{ color: '#6c757d' }} />
+                            <small style={{ color: '#6c757d' }}>Email</small>
                           </div>
-                          <strong className="text-dark">{user.email || 'N/A'}</strong>
+                          <strong style={{ color: '#212529' }}>{user.email || 'N/A'}</strong>
                         </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="p-3 h-100 border rounded">
-                          <div className="d-flex align-items-center gap-2 mb-2">
-                            <MapPin size={16} className="text-muted" />
-                            <small className="text-muted">City</small>
+                        <div style={{ padding: '1rem', border: '1px solid #dee2e6', borderRadius: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <MapPin size={16} style={{ color: '#6c757d' }} />
+                            <small style={{ color: '#6c757d' }}>City</small>
                           </div>
-                          <strong className="text-dark">{user.city || 'N/A'}</strong>
+                          <strong style={{ color: '#212529' }}>{user.city || 'N/A'}</strong>
                         </div>
-                      </div>
-                      <div className="col-md-4">
-                        <div className="p-3 h-100 border rounded">
-                          <div className="d-flex align-items-center gap-2 mb-2">
-                            <CheckCircle size={16} className="text-muted" />
-                            <small className="text-muted">KYC Status</small>
+                        <div style={{ padding: '1rem', border: '1px solid #dee2e6', borderRadius: '8px' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                            <CheckCircle size={16} style={{ color: '#6c757d' }} />
+                            <small style={{ color: '#6c757d' }}>KYC Status</small>
                           </div>
-                          <span className="badge bg-success px-3 py-2">
+                          <span style={{ background: '#198754', color: 'white', padding: '0.5rem 1rem', borderRadius: '6px', display: 'inline-block' }}>
                             {user.kyc?.kycStatus || user.kycStatus || 'N/A'}
                           </span>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Payment Details Row */}
-                    <div className="p-4 mb-4 border rounded" style={{ background: '#f8f9fa' }}>
-                      <div className="d-flex align-items-center gap-2 mb-3">
-                        <DollarSign size={20} className="text-primary" />
-                        <h6 className="text-dark fw-bold mb-0">Payment Details</h6>
+                      {/* Payment Details */}
+                      <div style={{ padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #dee2e6', borderRadius: '8px', background: '#f8f9fa' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                          <DollarSign size={20} style={{ color: '#0d6efd' }} />
+                          <h6 style={{ color: '#212529', fontWeight: 'bold', margin: 0 }}>Payment Details</h6>
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                          <div style={{ gridColumn: '1 / -1' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <FileText size={16} style={{ color: '#6c757d' }} />
+                              <small style={{ color: '#6c757d' }}>Order ID</small>
+                            </div>
+                            <code style={{ background: 'white', padding: '0.5rem 1rem', border: '1px solid #dee2e6', borderRadius: '6px', fontSize: '0.85rem', display: 'inline-block' }}>
+                              {user.entryFeeOrderId || 'N/A'}
+                            </code>
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <FileText size={16} style={{ color: '#6c757d' }} />
+                              <small style={{ color: '#6c757d' }}>Transaction ID</small>
+                            </div>
+                            <code style={{ background: 'white', padding: '0.5rem 1rem', border: '1px solid #dee2e6', borderRadius: '6px', fontSize: '0.85rem', display: 'inline-block' }}>
+                              {user.entryFeeTransactionId || 'N/A'}
+                            </code>
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <DollarSign size={16} style={{ color: '#6c757d' }} />
+                              <small style={{ color: '#6c757d' }}>Amount</small>
+                            </div>
+                            <strong style={{ color: '#212529', fontSize: '1.5rem' }}>₹{user.entryFeeAmount || 500}</strong>
+                          </div>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+                              <Calendar size={16} style={{ color: '#6c757d' }} />
+                              <small style={{ color: '#6c757d' }}>Submitted</small>
+                            </div>
+                            <small style={{ color: '#212529', fontWeight: '600' }}>{formatTimestamp(user.entryFeeSubmittedAt)}</small>
+                          </div>
+                        </div>
                       </div>
-                      <div className="row g-3">
-                        <div className="col-md-6">
-                          <div className="d-flex align-items-center gap-2 mb-2">
-                            <FileText size={16} className="text-muted" />
-                            <small className="text-muted">Order ID</small>
-                          </div>
-                          <code className="bg-white px-3 py-2 d-inline-block border rounded" style={{ fontSize: '0.85rem' }}>
-                            {user.entryFeeOrderId}
-                          </code>
-                        </div>
-                        <div className="col-md-3">
-                          <div className="d-flex align-items-center gap-2 mb-2">
-                            <DollarSign size={16} className="text-muted" />
-                            <small className="text-muted">Amount</small>
-                          </div>
-                          <strong className="text-dark fs-5">₹{user.entryFeeAmount || 500}</strong>
-                        </div>
-                        <div className="col-md-3">
-                          <div className="d-flex align-items-center gap-2 mb-2">
-                            <Calendar size={16} className="text-muted" />
-                            <small className="text-muted">Submitted</small>
-                          </div>
-                          <small className="text-dark fw-semibold">{formatTimestamp(user.entryFeeSubmittedAt)}</small>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Action Buttons */}
-                    <div className="row g-3">
-                      <div className="col-md-6">
+                      {/* Payment Screenshot */}
+                      {user.entryFeeScreenshotUrl && (
+                        <div style={{ padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #bee5eb', borderRadius: '8px', background: '#d1ecf1' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
+                            <Image size={20} style={{ color: '#0c5460' }} />
+                            <h6 style={{ color: '#0c5460', fontWeight: 'bold', margin: 0 }}>Payment Screenshot</h6>
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <img 
+                              src={user.entryFeeScreenshotUrl} 
+                              alt="Payment Screenshot" 
+                              style={{ 
+                                maxHeight: '300px', 
+                                maxWidth: '100%',
+                                cursor: 'pointer',
+                                objectFit: 'contain',
+                                border: '1px solid #bee5eb',
+                                borderRadius: '8px',
+                                marginBottom: '1rem',
+                                boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+                              }}
+                              onClick={() => handleOpenImageInNewTab(user.entryFeeScreenshotUrl)}
+                            />
+                            <div>
+                              <button 
+                                onClick={() => handleOpenImageInNewTab(user.entryFeeScreenshotUrl)}
+                                style={{
+                                  background: 'white',
+                                  border: '1px solid #0c5460',
+                                  color: '#0c5460',
+                                  padding: '0.5rem 1rem',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '0.5rem',
+                                  fontSize: '0.875rem'
+                                }}
+                              >
+                                <ExternalLink size={16} />
+                                Open in New Tab
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Action Buttons */}
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1rem' }}>
                         <button
-                          className="btn btn-success w-100 py-3 fw-semibold d-flex align-items-center justify-content-center gap-2"
                           onClick={() => handleOpenModal(user, 'approve')}
-                          disabled={processing[user.entryFeeOrderId]}
+                          disabled={processing[orderId]}
+                          style={{
+                            background: processing[orderId] ? '#6c757d' : '#198754',
+                            color: 'white',
+                            border: 'none',
+                            padding: '1rem',
+                            borderRadius: '8px',
+                            cursor: processing[orderId] ? 'not-allowed' : 'pointer',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            fontSize: '1rem'
+                          }}
                         >
-                          {processing[user.entryFeeOrderId] ? (
+                          {processing[orderId] ? (
                             <>
-                              <Loader className="spinner-border spinner-border-sm" size={18} />
+                              <Loader size={18} style={{ animation: 'spin 1s linear infinite' }} />
                               Processing...
                             </>
                           ) : (
@@ -356,12 +423,24 @@ const AdminEntryFeeVerification = () => {
                             </>
                           )}
                         </button>
-                      </div>
-                      <div className="col-md-6">
                         <button
-                          className="btn btn-danger w-100 py-3 fw-semibold d-flex align-items-center justify-content-center gap-2"
                           onClick={() => handleOpenModal(user, 'reject')}
-                          disabled={processing[user.entryFeeOrderId]}
+                          disabled={processing[orderId]}
+                          style={{
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            padding: '1rem',
+                            borderRadius: '8px',
+                            cursor: processing[orderId] ? 'not-allowed' : 'pointer',
+                            fontWeight: '600',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: '0.5rem',
+                            fontSize: '1rem',
+                            opacity: processing[orderId] ? 0.6 : 1
+                          }}
                         >
                           <XCircle size={20} />
                           Reject Payment
@@ -370,128 +449,189 @@ const AdminEntryFeeVerification = () => {
                     </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
 
         {/* Confirmation Modal */}
         {showModal && selectedUser && (
-          <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)', overflowY: 'auto' }}>
-            <div className="modal-dialog modal-dialog-centered modal-lg" style={{ maxHeight: '90vh', margin: '1.75rem auto' }}>
-              <div className="modal-content border-0 shadow-lg" style={{ maxHeight: '85vh', display: 'flex', flexDirection: 'column' }}>
-                <div 
-                  className={`modal-header border-0 p-4 ${action === 'approve' ? 'bg-success' : 'bg-danger'}`}
-                  style={{ flexShrink: 0 }}
+          <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1050, overflowY: 'auto', padding: '1rem' }}>
+            <div style={{ background: 'white', borderRadius: '12px', maxWidth: '700px', width: '100%', maxHeight: '90vh', display: 'flex', flexDirection: 'column', boxShadow: '0 10px 25px rgba(0,0,0,0.3)' }}>
+              <div style={{ background: action === 'approve' ? '#198754' : '#dc3545', padding: '1.5rem 2rem', borderTopLeftRadius: '12px', borderTopRightRadius: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  {action === 'approve' ? (
+                    <CheckCircle size={24} style={{ color: 'white' }} />
+                  ) : (
+                    <XCircle size={24} style={{ color: 'white' }} />
+                  )}
+                  <h5 style={{ color: 'white', fontWeight: 'bold', margin: 0 }}>
+                    {action === 'approve' ? 'Approve Payment' : 'Reject Payment'}
+                  </h5>
+                </div>
+                <button
+                  onClick={handleCloseModal}
+                  style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', padding: 0, lineHeight: 1 }}
                 >
-                  <div className="d-flex align-items-center gap-2">
-                    {action === 'approve' ? (
-                      <CheckCircle size={24} className="text-white" />
-                    ) : (
-                      <XCircle size={24} className="text-white" />
-                    )}
-                    <h5 className="modal-title text-white fw-bold mb-0">
-                      {action === 'approve' ? 'Approve Payment' : 'Reject Payment'}
-                    </h5>
+                  ×
+                </button>
+              </div>
+              
+              <div style={{ padding: '2rem', overflowY: 'auto', flex: 1 }}>
+                <div style={{ padding: '1rem', marginBottom: '1.5rem', border: '1px solid #dee2e6', borderRadius: '8px', background: '#f8f9fa' }}>
+                  <div style={{ display: 'grid', gap: '1rem' }}>
+                    <div>
+                      <small style={{ color: '#6c757d', display: 'block', marginBottom: '0.25rem' }}>User Name</small>
+                      <strong style={{ color: '#212529' }}>{selectedUser.name}</strong>
+                    </div>
+                    <div>
+                      <small style={{ color: '#6c757d', display: 'block', marginBottom: '0.25rem' }}>Phone Number</small>
+                      <strong style={{ color: '#212529' }}>{selectedUser.phoneNo}</strong>
+                    </div>
+                    <div>
+                      <small style={{ color: '#6c757d', display: 'block', marginBottom: '0.25rem' }}>Order ID</small>
+                      <code style={{ background: 'white', padding: '0.25rem 0.5rem', border: '1px solid #dee2e6', borderRadius: '4px' }}>
+                        {selectedUser.entryFeeOrderId || 'N/A'}
+                      </code>
+                    </div>
+                    <div>
+                      <small style={{ color: '#6c757d', display: 'block', marginBottom: '0.25rem' }}>Transaction ID</small>
+                      <code style={{ background: 'white', padding: '0.25rem 0.5rem', border: '1px solid #dee2e6', borderRadius: '4px' }}>
+                        {selectedUser.entryFeeTransactionId || 'N/A'}
+                      </code>
+                    </div>
+                    <div>
+                      <small style={{ color: '#6c757d', display: 'block', marginBottom: '0.25rem' }}>Amount</small>
+                      <strong style={{ color: '#212529', fontSize: '1.5rem' }}>₹{selectedUser.entryFeeAmount || 500}</strong>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    className="btn-close btn-close-white"
-                    onClick={handleCloseModal}
+                </div>
+
+                {selectedUser.entryFeeScreenshotUrl && (
+                  <div style={{ marginBottom: '1.5rem', textAlign: 'center', padding: '1rem', border: '1px solid #bee5eb', borderRadius: '8px', background: '#d1ecf1' }}>
+                    <small style={{ color: '#0c5460', display: 'block', marginBottom: '0.5rem' }}>Payment Screenshot</small>
+                    <img 
+                      src={selectedUser.entryFeeScreenshotUrl} 
+                      alt="Payment Screenshot" 
+                      style={{ maxHeight: '200px', maxWidth: '100%', objectFit: 'contain', cursor: 'pointer', border: '1px solid #bee5eb', borderRadius: '6px', marginBottom: '0.5rem' }}
+                      onClick={() => handleOpenImageInNewTab(selectedUser.entryFeeScreenshotUrl)}
+                    />
+                    <div>
+                      <button 
+                        onClick={() => handleOpenImageInNewTab(selectedUser.entryFeeScreenshotUrl)}
+                        style={{
+                          background: 'white',
+                          border: '1px solid #0c5460',
+                          color: '#0c5460',
+                          padding: '0.375rem 0.75rem',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.5rem',
+                          fontSize: '0.875rem'
+                        }}
+                      >
+                        <ExternalLink size={16} />
+                        Open in New Tab
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div style={{ marginBottom: '1.5rem' }}>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: '600' }}>
+                    Admin Note (Optional)
+                  </label>
+                  <textarea
+                    rows="4"
+                    placeholder={
+                      action === 'approve'
+                        ? 'e.g., Payment verified successfully'
+                        : 'e.g., Invalid transaction ID or payment not found'
+                    }
+                    value={adminNote}
+                    onChange={(e) => setAdminNote(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '0.75rem',
+                      border: '1px solid #dee2e6',
+                      borderRadius: '6px',
+                      fontSize: '1rem',
+                      fontFamily: 'inherit',
+                      resize: 'vertical'
+                    }}
                   />
                 </div>
-                <div className="modal-body p-4" style={{ overflowY: 'auto', flex: 1 }}>
-                  <div className="p-3 mb-4 border rounded" style={{ background: '#f8f9fa' }}>
-                    <div className="row g-3">
-                      <div className="col-md-6">
-                        <small className="text-muted d-block mb-1">User Name</small>
-                        <strong className="text-dark">{selectedUser.name}</strong>
-                      </div>
-                      <div className="col-md-6">
-                        <small className="text-muted d-block mb-1">Phone Number</small>
-                        <strong className="text-dark">{selectedUser.phoneNo}</strong>
-                      </div>
-                      <div className="col-md-8">
-                        <small className="text-muted d-block mb-1">Order ID</small>
-                        <code className="bg-white px-2 py-1 border rounded">
-                          {selectedUser.entryFeeOrderId}
-                        </code>
-                      </div>
-                      <div className="col-md-4">
-                        <small className="text-muted d-block mb-1">Amount</small>
-                        <strong className="text-dark fs-5">₹{selectedUser.entryFeeAmount || 500}</strong>
-                      </div>
-                    </div>
-                  </div>
 
-                  <div className="mb-4">
-                    <label htmlFor="adminNote" className="form-label fw-semibold">
-                      Admin Note (Optional)
-                    </label>
-                    <textarea
-                      id="adminNote"
-                      className="form-control"
-                      rows="4"
-                      placeholder={
-                        action === 'approve'
-                          ? 'e.g., Payment verified successfully'
-                          : 'e.g., Invalid order ID or payment not found'
-                      }
-                      value={adminNote}
-                      onChange={(e) => setAdminNote(e.target.value)}
-                    />
-                  </div>
-
-                  <div className={`alert ${action === 'approve' ? 'alert-success' : 'alert-danger'} border-0`}>
-                    <div className="d-flex align-items-start gap-3">
-                      <AlertTriangle size={24} className="flex-shrink-0" />
-                      <div>
-                        <strong className="d-block mb-2">Confirm Action</strong>
-                        <p className="mb-0">
-                          {action === 'approve'
-                            ? 'User will receive 200 tokens and gain access to the dashboard.'
-                            : 'User will be notified of rejection and can resubmit.'}
-                        </p>
-                      </div>
+                <div style={{ padding: '1rem', borderRadius: '8px', background: action === 'approve' ? '#d4edda' : '#f8d7da', border: `1px solid ${action === 'approve' ? '#c3e6cb' : '#f5c6cb'}` }}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+                    <AlertTriangle size={24} style={{ color: action === 'approve' ? '#155724' : '#721c24', flexShrink: 0 }} />
+                    <div>
+                      <strong style={{ display: 'block', marginBottom: '0.5rem', color: action === 'approve' ? '#155724' : '#721c24' }}>Confirm Action</strong>
+                      <p style={{ margin: 0, color: action === 'approve' ? '#155724' : '#721c24' }}>
+                        {action === 'approve'
+                          ? 'User will be marked as paid and gain access to the dashboard.'
+                          : 'User request and screenshot will be permanently deleted from the system.'}
+                      </p>
                     </div>
                   </div>
                 </div>
-                <div className="modal-footer border-0 p-4 bg-light" style={{ flexShrink: 0 }}>
-                  <button
-                    type="button"
-                    className="btn btn-secondary px-4 py-2"
-                    onClick={handleCloseModal}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    className={`btn ${action === 'approve' ? 'btn-success' : 'btn-danger'} px-4 py-2 d-flex align-items-center gap-2`}
-                    onClick={handleVerifyPayment}
-                    disabled={processing[selectedUser.entryFeeOrderId]}
-                  >
-                    {processing[selectedUser.entryFeeOrderId] ? (
-                      <>
-                        <Loader className="spinner-border spinner-border-sm" size={18} />
-                        Processing...
-                      </>
-                    ) : (
-                      <>
-                        {action === 'approve' ? (
-                          <>
-                            <CheckCircle size={18} />
-                            Confirm Approval
-                          </>
-                        ) : (
-                          <>
-                            <XCircle size={18} />
-                            Confirm Rejection
-                          </>
-                        )}
-                      </>
-                    )}
-                  </button>
-                </div>
+              </div>
+              
+              <div style={{ padding: '1.5rem 2rem', background: '#f8f9fa', borderBottomLeftRadius: '12px', borderBottomRightRadius: '12px', display: 'flex', justifyContent: 'flex-end', gap: '1rem' }}>
+                <button
+                  onClick={handleCloseModal}
+                  style={{
+                    background: '#6c757d',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '1rem'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleVerifyPayment}
+                  disabled={processing[selectedUser.entryFeeOrderId]}
+                  style={{
+                    background: action === 'approve' ? '#198754' : '#dc3545',
+                    color: 'white',
+                    border: 'none',
+                    padding: '0.75rem 1.5rem',
+                    borderRadius: '6px',
+                    cursor: processing[selectedUser.entryFeeOrderId] ? 'not-allowed' : 'pointer',
+                    fontSize: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    opacity: processing[selectedUser.entryFeeOrderId] ? 0.6 : 1
+                  }}
+                >
+                  {processing[selectedUser.entryFeeOrderId] ? (
+                    <>
+                      <Loader size={18} />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      {action === 'approve' ? (
+                        <>
+                          <CheckCircle size={18} />
+                          Confirm Approval
+                        </>
+                      ) : (
+                        <>
+                          <XCircle size={18} />
+                          Confirm Rejection
+                        </>
+                      )}
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>

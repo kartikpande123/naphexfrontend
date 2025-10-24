@@ -14,7 +14,9 @@ import {
   Calendar,
   AlertCircle,
   Loader,
-  XCircle
+  XCircle,
+  Eye,
+  ExternalLink
 } from 'lucide-react';
 import API_BASE_URL from "./ApiConfig"
 
@@ -26,6 +28,7 @@ export default function AdminTokenDetails() {
   const [searchQuery, setSearchQuery] = useState('');
   const [rejectModal, setRejectModal] = useState({ show: false, user: null, request: null });
   const [rejectionReason, setRejectionReason] = useState('');
+  const [imageModal, setImageModal] = useState({ show: false, url: null });
 
   useEffect(() => {
     let eventSource = null;
@@ -115,7 +118,12 @@ export default function AdminTokenDetails() {
           userId: user.userId,
           requestId: request.id,
           tokensToAdd: parseFloat(tokensToAdd),
-          paymentId: request.paymentId
+          paymentId: request.paymentId || request.transactionId,
+          amountPaid: request.amountPaid,
+          requestedTokens: request.requestedTokens,
+          netTokens: request.netTokens,
+          gstAmount: request.gstAmount || 0,
+          gatewayFee: request.gatewayFee || 0
         })
       });
 
@@ -161,6 +169,14 @@ export default function AdminTokenDetails() {
   const closeRejectModal = () => {
     setRejectModal({ show: false, user: null, request: null });
     setRejectionReason('');
+  };
+
+  const openImageModal = (url) => {
+    setImageModal({ show: true, url });
+  };
+
+  const closeImageModal = () => {
+    setImageModal({ show: false, url: null });
   };
 
   const handleRejectRequest = async () => {
@@ -232,7 +248,7 @@ export default function AdminTokenDetails() {
     const nameMatch = user.name?.toLowerCase().includes(query);
     const phoneMatch = user.phoneNo?.toLowerCase().includes(query);
     const paymentIdMatch = user.pendingRequests.some(req => 
-      req.paymentId?.toLowerCase().includes(query)
+      req.paymentId?.toLowerCase().includes(query) || req.transactionId?.toLowerCase().includes(query)
     );
     
     return nameMatch || phoneMatch || paymentIdMatch;
@@ -292,7 +308,7 @@ export default function AdminTokenDetails() {
                   <input
                     type="text"
                     className="form-control form-control-lg ps-5"
-                    placeholder="Search by name, phone number, or payment ID..."
+                    placeholder="Search by name, phone number, or transaction ID..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     style={{ 
@@ -412,10 +428,10 @@ export default function AdminTokenDetails() {
                             <div className="col-md-6">
                               <div className="d-flex align-items-center gap-2 mb-2">
                                 <CreditCard size={16} className="text-muted" />
-                                <small className="text-muted">Payment ID</small>
+                                <small className="text-muted">Transaction ID</small>
                               </div>
                               <code className="bg-white px-3 py-2 d-inline-block border rounded" style={{ fontSize: '0.85rem' }}>
-                                {request.paymentId}
+                                {request.transactionId || request.paymentId || 'N/A'}
                               </code>
                             </div>
                             <div className="col-md-2">
@@ -448,6 +464,43 @@ export default function AdminTokenDetails() {
                             </div>
                           </div>
                         </div>
+
+                        {/* Payment Screenshot */}
+                        {request.screenshotUrl && (
+                          <div className="p-4 mb-4 border rounded" style={{ background: '#f8f9fa' }}>
+                            <div className="d-flex align-items-center gap-2 mb-3">
+                              <Eye size={20} className="text-primary" />
+                              <h6 className="text-dark fw-bold mb-0">Payment Screenshot</h6>
+                            </div>
+                            <div className="position-relative" style={{ maxWidth: '400px' }}>
+                              <img 
+                                src={request.screenshotUrl} 
+                                alt="Payment Screenshot" 
+                                className="img-fluid border rounded shadow-sm"
+                                style={{ cursor: 'pointer', maxHeight: '300px', objectFit: 'cover' }}
+                                onClick={() => openImageModal(request.screenshotUrl)}
+                              />
+                              <div className="mt-2 d-flex gap-2">
+                                <button 
+                                  className="btn btn-sm btn-outline-primary d-flex align-items-center gap-1"
+                                  onClick={() => openImageModal(request.screenshotUrl)}
+                                >
+                                  <Eye size={16} />
+                                  View Full Size
+                                </button>
+                                <a 
+                                  href={request.screenshotUrl} 
+                                  target="_blank" 
+                                  rel="noopener noreferrer"
+                                  className="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1"
+                                >
+                                  <ExternalLink size={16} />
+                                  Open in New Tab
+                                </a>
+                              </div>
+                            </div>
+                          </div>
+                        )}
 
                         {/* Action Section */}
                         <div className="row g-3">
@@ -528,7 +581,7 @@ export default function AdminTokenDetails() {
               <div className="modal-body">
                 <div className="mb-3">
                   <p className="text-muted mb-1">User: <strong>{rejectModal.user?.name}</strong></p>
-                  <p className="text-muted mb-3">Payment ID: <code>{rejectModal.request?.paymentId}</code></p>
+                  <p className="text-muted mb-3">Transaction ID: <code>{rejectModal.request?.transactionId || rejectModal.request?.paymentId}</code></p>
                 </div>
                 <div className="mb-3">
                   <label className="form-label fw-semibold">Reason for Rejection</label>
@@ -568,6 +621,36 @@ export default function AdminTokenDetails() {
                     </>
                   )}
                 </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Image Modal */}
+      {imageModal.show && (
+        <div 
+          className="modal show d-block" 
+          style={{ backgroundColor: 'rgba(0,0,0,0.85)' }}
+          onClick={closeImageModal}
+        >
+          <div className="modal-dialog modal-dialog-centered modal-lg">
+            <div className="modal-content bg-transparent border-0">
+              <div className="modal-header border-0 pb-0">
+                <button 
+                  type="button" 
+                  className="btn-close btn-close-white ms-auto" 
+                  onClick={closeImageModal}
+                ></button>
+              </div>
+              <div className="modal-body text-center p-0">
+                <img 
+                  src={imageModal.url} 
+                  alt="Payment Screenshot Full Size" 
+                  className="img-fluid rounded shadow-lg"
+                  style={{ maxHeight: '80vh', objectFit: 'contain' }}
+                  onClick={(e) => e.stopPropagation()}
+                />
               </div>
             </div>
           </div>

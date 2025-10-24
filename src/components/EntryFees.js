@@ -1,29 +1,37 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import API_BASE_URL from './ApiConfig';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import upiQrCode from '../images/upi_bar.jpg';
 
 const EntryFees = ({ onContinue }) => {
   const [loading, setLoading] = useState(false);
   const [paymentStatus, setPaymentStatus] = useState('');
-  const [showOrderIdInput, setShowOrderIdInput] = useState(false);
-  const [orderId, setOrderId] = useState('');
+  const [showPaymentForm, setShowPaymentForm] = useState(false);
+  const [transactionId, setTransactionId] = useState('');
+  const [paymentScreenshot, setPaymentScreenshot] = useState(null);
+  const [screenshotPreview, setScreenshotPreview] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState('');
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [entryFeeStatus, setEntryFeeStatus] = useState('checking'); // checking, unpaid, pending, paid
+  const [entryFeeStatus, setEntryFeeStatus] = useState('checking');
+  
+  const qrCodeRef = useRef(null);
 
-  // Get user data from localStorage
   const userDataRaw = localStorage.getItem("userData");
   const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
   const phoneNo = userData?.phoneNo || "";
 
-  const RAZORPAY_LINK = "https://razorpay.me/@mohammedadilbetageri?amount=zgioswZa9n4qt5x9yD7i%2BQ%3D%3D";
+  const UPI_ID = "9019842426-2@ybl";
+  
+  // Calculate entry fee with 28% tax
+  const BASE_AMOUNT = 390.625; // Base amount before tax
+  const TAX_RATE = 0.28; // 28% tax
+  const TAX_AMOUNT = BASE_AMOUNT * TAX_RATE; // 109.375
+  const TOTAL_AMOUNT = 500; // Total amount including tax
 
   useEffect(() => {
-    // Check entry fee status on component mount
     checkEntryFeeStatus();
 
-    // Prevent closing popup with Escape key
     const handleKeyDown = (e) => {
       if (e.key === 'Escape' && entryFeeStatus !== 'paid') {
         e.preventDefault();
@@ -32,7 +40,6 @@ const EntryFees = ({ onContinue }) => {
       }
     };
 
-    // Prevent browser back button
     const handlePopState = (e) => {
       if (entryFeeStatus !== 'paid') {
         e.preventDefault();
@@ -41,7 +48,6 @@ const EntryFees = ({ onContinue }) => {
       }
     };
 
-    // Prevent page refresh/close
     const handleBeforeUnload = (e) => {
       if (entryFeeStatus !== 'paid') {
         e.preventDefault();
@@ -50,15 +56,11 @@ const EntryFees = ({ onContinue }) => {
       }
     };
 
-    // Add event listeners
     document.addEventListener('keydown', handleKeyDown, true);
     window.addEventListener('popstate', handlePopState);
     window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    // Push initial state to prevent back navigation
     window.history.pushState(null, null, window.location.pathname);
 
-    // Cleanup
     return () => {
       document.removeEventListener('keydown', handleKeyDown, true);
       window.removeEventListener('popstate', handlePopState);
@@ -66,10 +68,10 @@ const EntryFees = ({ onContinue }) => {
     };
   }, [entryFeeStatus]);
 
-  // Check if user has already paid entry fee
   const checkEntryFeeStatus = async () => {
     if (!phoneNo) {
       setEntryFeeStatus('unpaid');
+      clearPaymentForm();
       return;
     }
 
@@ -83,38 +85,93 @@ const EntryFees = ({ onContinue }) => {
       const data = await res.json();
       
       if (data.success && data.entryFee === 'paid') {
+        // Payment verified - proceed to dashboard
         setEntryFeeStatus('paid');
         setTimeout(() => onContinue(), 100);
       } else if (data.success && data.entryFee === 'pending') {
+        // Payment under verification
         setEntryFeeStatus('pending');
         setVerificationStatus('Your payment is under verification. Please wait for admin approval.');
-      } else {
+      } else if (data.success && data.entryFee === 'unpaid') {
+        // Payment unpaid or rejected - clear everything
         setEntryFeeStatus('unpaid');
+        clearPaymentForm();
+      } else {
+        // Default to unpaid
+        setEntryFeeStatus('unpaid');
+        clearPaymentForm();
       }
     } catch (err) {
       console.error("Error checking entry fee status:", err);
       setEntryFeeStatus('unpaid');
+      clearPaymentForm();
+    }
+  };
+
+  const clearPaymentForm = () => {
+    // Clear all payment-related states
+    setTransactionId('');
+    setPaymentScreenshot(null);
+    setScreenshotPreview('');
+    setShowPaymentForm(false);
+    setVerificationStatus('');
+    setPaymentStatus('');
+    setIsVerifying(false);
+    
+    // Clear file input if it exists
+    const fileInput = document.getElementById('screenshotInput');
+    if (fileInput) {
+      fileInput.value = '';
     }
   };
 
   const handleLogout = () => {
-    // Clear localStorage and navigate to login page
     localStorage.removeItem("userData");
     window.location.href = "/";
   };
 
   const handlePayNow = () => {
-    // Open Razorpay payment link in new tab
-    window.open(RAZORPAY_LINK, '_blank');
+    setShowPaymentForm(true);
+    setPaymentStatus('Scan the QR code or use the UPI ID to make payment');
     
-    // Show order ID input after opening payment link
-    setShowOrderIdInput(true);
-    setPaymentStatus('Please complete the payment and copy your Order ID from Razorpay');
+    // Scroll to QR code after a short delay to ensure DOM is updated
+    setTimeout(() => {
+      if (qrCodeRef.current) {
+        qrCodeRef.current.scrollIntoView({ 
+          behavior: 'smooth', 
+          block: 'center' 
+        });
+      }
+    }, 100);
   };
 
-  const handleSubmitOrderId = async () => {
-    if (!orderId.trim()) {
-      alert("❌ Please enter the Order ID");
+  const handleScreenshotChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert("❌ File size should be less than 5MB");
+        e.target.value = '';
+        return;
+      }
+      
+      if (!file.type.startsWith('image/')) {
+        alert("❌ Please upload an image file");
+        e.target.value = '';
+        return;
+      }
+
+      setPaymentScreenshot(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setScreenshotPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmitPayment = async () => {
+    if (!paymentScreenshot) {
+      alert("❌ Please upload payment screenshot");
       return;
     }
 
@@ -124,37 +181,42 @@ const EntryFees = ({ onContinue }) => {
     }
 
     setIsVerifying(true);
-    setVerificationStatus('Submitting order ID for verification...');
+    setVerificationStatus('Submitting payment details for verification...');
 
     try {
+      const formData = new FormData();
+      formData.append('phoneNo', phoneNo);
+      formData.append('transactionId', transactionId.trim() || 'N/A');
+      formData.append('amount', TOTAL_AMOUNT);
+      formData.append('screenshot', paymentScreenshot);
+
       const res = await fetch(`${API_BASE_URL}/submit-order-id`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          phoneNo, 
-          orderId: orderId.trim(),
-          amount: 500
-        })
+        body: formData
       });
 
       const data = await res.json();
       
       if (data.success) {
         setEntryFeeStatus('pending');
-        setVerificationStatus('✅ Order ID submitted successfully! Your payment is under verification. Admin will verify your payment soon.');
-        setShowOrderIdInput(false);
+        setVerificationStatus('✅ Payment details submitted successfully! Your payment is under verification. Admin will verify your payment soon.');
+        setShowPaymentForm(false);
       } else {
-        throw new Error(data.error || 'Failed to submit order ID');
+        throw new Error(data.error || 'Failed to submit payment details');
       }
     } catch (err) {
-      console.error("Error submitting order ID:", err);
+      console.error("Error submitting payment:", err);
       setVerificationStatus(`❌ Error: ${err.message}`);
     } finally {
       setIsVerifying(false);
     }
   };
 
-  // Render different states
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    alert("✅ UPI ID copied to clipboard!");
+  };
+
   if (entryFeeStatus === 'checking') {
     return (
       <div
@@ -211,7 +273,6 @@ const EntryFees = ({ onContinue }) => {
 
   return (
     <>
-      {/* Fullscreen overlay to prevent clicking outside */}
       <div
         style={{
           position: 'fixed',
@@ -240,7 +301,7 @@ const EntryFees = ({ onContinue }) => {
         data-bs-keyboard="false"
         onContextMenu={(e) => e.preventDefault()}
       >
-        <div className="modal-dialog modal-dialog-centered" role="document" style={{ maxHeight: '90vh', overflow: 'auto' }}>
+        <div className="modal-dialog modal-dialog-centered" role="document" style={{ maxHeight: '90vh', overflow: 'auto', maxWidth: '500px' }}>
           <div
             className="modal-content p-0"
             style={{
@@ -255,7 +316,6 @@ const EntryFees = ({ onContinue }) => {
             }}
             onContextMenu={(e) => e.preventDefault()}
           >
-            {/* Invisible overlay to prevent any bypass attempts */}
             <div
               style={{
                 position: 'absolute',
@@ -294,7 +354,6 @@ const EntryFees = ({ onContinue }) => {
 
             <div className="modal-body text-center p-4" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
               {entryFeeStatus === 'pending' ? (
-                // Pending Verification Status
                 <>
                   <div className="mb-4">
                     <div className="spinner-border text-warning mb-3" role="status" style={{ width: '3rem', height: '3rem' }}>
@@ -306,19 +365,17 @@ const EntryFees = ({ onContinue }) => {
                     </p>
                   </div>
 
-                  {verificationStatus && (
-                    <div
-                      className="alert alert-warning my-3 text-start"
-                      style={{
-                        fontSize: '0.9rem',
-                        backgroundColor: '#fff3cd',
-                        color: '#856404',
-                        borderLeft: '4px solid #ffc107'
-                      }}
-                    >
-                      {verificationStatus}
-                    </div>
-                  )}
+                  <div
+                    className="alert alert-warning my-3 text-start"
+                    style={{
+                      fontSize: '0.9rem',
+                      backgroundColor: '#fff3cd',
+                      color: '#856404',
+                      borderLeft: '4px solid #ffc107'
+                    }}
+                  >
+                    ⏳ Your payment is under verification. Please wait for admin approval.
+                  </div>
 
                   <button
                     className="btn btn-secondary w-100 mt-3 py-2"
@@ -333,13 +390,13 @@ const EntryFees = ({ onContinue }) => {
                   </button>
                 </>
               ) : (
-                // Unpaid Status - Show Payment Flow
                 <>
                   <h4 className="text-primary mb-3">Join the Game Room</h4>
                   <p style={{ fontSize: '0.95rem' }} className="text-muted">
-                    Unlock your access to play and compete. Entry fee is ₹500.
+                    Unlock your access to play and compete.
                   </p>
 
+                  {/* Price Breakdown */}
                   <div
                     className="alert alert-info mt-3"
                     style={{
@@ -347,6 +404,35 @@ const EntryFees = ({ onContinue }) => {
                       backgroundColor: '#e6f2ff',
                       color: '#004085',
                       border: '1px solid #b8daff'
+                    }}
+                  >
+                    <div className="text-start">
+                      <strong>💰 Entry Fee Breakdown:</strong>
+                      <div className="mt-2" style={{ fontSize: '0.85rem' }}>
+                        <div className="d-flex justify-content-between">
+                          <span>Base Amount:</span>
+                          <span>₹{BASE_AMOUNT.toFixed(2)}</span>
+                        </div>
+                        <div className="d-flex justify-content-between">
+                          <span>Tax (28%):</span>
+                          <span>₹{TAX_AMOUNT.toFixed(2)}</span>
+                        </div>
+                        <hr className="my-2" />
+                        <div className="d-flex justify-content-between fw-bold">
+                          <span>Total Amount:</span>
+                          <span>₹{TOTAL_AMOUNT}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    className="alert alert-success mt-2"
+                    style={{
+                      fontSize: '0.9rem',
+                      backgroundColor: '#d4edda',
+                      color: '#155724',
+                      border: '1px solid #c3e6cb'
                     }}
                   >
                     🎁 <strong>Bonus:</strong> Unlock 200 tokens instantly upon completing the entry fee!
@@ -367,7 +453,7 @@ const EntryFees = ({ onContinue }) => {
                     </div>
                   )}
 
-                  {!showOrderIdInput ? (
+                  {!showPaymentForm ? (
                     <button
                       className="btn btn-primary w-100 mt-3 py-2"
                       onClick={handlePayNow}
@@ -383,6 +469,36 @@ const EntryFees = ({ onContinue }) => {
                     </button>
                   ) : (
                     <div className="mt-4">
+                      {/* QR Code Section */}
+                      <div ref={qrCodeRef} className="mb-4 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '12px' }}>
+                        <h6 className="mb-3" style={{ fontWeight: '600' }}>Scan QR Code to Pay</h6>
+                        <img 
+                          src={upiQrCode} 
+                          alt="UPI QR Code" 
+                          style={{ 
+                            maxWidth: '250px', 
+                            width: '100%', 
+                            border: '3px solid #007bff',
+                            borderRadius: '12px',
+                            boxShadow: '0 4px 12px rgba(0,123,255,0.2)'
+                          }}
+                        />
+                        
+                        <div className="mt-3 p-2" style={{ backgroundColor: 'white', borderRadius: '8px' }}>
+                          <small className="text-muted d-block mb-1">Or use UPI ID:</small>
+                          <div className="d-flex align-items-center justify-content-center gap-2">
+                            <strong style={{ fontSize: '1rem', color: '#007bff' }}>{UPI_ID}</strong>
+                            <button 
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => copyToClipboard(UPI_ID)}
+                              style={{ padding: '2px 10px', fontSize: '0.75rem' }}
+                            >
+                              📋 Copy
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+
                       <div
                         className="alert alert-warning text-start"
                         style={{
@@ -392,27 +508,70 @@ const EntryFees = ({ onContinue }) => {
                           border: '1px solid #ffc107'
                         }}
                       >
-                        <strong>⚠️ Important:</strong> After completing payment on Razorpay, copy the <strong>Order ID</strong> and paste it below.
+                        <strong>⚠️ Important:</strong> After completing payment, upload the screenshot below and optionally provide transaction ID.
                       </div>
 
-                      <label htmlFor="orderIdInput" className="form-label text-start w-100 mb-2" style={{ fontSize: '0.9rem', fontWeight: '600' }}>
-                        Enter Order ID <span className="text-danger">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        id="orderIdInput"
-                        className="form-control mb-3"
-                        placeholder="e.g., order_abc123xyz"
-                        value={orderId}
-                        onChange={(e) => setOrderId(e.target.value)}
-                        disabled={isVerifying}
-                        style={{
-                          fontSize: '0.95rem',
-                          padding: '10px 15px',
-                          borderRadius: '8px',
-                          border: '2px solid #007bff'
-                        }}
-                      />
+                      {/* Transaction ID - Optional */}
+                      <div className="mb-3 text-start">
+                        <label htmlFor="transactionIdInput" className="form-label" style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                          Transaction ID <span className="text-muted">(Optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          id="transactionIdInput"
+                          className="form-control"
+                          placeholder="e.g., TXN123456789"
+                          value={transactionId}
+                          onChange={(e) => setTransactionId(e.target.value)}
+                          disabled={isVerifying}
+                          style={{
+                            fontSize: '0.95rem',
+                            padding: '10px 15px',
+                            borderRadius: '8px',
+                            border: '2px solid #ced4da'
+                          }}
+                        />
+                      </div>
+
+                      {/* Payment Screenshot - Required */}
+                      <div className="mb-3 text-start">
+                        <label htmlFor="screenshotInput" className="form-label" style={{ fontSize: '0.9rem', fontWeight: '600' }}>
+                          Payment Screenshot <span className="text-danger">*</span>
+                        </label>
+                        <input
+                          type="file"
+                          id="screenshotInput"
+                          className="form-control"
+                          accept="image/*"
+                          onChange={handleScreenshotChange}
+                          disabled={isVerifying}
+                          style={{
+                            fontSize: '0.95rem',
+                            padding: '10px 15px',
+                            borderRadius: '8px',
+                            border: '2px solid #007bff'
+                          }}
+                        />
+                        <small className="text-muted">Max size: 5MB | Formats: JPG, PNG, JPEG</small>
+                      </div>
+
+                      {/* Screenshot Preview */}
+                      {screenshotPreview && (
+                        <div className="mb-3 text-center">
+                          <img 
+                            src={screenshotPreview} 
+                            alt="Payment Screenshot Preview" 
+                            style={{ 
+                              maxWidth: '200px', 
+                              maxHeight: '200px',
+                              border: '2px solid #28a745',
+                              borderRadius: '8px',
+                              objectFit: 'contain'
+                            }}
+                          />
+                          <p className="text-success mt-2 mb-0" style={{ fontSize: '0.85rem' }}>✅ Screenshot uploaded</p>
+                        </div>
+                      )}
 
                       {verificationStatus && (
                         <div
@@ -427,8 +586,8 @@ const EntryFees = ({ onContinue }) => {
 
                       <button
                         className="btn btn-success w-100 py-2"
-                        onClick={handleSubmitOrderId}
-                        disabled={isVerifying || !orderId.trim()}
+                        onClick={handleSubmitPayment}
+                        disabled={isVerifying || !paymentScreenshot}
                         style={{
                           fontWeight: '600',
                           fontSize: '1rem',
@@ -436,16 +595,13 @@ const EntryFees = ({ onContinue }) => {
                           boxShadow: '0 4px 12px rgba(40,167,69,0.3)'
                         }}
                       >
-                        {isVerifying ? 'Submitting...' : '✅ Submit Order ID'}
+                        {isVerifying ? 'Submitting...' : '✅ Submit Payment Details'}
                       </button>
 
                       <button
                         className="btn btn-link text-primary mt-2"
                         onClick={() => {
-                          setShowOrderIdInput(false);
-                          setOrderId('');
-                          setVerificationStatus('');
-                          setPaymentStatus('');
+                          clearPaymentForm();
                         }}
                         style={{ fontSize: '0.85rem' }}
                       >
@@ -466,7 +622,7 @@ const EntryFees = ({ onContinue }) => {
                 borderTop: '1px solid #dee2e6'
               }}
             >
-              🔐 Secure Payment by <strong>Razorpay</strong>
+              🔐 Secure UPI Payment
             </div>
           </div>
         </div>

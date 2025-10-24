@@ -15,12 +15,16 @@ import {
   Banknote,
   TrendingDown,
   Database,
-  Loader
+  Loader,
+  Filter,
+  X
 } from 'lucide-react';
 
 export default function AdminWithdrawTransactions() {
   const [transactions, setTransactions] = useState([]);
   const [visibleCount, setVisibleCount] = useState(30);
+  const [selectedDate, setSelectedDate] = useState('');
+  const [filteredTransactions, setFilteredTransactions] = useState([]);
 
   useEffect(() => {
     const eventSource = new EventSource(`${API_BASE_URL}/api/users`);
@@ -40,6 +44,7 @@ export default function AdminWithdrawTransactions() {
                     userId: user.userIds?.myuserid || user.userId,
                     name: user.name,
                     createdAt: new Date(w.createdAt).toLocaleString(),
+                    rawDate: new Date(w.createdAt),
                     requestedTokens: w.requestedTokens,
                     tax: w.tax,
                     method: w.method?.bankAccountNo
@@ -55,9 +60,10 @@ export default function AdminWithdrawTransactions() {
           });
 
           // Sort latest first
-          allTransactions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          allTransactions.sort((a, b) => new Date(b.rawDate) - new Date(a.rawDate));
 
           setTransactions(allTransactions);
+          setFilteredTransactions(allTransactions);
         }
       } catch (err) {
         console.error("Error parsing event data:", err);
@@ -74,8 +80,28 @@ export default function AdminWithdrawTransactions() {
     };
   }, []);
 
+  // Filter transactions by selected date
+  useEffect(() => {
+    if (selectedDate) {
+      const filtered = transactions.filter(transaction => {
+        const transactionDate = new Date(transaction.rawDate);
+        const selected = new Date(selectedDate);
+        
+        return transactionDate.toDateString() === selected.toDateString();
+      });
+      setFilteredTransactions(filtered);
+    } else {
+      setFilteredTransactions(transactions);
+    }
+    setVisibleCount(30); // Reset visible count when filter changes
+  }, [selectedDate, transactions]);
+
   const loadMore = () => {
     setVisibleCount((prev) => prev + 30);
+  };
+
+  const clearFilter = () => {
+    setSelectedDate('');
   };
 
   const styles = {
@@ -108,6 +134,38 @@ export default function AdminWithdrawTransactions() {
       color: 'rgba(255,255,255,0.9)',
       fontSize: '1.1rem',
       fontWeight: '400'
+    },
+    filterSection: {
+      background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
+      padding: '1.5rem',
+      borderBottom: '1px solid #dee2e6'
+    },
+    filterCard: {
+      background: '#ffffff',
+      borderRadius: '12px',
+      padding: '1.5rem',
+      boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+      border: '1px solid #e0e6ed'
+    },
+    filterButton: {
+      background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '10px 20px',
+      fontWeight: '600',
+      color: 'white',
+      boxShadow: '0 4px 15px rgba(0, 123, 255, 0.3)',
+      transition: 'all 0.3s ease'
+    },
+    clearButton: {
+      background: 'linear-gradient(135deg, #6c757d 0%, #495057 100%)',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '10px 20px',
+      fontWeight: '600',
+      color: 'white',
+      boxShadow: '0 4px 15px rgba(108, 117, 125, 0.3)',
+      transition: 'all 0.3s ease'
     },
     statsContainer: {
       background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
@@ -212,34 +270,102 @@ export default function AdminWithdrawTransactions() {
             </div>
           </div>
 
+          {/* Date Filter Section */}
+          <div style={styles.filterSection}>
+            <div className="container">
+              <div style={styles.filterCard}>
+                <div className="row align-items-center">
+                  <div className="col-md-8">
+                    <div className="d-flex align-items-center">
+                      <Filter size={20} className="text-primary me-2" />
+                      <h5 className="mb-0 me-3">Filter by Date:</h5>
+                      <input
+                        type="date"
+                        className="form-control"
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        style={{
+                          maxWidth: '200px',
+                          border: '2px solid #007bff',
+                          borderRadius: '8px',
+                          padding: '8px 12px'
+                        }}
+                      />
+                      {selectedDate && (
+                        <button
+                          style={styles.clearButton}
+                          onClick={clearFilter}
+                          className="ms-3 d-flex align-items-center"
+                          onMouseEnter={(e) => {
+                            e.target.style.transform = 'translateY(-2px)';
+                            e.target.style.boxShadow = '0 6px 20px rgba(108, 117, 125, 0.4)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.transform = 'translateY(0)';
+                            e.target.style.boxShadow = '0 4px 15px rgba(108, 117, 125, 0.3)';
+                          }}
+                        >
+                          <X size={16} className="me-1" />
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <div className="col-md-4 text-end">
+                    <div className="d-flex align-items-center justify-content-end">
+                      <Calendar size={18} className="text-muted me-2" />
+                      <span className="text-muted">
+                        {selectedDate 
+                          ? `Showing withdrawals for: ${new Date(selectedDate).toLocaleDateString()}`
+                          : 'Showing all withdrawals'
+                        }
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Stats Section */}
           <div style={styles.statsContainer}>
-            <div className="row g-3">
-              <div className="col-md-4">
-                <div style={styles.statCard}>
-                  <div className="d-flex align-items-center justify-content-center mb-2">
-                    <Database size={24} className="me-2" />
-                    <h5 className="mb-0">Total Withdrawals</h5>
+            <div className="container">
+              <div className="row g-3">
+                <div className="col-md-3">
+                  <div style={styles.statCard}>
+                    <div className="d-flex align-items-center justify-content-center mb-2">
+                      <Database size={24} className="me-2" />
+                      <h5 className="mb-0">Total Withdrawals</h5>
+                    </div>
+                    <h3 className="mb-0">{transactions.length}</h3>
                   </div>
-                  <h3 className="mb-0">{transactions.length}</h3>
                 </div>
-              </div>
-              <div className="col-md-4">
-                <div style={styles.statCard}>
-                  <div className="d-flex align-items-center justify-content-center mb-2">
-                    <Eye size={24} className="me-2" />
-                    <h5 className="mb-0">Displaying</h5>
+                <div className="col-md-3">
+                  <div style={styles.statCard}>
+                    <div className="d-flex align-items-center justify-content-center mb-2">
+                      <Eye size={24} className="me-2" />
+                      <h5 className="mb-0">Displaying</h5>
+                    </div>
+                    <h3 className="mb-0">{Math.min(visibleCount, filteredTransactions.length)}</h3>
                   </div>
-                  <h3 className="mb-0">{Math.min(visibleCount, transactions.length)}</h3>
                 </div>
-              </div>
-              <div className="col-md-4">
-                <div style={styles.statCard}>
-                  <div className="d-flex align-items-center justify-content-center mb-2">
-                    <Activity size={24} className="me-2" />
-                    <h5 className="mb-0">Status</h5>
+                <div className="col-md-3">
+                  <div style={styles.statCard}>
+                    <div className="d-flex align-items-center justify-content-center mb-2">
+                      <Filter size={24} className="me-2" />
+                      <h5 className="mb-0">Filtered</h5>
+                    </div>
+                    <h3 className="mb-0">{filteredTransactions.length}</h3>
                   </div>
-                  <h3 className="mb-0">Live</h3>
+                </div>
+                <div className="col-md-3">
+                  <div style={styles.statCard}>
+                    <div className="d-flex align-items-center justify-content-center mb-2">
+                      <Activity size={24} className="me-2" />
+                      <h5 className="mb-0">Status</h5>
+                    </div>
+                    <h3 className="mb-0">Live</h3>
+                  </div>
                 </div>
               </div>
             </div>
@@ -247,7 +373,7 @@ export default function AdminWithdrawTransactions() {
 
           {/* Enhanced Table */}
           <div style={styles.tableContainer}>
-            {transactions.length > 0 ? (
+            {filteredTransactions.length > 0 ? (
               <div className="table-responsive">
                 <table className="table table-hover mb-0" style={{ border: '2px solid #dee2e6' }}>
                   <thead>
@@ -297,7 +423,7 @@ export default function AdminWithdrawTransactions() {
                     </tr>
                   </thead>
                   <tbody>
-                    {transactions.slice(0, visibleCount).map((t, idx) => (
+                    {filteredTransactions.slice(0, visibleCount).map((t, idx) => (
                       <tr
                         key={idx}
                         style={idx % 2 === 0 ? styles.tableRow : {...styles.tableRow, ...styles.alternateRow}}
@@ -341,12 +467,31 @@ export default function AdminWithdrawTransactions() {
               <div style={styles.noDataCard}>
                 <div className="d-flex flex-column align-items-center">
                   <Database size={48} className="text-muted mb-3" />
-                  <h4 className="text-muted mb-3">No Withdrawal Data</h4>
-                  <p className="text-muted">Waiting for approved withdrawal transactions...</p>
-                  <div className="d-flex align-items-center mt-3">
-                    <Loader className="spinner-border-sm me-2" />
-                    <span className="text-primary">Loading...</span>
-                  </div>
+                  <h4 className="text-muted mb-3">
+                    {selectedDate ? 'No Data for Selected Date' : 'No Withdrawal Data'}
+                  </h4>
+                  <p className="text-muted">
+                    {selectedDate 
+                      ? `No withdrawal transactions found for ${new Date(selectedDate).toLocaleDateString()}`
+                      : 'Waiting for approved withdrawal transactions...'
+                    }
+                  </p>
+                  {selectedDate && (
+                    <button
+                      style={styles.clearButton}
+                      onClick={clearFilter}
+                      className="mt-2 d-flex align-items-center"
+                    >
+                      <X size={16} className="me-1" />
+                      Clear Filter
+                    </button>
+                  )}
+                  {!selectedDate && (
+                    <div className="d-flex align-items-center mt-3">
+                      <Loader className="spinner-border-sm me-2" />
+                      <span className="text-primary">Loading...</span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -354,7 +499,7 @@ export default function AdminWithdrawTransactions() {
         </div>
 
         {/* Enhanced Load More Button */}
-        {visibleCount < transactions.length && (
+        {visibleCount < filteredTransactions.length && (
           <div className="text-center mt-4">
             <button
               style={styles.loadMoreBtn}
@@ -372,7 +517,7 @@ export default function AdminWithdrawTransactions() {
               <TrendingDown size={20} className="me-2" />
               Load More Records
               <span className="ms-2 badge bg-light text-primary">
-                +{Math.min(30, transactions.length - visibleCount)}
+                +{Math.min(30, filteredTransactions.length - visibleCount)}
               </span>
             </button>
           </div>
