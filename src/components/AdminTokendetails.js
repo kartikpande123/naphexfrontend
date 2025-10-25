@@ -47,7 +47,7 @@ export default function AdminTokenDetails() {
           const response = JSON.parse(event.data);
           if (response.success && response.data) {
             const usersWithPendingTokens = response.data
-              .filter(user => user.id !== 'RootId' && user.tokenRequestHistory)
+              .filter(user => user.tokenRequestHistory)
               .map(user => {
                 const pendingRequests = Object.entries(user.tokenRequestHistory || {})
                   .filter(([_, request]) => request.status === 'pending')

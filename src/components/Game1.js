@@ -579,7 +579,9 @@ const OpenCloseGame = () => {
                     <span>Back</span>
                 </button>
                 <h1 className="game-title">FRUITS-GAME</h1>
-                <button className="nav-button how-to-play-button">
+                <button className="nav-button how-to-play-button"
+                onClick={() => navigate("/howtoplay")}
+                >
                     <FaQuestionCircle className="ic"/>
                     <span>How to Play</span>
                 </button>

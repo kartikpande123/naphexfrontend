@@ -64,6 +64,12 @@ const SignupPage = () => {
     isChecking: false
   });
 
+  // Function to sanitize referral ID (remove invalid characters)
+  const sanitizeReferralId = (value) => {
+    // Remove any characters that aren't alphanumeric
+    return value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  };
+
   // Function to scroll to first error field
   const scrollToFirstError = (newErrors) => {
     const errorFieldRefs = {
@@ -172,7 +178,10 @@ const SignupPage = () => {
 
   // Check referral ID
   const checkReferralId = async (id) => {
-    if (!id.trim()) {
+    // Sanitize the ID first
+    const sanitizedId = sanitizeReferralId(id);
+    
+    if (!sanitizedId) {
       setReferralStatus({
         isValid: false,
         message: 'Referral ID is required',
@@ -185,7 +194,8 @@ const SignupPage = () => {
     setReferralStatus(prev => ({ ...prev, isChecking: true }));
 
     try {
-      const response = await axios.get(`${API_BASE_URL}/checkReferralSlots/${id}`);
+      // Use sanitized ID in API call
+      const response = await axios.get(`${API_BASE_URL}/checkReferralSlots/${sanitizedId}`);
       
       if (response.data.success) {
         if (response.data.slotsAvailable) {
@@ -230,7 +240,12 @@ const SignupPage = () => {
       newErrors.displayName = "Full name is required";
     }
 
-    if (!referralStatus.isValid) {
+    // Sanitize and validate referral ID
+    const sanitizedReferralId = sanitizeReferralId(referralId);
+    
+    if (!sanitizedReferralId) {
+      newErrors.referralId = "Referral ID is required and must contain only letters and numbers";
+    } else if (!referralStatus.isValid) {
       newErrors.referralId = "Please enter a valid referral ID with available slots";
     }
 
@@ -247,10 +262,6 @@ const SignupPage = () => {
     // Validate state
     if (!state) {
       newErrors.state = "Please select a state";
-    }
-
-    if (!referralId.trim()) {
-      newErrors.referralId = "Referral ID is required";
     }
 
     const passwordErrors = validatePassword(password);
@@ -337,6 +348,12 @@ const SignupPage = () => {
       if (sendOtpResponse.data.success) {
         localStorage.setItem('debug_otp', sendOtpResponse.data.debug.otp);
         setOtpSent(true);
+        setAlertMessage('OTP resent successfully!');
+        setAlertType('success');
+        
+        setTimeout(() => {
+          setAlertMessage('');
+        }, 3000);
       } else {
         const apiError = { api: "Failed to resend OTP. Please try again." };
         setErrors(apiError);
@@ -382,7 +399,10 @@ const SignupPage = () => {
     }
 
     try {
-        // Prepare user data for localStorage - include the referralId from props/state
+        // Sanitize referral ID before saving
+        const sanitizedReferralId = sanitizeReferralId(referralId);
+        
+        // Prepare user data for localStorage
         const signupData = {
             name: displayName,
             phoneNo: phone,
@@ -390,7 +410,7 @@ const SignupPage = () => {
             password,
             city,
             state,
-            referralId: referralId // Make sure this matches the ID passed from the previous step
+            referralId: sanitizedReferralId // Use sanitized version
         };
 
         // Save data to localStorage
@@ -1033,10 +1053,20 @@ const SignupPage = () => {
                     required
                     value={referralId}
                     onChange={(e) => {
-                      setReferralId(e.target.value);
-                      debouncedCheckReferral(e.target.value);
+                      const sanitized = sanitizeReferralId(e.target.value);
+                      setReferralId(sanitized);
+                      if (sanitized) {
+                        debouncedCheckReferral(sanitized);
+                      } else {
+                        setReferralStatus({
+                          isValid: false,
+                          message: 'Referral ID must contain only letters and numbers',
+                          referrerName: '',
+                          isChecking: false
+                        });
+                      }
                     }}
-                    placeholder="Enter Referral ID"
+                    placeholder="Enter Referral ID (letters and numbers only)"
                     style={{
                       borderColor: referralStatus.isValid ? '#2ecc71' : referralStatus.message ? '#e74c3c' : 'rgba(255, 255, 255, 0.1)'
                     }}

@@ -231,6 +231,10 @@ const AuthPage = () => {
           <span className="link-icon">📊</span>
           <span className="link-text">Check account status</span>
         </Link>
+        <Link to="/howtoplay" className="nav-link">
+          <span className="link-icon">📽️</span>
+          <span className="link-text">How To Play</span>
+        </Link>
         <Link to="/terms&conditions" className="nav-link">
           <span className="link-icon">📋</span>
           <span className="link-text">Terms & Conditions</span>

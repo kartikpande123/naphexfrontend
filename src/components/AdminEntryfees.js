@@ -45,7 +45,7 @@ const AdminEntryFeeVerification = () => {
           const response = JSON.parse(event.data);
           if (response.success && response.data) {
             const pendingUsers = response.data.filter(
-              user => user.entryFee === 'pending' && user.id !== 'RootId'
+              user => user.entryFee === 'pending'
             );
             setUsers(pendingUsers);
             setLoading(false);

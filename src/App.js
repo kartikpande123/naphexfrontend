@@ -55,6 +55,7 @@ import UserTokenRequest from './components/UserTokenRequest';
 import UserWIns from './components/UserWIns';
 import CancellationRefundPolicy from './components/CancellationAndRefund';
 import AdminRejectedTokens from './components/AdminRejectedToken';
+import HowToPlayVideo from './components/HowToPlayVideo';
 
 // Protected Route Component for Users
 const ProtectedRoute = ({ children }) => {
@@ -98,6 +99,7 @@ function App() {
           <Route path="/statuscheck" element={<AccountStatusCheck />} />
           <Route path='/opencloseresult' element={<AdminOpenCloseResults />} />
           <Route path='/adminlogin' element={<AdminLogin />} />
+          <Route path='/howtoplay' element={<HowToPlayVideo />} />
           <Route path='/cancellationrefundpolicy' element={<CancellationRefundPolicy />} />
 
 
