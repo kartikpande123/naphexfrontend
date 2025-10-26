@@ -56,6 +56,7 @@ import UserWIns from './components/UserWIns';
 import CancellationRefundPolicy from './components/CancellationAndRefund';
 import AdminRejectedTokens from './components/AdminRejectedToken';
 import HowToPlayVideo from './components/HowToPlayVideo';
+import AdminDeleteUser from './components/AdminDeleteUser';
 
 // Protected Route Component for Users
 const ProtectedRoute = ({ children }) => {
@@ -230,6 +231,11 @@ function App() {
             <Route path="/adminrejectedrequests" element={
             <AdminProtectedRoute>
               <AdminRejectedTokens />
+            </AdminProtectedRoute>
+          } />
+            <Route path="/admindeleteuser" element={
+            <AdminProtectedRoute>
+              <AdminDeleteUser />
             </AdminProtectedRoute>
           } />
 

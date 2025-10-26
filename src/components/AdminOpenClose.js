@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BarChart3, Users, Trophy, DollarSign, TrendingUp, Settings, Bell, User, Menu, Settings2, Blocks, BlocksIcon, StopCircle } from 'lucide-react';
+import { BarChart3, Users, Trophy, DollarSign, TrendingUp, Settings, Bell, User, Menu, Settings2, Blocks, BlocksIcon, StopCircle, DeleteIcon } from 'lucide-react';
 import logo from "../images/logo-1.png";
 import { useNavigate } from 'react-router-dom';
 
@@ -139,6 +139,10 @@ function AdminOpenClose() {
         navigate("/adminbankverfication")
     }
 
+    function deleteUser(){
+        navigate("/admindeleteuser")
+    }
+
     const menuItems = [
         {
             title: 'Results',
@@ -193,6 +197,12 @@ function AdminOpenClose() {
             icon: Settings,
             onClick: bankverification,
             description: 'Accept Or Reject new user.'
+        },
+        {
+            title: 'Delete User',
+            icon: DeleteIcon,
+            onClick: deleteUser,
+            description: 'Delete user permanently.'
         },
     ];
 
