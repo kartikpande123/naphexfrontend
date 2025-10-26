@@ -745,7 +745,6 @@ const TransactionHistory = () => {
                     <th style={{...styles.th}}>Type</th>
                     <th style={{...styles.th}}>Amount Requested</th>
                     <th style={{...styles.th}}>Amount Credited</th>
-                    <th style={{...styles.th}}>Balance After</th>
                     <th style={{...styles.th}}>Tax Details</th>
                     <th style={{...styles.th}}>Method</th>
                     <th style={{...styles.th, ...styles.thLast}}>Status</th>
@@ -774,9 +773,6 @@ const TransactionHistory = () => {
                         ...(transaction.amountCredited > 0 ? styles.amountPositive : styles.amountNegative)
                       }}>
                         {transaction.type === 'deposit' ? '+' : ''}{transaction.amountCredited} Tokens
-                      </td>
-                      <td style={{...styles.td, fontWeight: '600'}}>
-                        {transaction.balanceAfter !== null ? `${transaction.balanceAfter} Tokens` : '-'}
                       </td>
                       <td style={styles.td}>
                         ₹{transaction.tax} ({transaction.taxRate})
