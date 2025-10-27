@@ -1,9 +1,15 @@
-import React, { useEffect } from 'react';
-import { BarChart3, Users, Trophy, DollarSign, TrendingUp, Settings, Bell, User, Menu, Settings2, Blocks, BlocksIcon, StopCircle, DeleteIcon } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { BarChart3, Users, Trophy, DollarSign, TrendingUp, Settings, StopCircle, Trash2, Eye, EyeOff } from 'lucide-react';
 import logo from "../images/logo-1.png";
 import { useNavigate } from 'react-router-dom';
 
 function AdminOpenClose() {
+    const [showAdminKeyPopup, setShowAdminKeyPopup] = useState(false);
+    const [adminKey, setAdminKey] = useState("");
+    const [adminKeyError, setAdminKeyError] = useState("");
+    const [pendingAction, setPendingAction] = useState(null);
+    const [showPassword, setShowPassword] = useState(false);
+
     useEffect(() => {
         // Add styles to head
         const styleTag = document.createElement('style');
@@ -88,6 +94,154 @@ function AdminOpenClose() {
                     box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
                 }
             }
+
+            /* Admin Key Popup Styles */
+            .admin-popup-overlay {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.6);
+                backdrop-filter: blur(8px);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+                animation: fadeIn 0.3s ease-out;
+            }
+            
+            .admin-popup {
+                background: white;
+                border-radius: 20px;
+                padding: 32px;
+                max-width: 450px;
+                width: 90%;
+                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+                animation: slideUp 0.4s ease-out;
+            }
+            
+            @keyframes slideUp {
+                from {
+                    transform: translateY(50px);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateY(0);
+                    opacity: 1;
+                }
+            }
+            
+            .admin-popup-header {
+                text-align: center;
+                margin-bottom: 24px;
+            }
+            
+            .admin-popup-icon {
+                font-size: 48px;
+                color: #667eea;
+                margin-bottom: 16px;
+            }
+            
+            .admin-popup-title {
+                font-size: 24px;
+                font-weight: 700;
+                color: #1f2937;
+                margin: 0;
+            }
+            
+            .admin-popup-message {
+                color: #6b7280;
+                text-align: center;
+                margin-bottom: 24px;
+                line-height: 1.6;
+            }
+            
+            .admin-popup-input {
+                width: 100%;
+                padding: 12px 16px;
+                padding-right: 45px;
+                border: 2px solid #e5e7eb;
+                border-radius: 10px;
+                font-size: 16px;
+                transition: all 0.3s ease;
+                margin-bottom: 8px;
+            }
+            
+            .admin-popup-input:focus {
+                outline: none;
+                border-color: #667eea;
+                box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            }
+
+            .password-input-wrapper {
+                position: relative;
+                width: 100%;
+            }
+
+            .password-toggle-btn {
+                position: absolute;
+                right: 12px;
+                top: 50%;
+                transform: translateY(-50%);
+                background: none;
+                border: none;
+                cursor: pointer;
+                color: #6b7280;
+                padding: 4px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: all 0.3s ease;
+            }
+
+            .password-toggle-btn:hover {
+                color: #667eea;
+            }
+            
+            .admin-popup-error {
+                color: #ef4444;
+                font-size: 14px;
+                margin-top: 8px;
+                margin-bottom: 16px;
+                text-align: center;
+            }
+            
+            .admin-popup-buttons {
+                display: flex;
+                gap: 12px;
+                margin-top: 24px;
+            }
+            
+            .admin-popup-btn {
+                flex: 1;
+                padding: 12px 24px;
+                border: none;
+                border-radius: 10px;
+                font-size: 16px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.3s ease;
+            }
+            
+            .admin-popup-confirm {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+            }
+            
+            .admin-popup-confirm:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+            }
+            
+            .admin-popup-cancel {
+                background: #f3f4f6;
+                color: #6b7280;
+            }
+            
+            .admin-popup-cancel:hover {
+                background: #e5e7eb;
+            }
         `;
         document.head.appendChild(styleTag);
     
@@ -99,7 +253,7 @@ function AdminOpenClose() {
 
     const navigate = useNavigate();
 
-    // Navigation functions (replace with your actual navigation logic)
+    // Navigation functions
     function goResults() {
         console.log("Navigate to: /opencloseresult");
         navigate("/opencloseresult")
@@ -132,16 +286,52 @@ function AdminOpenClose() {
     function RejectedUsers(){
         navigate("/rejectedusers")
     }
+    
     function BlockUnblock(){
-        navigate("/blockunblockusers")
+        setPendingAction(() => () => navigate("/blockunblockusers"));
+        setShowAdminKeyPopup(true);
     }
+    
     function bankverification(){
         navigate("/adminbankverfication")
     }
 
     function deleteUser(){
-        navigate("/admindeleteuser")
+        setPendingAction(() => () => navigate("/admindeleteuser"));
+        setShowAdminKeyPopup(true);
     }
+
+    const handleAdminKeySubmit = () => {
+        if (adminKey === "admin") {
+            setShowAdminKeyPopup(false);
+            setAdminKey("");
+            setAdminKeyError("");
+            if (pendingAction) {
+                pendingAction();
+                setPendingAction(null);
+            }
+        } else {
+            setAdminKeyError("Invalid Super Admin Key");
+        }
+    };
+
+    const handleAdminKeyEnter = (e) => {
+        if (e.key === "Enter") {
+            handleAdminKeySubmit();
+        }
+    };
+
+    const handleCancelAdminKey = () => {
+        setShowAdminKeyPopup(false);
+        setAdminKey("");
+        setAdminKeyError("");
+        setPendingAction(null);
+        setShowPassword(false);
+    };
+
+    const togglePasswordVisibility = () => {
+        setShowPassword(!showPassword);
+    };
 
     const menuItems = [
         {
@@ -184,25 +374,25 @@ function AdminOpenClose() {
             title: 'Rejected Users',
             icon: StopCircle,
             onClick: RejectedUsers,
-            description: 'Accept Or Reject new user.'
+            description: 'View rejected users list.'
         },
         {
             title: 'Block/Unblock Users',
             icon: Settings,
             onClick: BlockUnblock,
-            description: 'Accept Or Reject new user.'
+            description: 'Block or unblock users (Requires Super Admin Key).'
         },
         {
             title: 'Bank Verification',
             icon: Settings,
             onClick: bankverification,
-            description: 'Accept Or Reject new user.'
+            description: 'Verify user bank details.'
         },
         {
             title: 'Delete User',
-            icon: DeleteIcon,
+            icon: Trash2,
             onClick: deleteUser,
-            description: 'Delete user permanently.'
+            description: 'Delete user permanently (Requires Super Admin Key).'
         },
     ];
 
@@ -276,20 +466,10 @@ function AdminOpenClose() {
             textShadow: '0 2px 4px rgba(0,0,0,0.2)',
             textAlign: 'center'
         },
-        rightSection: {},
         mainContent: {
             padding: '40px 32px',
             maxWidth: '1400px',
             margin: '0 auto',
-
-        },
-        pageTitle1: {
-            color: 'white',
-            fontSize: '32px',
-            fontWeight: '700',
-            textAlign: 'center',
-            marginBottom: '48px',
-            textShadow: '0 2px 8px rgba(0,0,0,0.3)',
         },
         grid: {
             display: 'grid',
@@ -359,14 +539,6 @@ function AdminOpenClose() {
         }
     };
 
-    const handleActionButtonHover = (e, isEntering) => {
-        // Removed - not needed for simplified header
-    };
-
-    const handleProfileHover = (e, isEntering) => {
-        // Removed - not needed for simplified header
-    };
-
     return (
         <div style={styles.container}>
             {/* Enhanced Header with Professional Design */}
@@ -425,6 +597,49 @@ function AdminOpenClose() {
                     })}
                 </div>
             </main>
+
+            {/* Admin Key Popup */}
+            {showAdminKeyPopup && (
+                <div className="admin-popup-overlay">
+                    <div className="admin-popup">
+                        <div className="admin-popup-header">
+                            <div className="admin-popup-icon">🔒</div>
+                            <h4 className="admin-popup-title">Super Admin Authentication</h4>
+                        </div>
+                        <p className="admin-popup-message">
+                            This action requires Super Admin privileges. Please enter the Super Admin key to continue.
+                        </p>
+                        <div className="password-input-wrapper">
+                            <input
+                                type={showPassword ? "text" : "password"}
+                                className="admin-popup-input"
+                                placeholder="Enter Super Admin Key"
+                                value={adminKey}
+                                onChange={(e) => setAdminKey(e.target.value)}
+                                onKeyPress={handleAdminKeyEnter}
+                                autoFocus
+                            />
+                            <button 
+                                type="button"
+                                className="password-toggle-btn"
+                                onClick={togglePasswordVisibility}
+                                aria-label={showPassword ? "Hide password" : "Show password"}
+                            >
+                                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                            </button>
+                        </div>
+                        {adminKeyError && <div className="admin-popup-error">{adminKeyError}</div>}
+                        <div className="admin-popup-buttons">
+                            <button className="admin-popup-btn admin-popup-confirm" onClick={handleAdminKeySubmit}>
+                                Submit
+                            </button>
+                            <button className="admin-popup-btn admin-popup-cancel" onClick={handleCancelAdminKey}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

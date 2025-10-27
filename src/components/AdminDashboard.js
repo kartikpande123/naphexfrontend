@@ -12,6 +12,7 @@ const Home = () => {
   const [showAdminKeyPopup, setShowAdminKeyPopup] = useState(false);
   const [adminKey, setAdminKey] = useState("");
   const [adminKeyError, setAdminKeyError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [counts, setCounts] = useState({
     pendingWithdrawals: 0,
     pendingTokenRequests: 0,
@@ -37,6 +38,7 @@ const Home = () => {
       setShowAdminKeyPopup(false);
       setAdminKey("");
       setAdminKeyError("");
+      setShowPassword(false);
       navigate("/binary");
     } else {
       setAdminKeyError("Invalid Super Admin Key");
@@ -51,6 +53,17 @@ const Home = () => {
 
   const handleBinaryClick = () => {
     setShowAdminKeyPopup(true);
+  };
+
+  const handleCancelAdminKey = () => {
+    setShowAdminKeyPopup(false);
+    setAdminKey("");
+    setAdminKeyError("");
+    setShowPassword(false);
+  };
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
   };
 
   // Calculate pending counts from user data
@@ -245,6 +258,34 @@ const Home = () => {
 
   return (
     <div className="enhanced-layout">
+      <style>
+        {`
+          .password-input-wrapper {
+            position: relative;
+            width: 100%;
+          }
+
+          .password-toggle-icon {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #6c757d;
+            font-size: 1.2rem;
+            transition: color 0.3s ease;
+            z-index: 10;
+          }
+
+          .password-toggle-icon:hover {
+            color: #495057;
+          }
+
+          .form-control {
+            padding-right: 40px;
+          }
+        `}
+      </style>
       <nav className="navbar navbar-expand-lg enhanced-navbar">
         <div className="container">
           <Link className="navbar-brand d-flex align-items-center brand-hover" to="/">
@@ -350,22 +391,29 @@ const Home = () => {
                       Please enter the Super Admin key to access Binary section.
                     </p>
                     <div className="form-group mb-3">
-                      <input
-                        type="password"
-                        className="form-control"
-                        placeholder="Enter Super Admin Key"
-                        value={adminKey}
-                        onChange={(e) => setAdminKey(e.target.value)}
-                        onKeyPress={handleAdminKeyEnter}
-                        autoFocus
-                      />
+                      <div className="password-input-wrapper">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          className="form-control"
+                          placeholder="Enter Super Admin Key"
+                          value={adminKey}
+                          onChange={(e) => setAdminKey(e.target.value)}
+                          onKeyPress={handleAdminKeyEnter}
+                          autoFocus
+                        />
+                        <i 
+                          className={`bi ${showPassword ? 'bi-eye-slash-fill' : 'bi-eye-fill'} password-toggle-icon`}
+                          onClick={togglePasswordVisibility}
+                          title={showPassword ? "Hide password" : "Show password"}
+                        ></i>
+                      </div>
                       {adminKeyError && <div className="text-danger mt-2">{adminKeyError}</div>}
                     </div>
                     <div className="logout-popup-buttons">
                       <button className="btn btn-primary logout-popup-confirm" onClick={handleAdminKeySubmit}>
                         Submit
                       </button>
-                      <button className="btn btn-outline-secondary logout-popup-cancel" onClick={() => setShowAdminKeyPopup(false)}>
+                      <button className="btn btn-outline-secondary logout-popup-cancel" onClick={handleCancelAdminKey}>
                         Cancel
                       </button>
                     </div>

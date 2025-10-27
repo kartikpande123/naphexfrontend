@@ -141,16 +141,16 @@ function AdminPaymentDashboard() {
             description: 'View complete transaction logs and history'
         },
         {
-            title: 'Entry Fees Varification',
+            title: 'Entry Fees Verification',
             icon: FaMoneyCheck,
             onClick: goEntryFeesVarification,
-            description: 'User Entry Fees Varifications'
+            description: 'User Entry Fees Verification'
         },
         {
             title: 'Rejected Token Requests',
             icon: FaRegObjectUngroup,
             onClick: goRejectedTokens,
-            description: 'User Entry Fees Varifications'
+            description: 'See Rejected Token Requests'
         }
     ];
 

@@ -21,6 +21,11 @@ const AdminBinaryTree = () => {
   const [allUsers, setAllUsers] = useState([]);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
 
+  // New states for empty slots feature
+  const [showEmptySlots, setShowEmptySlots] = useState(false);
+  const [emptySlots, setEmptySlots] = useState([]);
+  const [emptySlotsSort, setEmptySlotsSort] = useState("level"); // "level" or "name"
+
   // Add refs for scrolling to highlighted nodes
   const treeWrapperRef = useRef(null);
   const nodeRefs = useRef({});
@@ -76,6 +81,9 @@ const AdminBinaryTree = () => {
           const newLevelOptions = Array.from({ length: maxPossibleLevel }, (_, i) => i + 1);
           setLevelOptions(newLevelOptions);
         }
+
+        // Calculate empty slots
+        calculateEmptySlots(processedTreeData);
       } catch (err) {
         console.error("Error fetching tree data:", err);
         setError("Failed to load data");
@@ -112,11 +120,19 @@ const AdminBinaryTree = () => {
     // Second pass: Build parent-child relationships
     Object.entries(flatData).forEach(([userId, userData]) => {
       if (userData.leftChild) {
-        nodesMap[userId].children.push(nodesMap[userData.leftChild]);
+        const leftChild = nodesMap[userData.leftChild];
+        if (leftChild) {
+          leftChild.position = "left";
+          nodesMap[userId].children.push(leftChild);
+        }
       }
 
       if (userData.rightChild) {
-        nodesMap[userId].children.push(nodesMap[userData.rightChild]);
+        const rightChild = nodesMap[userData.rightChild];
+        if (rightChild) {
+          rightChild.position = "right";
+          nodesMap[userId].children.push(rightChild);
+        }
       }
     });
 
@@ -139,6 +155,106 @@ const AdminBinaryTree = () => {
     return Math.max(
       ...node.children.map(child => calculateMaxTreeDepth(child, currentDepth + 1))
     );
+  };
+
+  // Calculate empty slots in the tree
+  const calculateEmptySlots = (rootNode) => {
+    const slots = [];
+    
+    const findEmptySlots = (node, level = 0) => {
+      if (!node) return;
+      
+      // Check if this node has empty slots
+      if (!node.children || node.children.length === 0) {
+        // Both slots are empty
+        slots.push({
+          parentName: node.name,
+          parentId: node.userId,
+          level: level + 1,
+          availablePositions: ["left", "right"]
+        });
+      } else if (node.children.length === 1) {
+        // One slot is empty
+        const existingChild = node.children[0];
+        const existingPosition = existingChild.position || "left"; // Default to left if no position
+        const emptyPosition = existingPosition === "left" ? "right" : "left";
+        
+        slots.push({
+          parentName: node.name,
+          parentId: node.userId,
+          level: level + 1,
+          availablePositions: [emptyPosition]
+        });
+      }
+      
+      // Recursively check children
+      if (node.children) {
+        node.children.forEach(child => findEmptySlots(child, level + 1));
+      }
+    };
+    
+    findEmptySlots(rootNode);
+    setEmptySlots(slots);
+  };
+
+  // Sort empty slots based on selected criteria
+  const getSortedEmptySlots = () => {
+    const sorted = [...emptySlots];
+    
+    if (emptySlotsSort === "level") {
+      sorted.sort((a, b) => a.level - b.level);
+    } else if (emptySlotsSort === "name") {
+      sorted.sort((a, b) => a.parentName.localeCompare(b.parentName));
+    }
+    
+    return sorted;
+  };
+
+  // Navigate to user (for empty slots)
+  const navigateToUser = (userId) => {
+    // Find the user in the tree and create a path to it
+    const findUserPath = (node, targetId, path = []) => {
+      if (!node) return null;
+      
+      const currentPath = [...path, node];
+      
+      if (node.userId === targetId) {
+        return currentPath;
+      }
+      
+      if (node.children) {
+        for (const child of node.children) {
+          const result = findUserPath(child, targetId, currentPath);
+          if (result) return result;
+        }
+      }
+      
+      return null;
+    };
+    
+    const userPath = findUserPath(treeData, userId);
+    
+    if (userPath) {
+      // Expand all nodes in the path
+      setViewMode("custom");
+      const newExpandedNodes = {...expandedNodes};
+      userPath.forEach(pathNode => {
+        newExpandedNodes[pathNode.userId] = true;
+      });
+      setExpandedNodes(newExpandedNodes);
+      
+      // Set search results to highlight the user
+      setSearchResults([userPath]);
+      setSearchPaths([userPath.map(node => node.userId)]);
+      
+      // Close the modal
+      setShowEmptySlots(false);
+      
+      // Scroll to user
+      setTimeout(() => {
+        scrollToNode(userId);
+      }, 300);
+    }
   };
 
   // Handle search input change with suggestions
@@ -354,15 +470,7 @@ const AdminBinaryTree = () => {
 
   // Handle navigation to binary table
   const handleShowBinaryTable = () => {
-    // You can replace this with your actual navigation logic
-    // For example, if you're using React Router:
-    // navigate('/binarytable');
-    
-    // Or if you're using window.location:
     window.location.href = '/binarytable';
-    
-    // Or if you have a custom navigation function, call it here
-    // props.onNavigate('/binarytable');
   };
 
   // Toggle node expansion
@@ -391,6 +499,11 @@ const AdminBinaryTree = () => {
     setViewMode("default");
   };
 
+  // Show empty slots modal
+  const showEmptySlotsModal = () => {
+    setShowEmptySlots(true);
+  };
+
   // Check if a node is in search results
   const isHighlighted = (node) => {
     return searchResults.some(path =>
@@ -401,6 +514,15 @@ const AdminBinaryTree = () => {
   // Check if node is in a search path (for highlighting the path to the result)
   const isInSearchPath = (nodeId) => {
     return searchPaths.some(path => path.includes(nodeId));
+  };
+
+  // Generate empty placeholder node for missing children
+  const renderEmptyNode = (position) => {
+    const nodeClass = position === "left" ? "empty-node-placeholder left-side" : "empty-node-placeholder right-side";
+    
+    return (
+      <div className={nodeClass}></div>
+    );
   };
 
   // Render tree nodes with empty placeholders for balance
@@ -427,15 +549,6 @@ const AdminBinaryTree = () => {
     const isNodeHighlighted = isHighlighted(node);
     const isPathNode = isInSearchPath(node.userId);
     const hasChildren = node.children && node.children.length > 0;
-    
-    // Calculate if we need placeholders
-    let leftChild = null;
-    let rightChild = null;
-    
-    if (node.children && node.children.length > 0) {
-      leftChild = node.children[0];
-      rightChild = node.children.length > 1 ? node.children[1] : null;
-    }
 
     // Determine node class
     let nodeClass = "user-box";
@@ -492,16 +605,47 @@ const AdminBinaryTree = () => {
           )}
         </div>
 
-        {isExpanded && (
+        {isExpanded && hasChildren && (
           <div className="node-children">
             <div className="children-container">
-              {/* Always render both left and right positions, even if children don't exist */}
-              <div className="child-wrapper left-wrapper">
-                {renderTree(leftChild, level + 1, node, "left")}
-              </div>
-              <div className="child-wrapper right-wrapper">
-                {renderTree(rightChild, level + 1, node, "right")}
-              </div>
+              {/* MODIFIED: Ensure left and right child positions are preserved */}
+              {node.children.length === 2 ? (
+                // Both children exist - normal rendering
+                node.children.map((child, index) => (
+                  <div key={child.userId} className="child-wrapper">
+                    {renderTree(
+                      child, 
+                      level + 1, 
+                      node, 
+                      index === 0 ? "left" : "right"
+                    )}
+                  </div>
+                ))
+              ) : node.children.length === 1 ? (
+                // Only one child exists - need to determine if it's left or right
+                // and render placeholder for the missing position
+                <>
+                  {node.children[0].position === "right" ? (
+                    <>
+                      <div className="child-wrapper">
+                        {renderEmptyNode("left")}
+                      </div>
+                      <div className="child-wrapper">
+                        {renderTree(node.children[0], level + 1, node, "right")}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="child-wrapper">
+                        {renderTree(node.children[0], level + 1, node, "left")}
+                      </div>
+                      <div className="child-wrapper">
+                        {renderEmptyNode("right")}
+                      </div>
+                    </>
+                  )}
+                </>
+              ) : null}
             </div>
           </div>
         )}
@@ -625,6 +769,19 @@ const AdminBinaryTree = () => {
             </svg>
             Collapse Tree
           </button>
+
+          {/* New Empty Slots Button */}
+          <button 
+            className="control-button empty-slots-button"
+            onClick={showEmptySlotsModal}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            Empty Slots ({emptySlots.length})
+          </button>
         </div>
       </div>
 
@@ -660,6 +817,82 @@ const AdminBinaryTree = () => {
       {searchResults.length > 0 && (
         <div className="search-results">
           <p>Found {searchResults.length} result(s)</p>
+        </div>
+      )}
+
+      {/* Empty Slots Modal */}
+      {showEmptySlots && (
+        <div className="modal-overlay" onClick={() => setShowEmptySlots(false)}>
+          <div className="empty-slots-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Available Empty Slots</h3>
+              <button 
+                className="modal-close-button"
+                onClick={() => setShowEmptySlots(false)}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="modal-controls">
+              <div className="sort-control">
+                <label htmlFor="sort-select">Sort by:</label>
+                <select 
+                  id="sort-select"
+                  value={emptySlotsSort} 
+                  onChange={(e) => setEmptySlotsSort(e.target.value)}
+                  className="sort-select"
+                >
+                  <option value="level">Level</option>
+                  <option value="name">Name (A-Z)</option>
+                </select>
+              </div>
+              <div className="slots-count">
+                Total Empty Slots: {emptySlots.length}
+              </div>
+            </div>
+
+            <div className="empty-slots-list">
+              {getSortedEmptySlots().map((slot, index) => (
+                <div key={`${slot.parentId}-${index}`} className="empty-slot-item">
+                  <div className="slot-info">
+                    <div className="slot-parent">
+                      <span className="parent-name">{slot.parentName}</span>
+                      <span className="parent-id">ID: {slot.parentId}</span>
+                    </div>
+                    <div className="slot-details">
+                      <span className="slot-level">Level {slot.level}</span>
+                      <div className="available-positions">
+                        {slot.availablePositions.map(position => (
+                          <span 
+                            key={position} 
+                            className={`position-badge ${position}`}
+                          >
+                            {position.charAt(0).toUpperCase() + position.slice(1)}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    className="go-to-user-button"
+                    onClick={() => navigateToUser(slot.parentId)}
+                  >
+                    Go to User
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {emptySlots.length === 0 && (
+              <div className="no-empty-slots">
+                <p>No empty slots available in your network.</p>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>
