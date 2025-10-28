@@ -296,10 +296,10 @@ function AdminOpenClose() {
         navigate("/adminbankverfication")
     }
 
-    function deleteUser(){
-        setPendingAction(() => () => navigate("/admindeleteuser"));
-        setShowAdminKeyPopup(true);
-    }
+    // function deleteUser(){
+    //     setPendingAction(() => () => navigate("/admindeleteuser"));
+    //     setShowAdminKeyPopup(true);
+    // }
 
     const handleAdminKeySubmit = () => {
         if (adminKey === "admin") {
@@ -387,12 +387,6 @@ function AdminOpenClose() {
             icon: Settings,
             onClick: bankverification,
             description: 'Verify user bank details.'
-        },
-        {
-            title: 'Delete User',
-            icon: Trash2,
-            onClick: deleteUser,
-            description: 'Delete user permanently (Requires Super Admin Key).'
         },
     ];
 

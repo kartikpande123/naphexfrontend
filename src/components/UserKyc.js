@@ -996,7 +996,7 @@ const UserKyc = () => {
           </div>
         )}
 
-        {/* Admin Verification Popup with User ID */}
+        {/* Admin Verification Popup with User ID and Referral ID */}
         {showPopup && (
           <div
             className="kyc-popup-overlay"
@@ -1102,7 +1102,7 @@ const UserKyc = () => {
                     border: '3px solid #28a745',
                     borderRadius: '18px',
                     padding: '28px',
-                    marginBottom: '32px',
+                    marginBottom: '24px',
                     textAlign: 'center',
                     position: 'relative',
                     background: 'linear-gradient(135deg, #f8fffe 0%, #e8f5e8 100%)',
@@ -1228,6 +1228,143 @@ const UserKyc = () => {
                   }}>
                     <i className="bi bi-info-circle-fill" style={{ color: '#17a2b8', fontSize: '18px' }}></i>
                     Use this ID to check your account status on the login page
+                  </p>
+                </div>
+
+                {/* Referral ID Display */}
+                <div
+                  className="kyc-referral-id-box"
+                  style={{
+                    backgroundColor: '#fff8e6',
+                    border: '3px solid #ffc107',
+                    borderRadius: '18px',
+                    padding: '28px',
+                    marginBottom: '32px',
+                    textAlign: 'center',
+                    position: 'relative',
+                    background: 'linear-gradient(135deg, #fff8e6 0%, #ffe8a8 100%)',
+                    boxShadow: '0 5px 15px rgba(255, 193, 7, 0.1)'
+                  }}
+                >
+                  <div style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    left: '-2px',
+                    right: '-2px',
+                    bottom: '-2px',
+                    background: 'linear-gradient(45deg, #ffc107, #ffb300, #ffc107)',
+                    borderRadius: '20px',
+                    zIndex: -1,
+                    opacity: '0.1'
+                  }}></div>
+
+                  <h3 style={{
+                    color: '#856404',
+                    marginBottom: '20px',
+                    fontSize: '22px',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px'
+                  }}>
+                    <i className="bi bi-people-fill" style={{ fontSize: '26px' }}></i>
+                    Your Referral ID
+                  </h3>
+
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '16px',
+                    backgroundColor: 'white',
+                    padding: '20px',
+                    borderRadius: '14px',
+                    border: '2px solid #dee2e6',
+                    boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.05)',
+                    flexWrap: 'wrap'
+                  }}>
+                      <span style={{
+                      fontSize: '20px',
+                      fontWeight: '700',
+                      color: '#2c3e50',
+                      fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace',
+                      letterSpacing: '1px',
+                      padding: '12px 20px',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '10px',
+                      border: '1px solid #e9ecef',
+                      textAlign: 'center',
+                      wordBreak: 'break-all',
+                      width: '100%',
+                      maxWidth: '300px',
+                      lineHeight: '1.4'
+                    }}>
+                      {referralId}
+                    </span>
+
+                    <button
+                      onClick={() => copyToClipboard(referralId, 'referralId')}
+                      style={{
+                        background: copiedRefId
+                          ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)'
+                          : 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)',
+                        color: copiedRefId ? 'white' : '#212529',
+                        border: 'none',
+                        borderRadius: '12px',
+                        padding: '14px 20px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px',
+                        fontSize: '16px',
+                        fontWeight: '600',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        boxShadow: '0 5px 20px rgba(0,0,0,0.2)',
+                        transform: copiedRefId ? 'scale(1.05)' : 'scale(1)',
+                        minWidth: '120px',
+                        justifyContent: 'center'
+                      }}
+                      onMouseEnter={(e) => {
+                        if (!copiedRefId) {
+                          e.target.style.transform = 'translateY(-2px) scale(1.02)';
+                          e.target.style.boxShadow = '0 8px 25px rgba(0,0,0,0.3)';
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!copiedRefId) {
+                          e.target.style.transform = 'scale(1)';
+                          e.target.style.boxShadow = '0 5px 20px rgba(0,0,0,0.2)';
+                        }
+                      }}
+                    >
+                      {copiedRefId ? (
+                        <>
+                          <i className="bi bi-check-lg" style={{ fontSize: '18px' }}></i>
+                          Copied!
+                        </>
+                      ) : (
+                        <>
+                          <i className="bi bi-clipboard" style={{ fontSize: '18px' }}></i>
+                          Copy
+                        </>
+                      )}
+                    </button>
+                  </div>
+
+                  <p style={{
+                    marginTop: '20px',
+                    fontSize: '15px',
+                    color: '#856404',
+                    fontStyle: 'italic',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    lineHeight: '1.6'
+                  }}>
+                    <i className="bi bi-share-fill" style={{ color: '#ffc107', fontSize: '18px' }}></i>
+                    Share this referral ID with friends to earn rewards
                   </p>
                 </div>
 
@@ -1381,7 +1518,11 @@ const UserKyc = () => {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '14px' }}>
                       <span style={{ fontSize: '20px', minWidth: '24px' }}>📋</span>
-                      <span>Save your User ID for status checking</span>
+                      <span>Save your User ID and Referral ID for future use</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px', marginBottom: '14px' }}>
+                      <span style={{ fontSize: '20px', minWidth: '24px' }}>👥</span>
+                      <span>Share your Referral ID to earn rewards when friends join</span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '14px' }}>
                       <span style={{ fontSize: '20px', minWidth: '24px' }}>❓</span>
@@ -1518,7 +1659,8 @@ const UserKyc = () => {
           padding: 32px 24px;
         }
         
-        .kyc-user-id-box {
+        .kyc-user-id-box,
+        .kyc-referral-id-box {
           padding: 24px 20px;
         }
         
@@ -1546,7 +1688,8 @@ const UserKyc = () => {
           padding: 24px 20px;
         }
         
-        .kyc-user-id-box {
+        .kyc-user-id-box,
+        .kyc-referral-id-box {
           padding: 20px;
         }
         
