@@ -176,7 +176,7 @@ const ResponsibleGaming = () => {
                             onMouseEnter={(e) => e.target.style.textDecoration = 'underline'}
                             onMouseLeave={(e) => e.target.style.textDecoration = 'none'}
                           >
-                            naphex.com@gmail.com
+                            naphex24@outlook.com
                           </a>
                         </div>
                       </div>

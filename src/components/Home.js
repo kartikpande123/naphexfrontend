@@ -595,6 +595,9 @@ const Home = () => {
               <p className="copyright-text">
                 © 2025/2026 NAPHEX. All rights reserved.
               </p>
+              <p className="copyright-text">
+                Contact: +91 7892739656 (WhatsApp)
+              </p>
             </div>
             <div className="footer-links">
               <Link to="/terms&conditions" className="footer-link">

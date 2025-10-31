@@ -236,7 +236,7 @@ const PrivacyPolicy = () => {
                 <Section title="13. Contact Us" sectionBarStyle={sectionBarStyle}>
                   <div className="p-4" style={contactBoxStyle}>
                     <div className="text-dark">
-                      <strong>Email:</strong> naphex.com@gmail.com<br />
+                      <strong>Email:</strong> naphex24@outlook.com<br />
                       <strong>Phone:</strong> +91-7892739656
                     </div>
                   </div>

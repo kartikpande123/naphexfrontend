@@ -1,7 +1,5 @@
 import React from 'react';
-import { Shield, Trophy, Users, Mail, Star, Gamepad2, Lock, CheckCircle } from 'lucide-react';
-import logo from "../images/logo-1.png";
-import { Link } from 'react-router-dom';
+import { Shield, Trophy, Users, Mail, Star, Lock, CheckCircle, MapPin, Phone, Building2 } from 'lucide-react';
 
 const AboutPage = () => {
   const gradientBg = {
@@ -38,7 +36,6 @@ const AboutPage = () => {
 
   return (
     <div style={gradientBg}>
-      {/* Bootstrap CSS CDN */}
       <link 
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" 
         rel="stylesheet" 
@@ -65,7 +62,7 @@ const AboutPage = () => {
                     borderRadius: '50%'
                   }}
                 >
-                  <img src={logo} alt='logo' style={{height:"100px", width:"100px", borderRadius:"50%"}}/>
+                  <Shield size={40} color="white" />
                 </div>
                 <h2 
                   className="h3 text-light mb-2"
@@ -78,6 +75,12 @@ const AboutPage = () => {
                 >
                   NADAKATTI ENTERPRISES PRESENTS
                 </h2>
+                <div className="d-flex justify-content-center align-items-center mb-3">
+                  <Building2 size={18} color="#22d3ee" className="me-2" />
+                  <span className="text-white fw-semibold" style={{ fontSize: '0.95rem', letterSpacing: '0.5px' }}>
+                    GSTN: 29AAWFN6270D1ZR
+                  </span>
+                </div>
                 <h1 
                   className="display-1 fw-bold mb-4"
                   style={{
@@ -121,9 +124,8 @@ const AboutPage = () => {
                 </p>
                 <p className="mb-4">
                   As a sub-product of Nadakatti Enterprises, Naphex upholds the same standards of excellence 
-                  and innovation. We offer live gaming options on different sports and games 
-                  . At Naphex, we provide the best gaming experience 
-                  to users and the chance to test their skills and win real rewards.
+                  and innovation. We offer live gaming options on different sports and games. 
+                  At Naphex, we provide the best gaming experience to users and the chance to test their skills and win real rewards.
                 </p>
                 <p className="mb-0">
                   Backed by Nadakatti Enterprises reputation for quality and reliability, we ensure that all 
@@ -281,7 +283,7 @@ const AboutPage = () => {
                 <div className="col-12 col-md-4 text-center text-md-end mt-3 mt-md-0">
                   <p className="text-light mb-3 fs-6">Contact our support team:</p>
                   <a 
-                    href="mailto:naphex.com@gmail.com" 
+                    href="mailto:naphex24@outlook.com" 
                     className="btn btn-lg text-white fw-semibold px-4 py-3 d-inline-flex align-items-center shadow-lg"
                     style={buttonStyle}
                     onMouseEnter={(e) => {
@@ -294,7 +296,7 @@ const AboutPage = () => {
                     }}
                   >
                     <Mail size={20} className="me-2" />
-                    naphex.com@gmail.com
+                    naphex24@outlook.com
                   </a>
                 </div>
               </div>
@@ -303,7 +305,7 @@ const AboutPage = () => {
         </div>
 
         {/* Disclaimer */}
-        <div className="row justify-content-center">
+        <div className="row justify-content-center mb-5">
           <div className="col-12">
             <div 
               className="p-4"
@@ -326,37 +328,108 @@ const AboutPage = () => {
             </div>
           </div>
         </div>
-      </div>
-      <footer className="enhanced-footer">
-                <div className="footer-content">
-                  <div className="copyright-section">
-                    <p className="copyright-text">
-                      © 2025/2026 NADAKATTI ENTERPRISES. All rights reserved.
-                    </p>
-                  </div>
-                  <div className="footer-links">
-                    <Link to="/terms&conditions" className="footer-link">
-                      Terms & Conditions
-                    </Link>
-                    <span className="footer-separator">|</span>
-                    <Link to="/kycpolicy" className="footer-link">
-                      KYC Policy
-                    </Link>
-                    <span className="footer-separator">|</span>
-                    <Link to="/privacypolicy" className="footer-link">
-                      Privacy Policy
-                    </Link>
-                    <span className="footer-separator">|</span>
-                    <Link to="/rules" className="footer-link">
-                      Game Rules
-                    </Link>
-                    <span className="footer-separator">|</span>
-                    <Link to="/FAQs" className="footer-link">
-                      FAQs
-                    </Link>
+
+        {/* Contact Us Section */}
+        <div className="row justify-content-center mb-5">
+          <div className="col-12">
+            <div className="p-4 p-md-5 shadow-lg" style={heroCardStyle}>
+              <div className="text-center mb-4">
+                <h2 className="h1 text-white fw-bold mb-2">Contact Us</h2>
+                <p className="text-light fs-5">Get in touch with Nadakatti Enterprises</p>
+              </div>
+              
+              <div className="row g-4">
+                <div className="col-12 col-md-4">
+                  <div className="text-center">
+                    <div 
+                      className="d-inline-flex align-items-center justify-content-center mb-3"
+                      style={{ width: '56px', height: '56px', ...iconBg }}
+                    >
+                      <Building2 size={28} color="white" />
+                    </div>
+                    <h4 className="text-white mb-2 fw-semibold">Company Name</h4>
+                    <p className="text-light mb-0">Nadakatti Enterprises</p>
                   </div>
                 </div>
-              </footer>
+                
+                <div className="col-12 col-md-4">
+                  <div className="text-center">
+                    <div 
+                      className="d-inline-flex align-items-center justify-content-center mb-3"
+                      style={{ width: '56px', height: '56px', ...iconBg }}
+                    >
+                      <MapPin size={28} color="white" />
+                    </div>
+                    <h4 className="text-white mb-2 fw-semibold">Address</h4>
+                    <p className="text-light mb-0">
+                      Narendra Cross<br />
+                      Dharwad<br />
+                      Karnataka 580005
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="col-12 col-md-4">
+                  <div className="text-center">
+                    <div 
+                      className="d-inline-flex align-items-center justify-content-center mb-3"
+                      style={{ width: '56px', height: '56px', ...iconBg }}
+                    >
+                      <Phone size={28} color="white" />
+                    </div>
+                    <h4 className="text-white mb-2 fw-semibold">Phone</h4>
+                    <a 
+                      href="tel:7892739656" 
+                      className="text-light text-decoration-none"
+                      style={{ fontSize: '1.1rem' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = '#22d3ee'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = '#f1f5f9'}
+                    >
+                      +91 7892739656
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <footer style={{
+        background: 'linear-gradient(180deg, rgba(15, 23, 42, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%)',
+        borderTop: '1px solid rgba(59, 130, 246, 0.3)',
+        padding: '2rem 0'
+      }}>
+        <div className="container">
+          <div className="text-center mb-3">
+            <p className="text-light mb-0">
+              © 2025/2026 NADAKATTI ENTERPRISES. All rights reserved.
+            </p>
+          </div>
+          <div className="d-flex flex-wrap justify-content-center align-items-center gap-3">
+            <a href="/terms&conditions" className="text-light text-decoration-none" style={{ fontSize: '0.9rem' }}>
+              Terms & Conditions
+            </a>
+            <span className="text-light">|</span>
+            <a href="/kycpolicy" className="text-light text-decoration-none" style={{ fontSize: '0.9rem' }}>
+              KYC Policy
+            </a>
+            <span className="text-light">|</span>
+            <a href="/privacypolicy" className="text-light text-decoration-none" style={{ fontSize: '0.9rem' }}>
+              Privacy Policy
+            </a>
+            <span className="text-light">|</span>
+            <a href="/rules" className="text-light text-decoration-none" style={{ fontSize: '0.9rem' }}>
+              Game Rules
+            </a>
+            <span className="text-light">|</span>
+            <a href="/FAQs" className="text-light text-decoration-none" style={{ fontSize: '0.9rem' }}>
+              FAQs
+            </a>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };

@@ -223,7 +223,7 @@ const KycPolicy = () => {
                     <div className="text-dark">
                       For any queries related to this policy:<br />
                       <div className="mt-3">
-                        <strong>Email:</strong> naphex.com@gmail.com<br />
+                        <strong>Email:</strong> naphex24@outlook.com<br />
                         <strong>Phone:</strong> +91-7892739656
                       </div>
                     </div>

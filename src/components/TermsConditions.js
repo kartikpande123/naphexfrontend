@@ -272,7 +272,7 @@ const TermsAndConditions = () => {
                   <div className="p-4" style={contactBoxStyle}>
                     <div className="text-dark">
                       Reach us with any questions about your account or these terms.<br /><br />
-                      <strong>Email:</strong> naphex.com@gmail.com<br />
+                      <strong>Email:</strong> naphex24@outlook.com<br />
                       <strong>Phone:</strong> +91-7892739656
                     </div>
                   </div>
