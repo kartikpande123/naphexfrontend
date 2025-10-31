@@ -142,7 +142,7 @@ const UserKyc = () => {
 
       window.addEventListener('beforeunload', handleBeforeUnload);
       window.addEventListener('popstate', handlePopState);
-      
+
       // Push current state to prevent back navigation
       window.history.pushState(null, null, window.location.pathname);
 
@@ -165,7 +165,7 @@ const UserKyc = () => {
   const handleFileUpload = async (event, documentType) => {
     // Only handle non-selfie documents since selfie is camera-only
     if (documentType === 'selfie') return;
-    
+
     const file = event.target.files[0];
     const validation = validateFile(file);
 
@@ -213,16 +213,16 @@ const UserKyc = () => {
 
   const startCamera = async () => {
     try {
-      const mediaStream = await navigator.mediaDevices.getUserMedia({ 
-        video: { 
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: {
           width: { ideal: 640 },
           height: { ideal: 480 },
           facingMode: 'user' // Front camera for selfie
-        } 
+        }
       });
       setStream(mediaStream);
       setShowCamera(true);
-      
+
       // Wait for video element to be ready
       setTimeout(() => {
         if (videoRef.current) {
@@ -256,7 +256,7 @@ const UserKyc = () => {
       // Convert canvas to blob
       canvas.toBlob((blob) => {
         const file = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
-        
+
         // Set upload progress
         setUploadProgress(prev => ({
           ...prev,
@@ -297,13 +297,13 @@ const UserKyc = () => {
   };
 
   const handleKYCSubmit = () => {
-    // Validate all documents are uploaded including selfie
-    const { aadharCard, panCard, bankPassbook, selfie } = kycData;
+    // Validate only required documents (aadharCard, panCard, selfie) - bankPassbook is optional
+    const { aadharCard, panCard, selfie } = kycData;
 
-    if (!aadharCard || !panCard || !bankPassbook || !selfie) {
+    if (!aadharCard || !panCard || !selfie) {
       setAlert({
         show: true,
-        message: 'Please upload all required documents including selfie',
+        message: 'Please upload all required documents (Aadhar Card, PAN Card, and Selfie)',
         isError: true
       });
       setTimeout(() => setAlert({ show: false, message: '', isError: false }), 3000);
@@ -337,9 +337,9 @@ const UserKyc = () => {
         throw new Error('Required signup data is missing');
       }
 
-      // Validate KYC documents including selfie
-      if (!kycData.aadharCard || !kycData.panCard || !kycData.bankPassbook || !kycData.selfie) {
-        throw new Error('All KYC documents including selfie are required');
+      // Validate required KYC documents (aadharCard, panCard, selfie) - bankPassbook is optional
+      if (!kycData.aadharCard || !kycData.panCard || !kycData.selfie) {
+        throw new Error('Required KYC documents (Aadhar Card, PAN Card, and Selfie) are required');
       }
 
       // Create FormData for file upload
@@ -356,11 +356,15 @@ const UserKyc = () => {
       formData.append('city', signupData.city?.trim() || '');
       formData.append('state', signupData.state?.trim() || '');
 
-      // Add KYC files including selfie
+      // Add KYC files including selfie (bankPassbook is optional)
       formData.append('aadharCard', kycData.aadharCard);
       formData.append('panCard', kycData.panCard);
-      formData.append('bankPassbook', kycData.bankPassbook);
-      formData.append('selfie', kycData.selfie); // Added selfie
+      formData.append('selfie', kycData.selfie);
+
+      // Add bankPassbook only if it exists
+      if (kycData.bankPassbook) {
+        formData.append('bankPassbook', kycData.bankPassbook);
+      }
 
       // Make API call to the updated endpoint
       const response = await fetch(`${API_BASE_URL}/registerUser`, {
@@ -516,7 +520,7 @@ const UserKyc = () => {
                 <CameraIcon />
                 Take Your Selfie
               </h3>
-              
+
               <div style={{
                 position: 'relative',
                 borderRadius: '12px',
@@ -628,7 +632,7 @@ const UserKyc = () => {
             <div className="document-upload">
               <label className="document-label">
                 <i className="bi bi-person-badge"></i>
-                Aadhar Card
+                Aadhar Card *
               </label>
               <div className="upload-area">
                 <input
@@ -666,7 +670,7 @@ const UserKyc = () => {
             <div className="document-upload">
               <label className="document-label">
                 <i className="bi bi-credit-card"></i>
-                PAN Card
+                PAN Card *
               </label>
               <div className="upload-area">
                 <input
@@ -700,11 +704,11 @@ const UserKyc = () => {
               </div>
             </div>
 
-            {/* Bank Passbook Upload */}
+            {/* Bank Passbook Upload - Optional */}
             <div className="document-upload">
               <label className="document-label">
                 <i className="bi bi-bank"></i>
-                Bank Passbook
+                Bank Passbook (Optional)
               </label>
               <div className="upload-area">
                 <input
@@ -728,7 +732,7 @@ const UserKyc = () => {
                   ) : (
                     <div className="upload-placeholder">
                       <UploadIcon />
-                      Click to upload Bank Passbook
+                      Click to upload Bank Passbook (Optional)
                     </div>
                   )}
                 </label>
@@ -742,7 +746,7 @@ const UserKyc = () => {
             <div className="document-upload">
               <label className="document-label">
                 <i className="bi bi-person-circle"></i>
-                Selfie Photo
+                Selfie Photo *
               </label>
               <div className="upload-area">
                 {/* Selfie Capture Area */}
@@ -877,7 +881,7 @@ const UserKyc = () => {
                           />
                         )}
                       </div>
-                      
+
                       <div style={{ flex: 1 }}>
                         <div style={{
                           display: 'flex',
@@ -894,18 +898,18 @@ const UserKyc = () => {
                             Selfie Captured Successfully
                           </span>
                         </div>
-                        
+
                         <div style={{
                           fontSize: '14px',
                           color: '#6c757d',
                           marginBottom: '12px'
                         }}>
-                          {kycData.selfie.name || 'selfie.jpg'} 
+                          {kycData.selfie.name || 'selfie.jpg'}
                           <span style={{ marginLeft: '8px', fontSize: '12px' }}>
                             ({(kycData.selfie.size / 1024).toFixed(1)} KB)
                           </span>
                         </div>
-                        
+
                         <button
                           type="button"
                           onClick={() => {
@@ -969,7 +973,7 @@ const UserKyc = () => {
             <button
               className="submit-kyc-btn"
               onClick={handleKYCSubmit}
-              disabled={!kycData.aadharCard || !kycData.panCard || !kycData.bankPassbook || !kycData.selfie}
+              disabled={!kycData.aadharCard || !kycData.panCard || !kycData.selfie}
             >
               Submit KYC Documents
             </button>
@@ -1006,11 +1010,11 @@ const UserKyc = () => {
               left: 0,
               right: 0,
               bottom: 0,
-              backgroundColor: '#ffffff',
+              backgroundColor: 'rgba(0, 0, 0, 0.5)',
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',
-              zIndex: 9999,
+              zIndex: 999999,
               padding: '20px',
               animation: 'fadeIn 0.3s ease-out'
             }}
@@ -1027,7 +1031,8 @@ const UserKyc = () => {
                 overflowY: 'auto',
                 position: 'relative',
                 border: '1px solid rgba(0, 0, 0, 0.1)',
-                animation: 'slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                animation: 'slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                zIndex: 999999,
               }}
             >
               {/* Header Section */}
@@ -1147,7 +1152,7 @@ const UserKyc = () => {
                     boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.05)',
                     flexWrap: 'wrap'
                   }}>
-                      <span style={{
+                    <span style={{
                       fontSize: '20px',
                       fontWeight: '700',
                       color: '#2c3e50',
@@ -1284,7 +1289,7 @@ const UserKyc = () => {
                     boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.05)',
                     flexWrap: 'wrap'
                   }}>
-                      <span style={{
+                    <span style={{
                       fontSize: '20px',
                       fontWeight: '700',
                       color: '#2c3e50',
