@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Eye, EyeOff, Calendar, Phone, MapPin, CreditCard, User, Coins, X, Camera } from 'lucide-react';
+import { CheckCircle, XCircle, Eye, EyeOff, Calendar, Phone, MapPin, CreditCard, User, Coins, X, Camera, FileText } from 'lucide-react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './UserManagementDashboard.css';
 import API_BASE_URL from './ApiConfig';
@@ -10,7 +10,6 @@ const UserManagementDashboard = () => {
   const [error, setError] = useState(null);
   const [expandedUsers, setExpandedUsers] = useState(new Set());
   const [processingUsers, setProcessingUsers] = useState(new Set());
-  const [modalImage, setModalImage] = useState(null);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [rejectionReason, setRejectionReason] = useState('');
@@ -39,7 +38,9 @@ const UserManagementDashboard = () => {
               ...user,
               // Extract userId from userIds subcollection if available
               userId: user.userIds?.myuserid || user.userId || user.id,
-              referralId: user.userIds?.myrefrelid || user.referralId
+              referralId: user.userIds?.myrefrelid || user.referralId,
+              // Ensure panNumber is properly mapped
+              panNumber: user.panNumber || 'Not provided'
             }))
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           
@@ -78,93 +79,92 @@ const UserManagementDashboard = () => {
   };
 
   const handleAcceptUser = async (userId) => {
-  setProcessingUsers(prev => new Set([...prev, userId]));
-  
-  try {
-    const response = await fetch(`${API_BASE_URL}/kyc/accept/${userId}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-    });
+    setProcessingUsers(prev => new Set([...prev, userId]));
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/kyc/accept/${userId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
 
-    const result = await response.json();
+      const result = await response.json();
 
-    if (result.success) {
-      setUsers(prevUsers => 
-        prevUsers.map(user => 
-          user.userIds?.myuserid === userId
-            ? { 
-                ...user, 
-                kycStatus: 'accepted',
-                kycAcceptedAt: result.data.acceptedAt
-              }
-            : user
-        )
-      );
-      alert('KYC accepted successfully!');
-    } else {
-      alert(`Error: ${result.message}`);
+      if (result.success) {
+        setUsers(prevUsers => 
+          prevUsers.map(user => 
+            user.userIds?.myuserid === userId
+              ? { 
+                  ...user, 
+                  kycStatus: 'accepted',
+                  kycAcceptedAt: result.data.acceptedAt
+                }
+              : user
+          )
+        );
+        alert('KYC accepted successfully!');
+      } else {
+        alert(`Error: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Failed to accept KYC. Please try again.');
+    } finally {
+      setProcessingUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
     }
-  } catch (error) {
-    console.error('Error:', error);
-    alert('Failed to accept KYC. Please try again.');
-  } finally {
-    setProcessingUsers(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(userId);
-      return newSet;
-    });
-  }
-};
+  };
 
   const handleRejectUser = async () => {
-  if (!rejectionReason.trim()) {
-    alert('Please provide a rejection reason');
-    return;
-  }
-
-  setProcessingUsers(prev => new Set([...prev, selectedUserId]));
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/kyc/reject/${selectedUserId}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        rejectionReason: rejectionReason.trim()
-      }),
-    });
-
-    const result = await response.json();
-
-    if (result.success) {
-      // Remove the user from the local state since the backend deleted the user
-      setUsers(prevUsers =>
-        prevUsers.filter(user => user.userId !== selectedUserId)
-      );
-
-      console.log(`User ${selectedUserId} rejected and deleted successfully`);
-
-      // Close modal and reset
-      setShowRejectModal(false);
-      setSelectedUserId(null);
-      setRejectionReason('');
-    } else {
-      console.error('Error rejecting user:', result.message);
-      alert(result.message || 'Rejection failed.');
+    if (!rejectionReason.trim()) {
+      alert('Please provide a rejection reason');
+      return;
     }
-  } catch (error) {
-    console.error('Error rejecting user:', error);
-    alert('An error occurred while rejecting the user.');
-  } finally {
-    setProcessingUsers(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(selectedUserId);
-      return newSet;
-    });
-  }
-};
 
+    setProcessingUsers(prev => new Set([...prev, selectedUserId]));
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/kyc/reject/${selectedUserId}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          rejectionReason: rejectionReason.trim()
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Remove the user from the local state since the backend deleted the user
+        setUsers(prevUsers =>
+          prevUsers.filter(user => user.userId !== selectedUserId)
+        );
+
+        console.log(`User ${selectedUserId} rejected and deleted successfully`);
+
+        // Close modal and reset
+        setShowRejectModal(false);
+        setSelectedUserId(null);
+        setRejectionReason('');
+      } else {
+        console.error('Error rejecting user:', result.message);
+        alert(result.message || 'Rejection failed.');
+      }
+    } catch (error) {
+      console.error('Error rejecting user:', error);
+      alert('An error occurred while rejecting the user.');
+    } finally {
+      setProcessingUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(selectedUserId);
+        return newSet;
+      });
+    }
+  };
 
   const openRejectModal = (userId) => {
     setSelectedUserId(userId);
@@ -175,6 +175,13 @@ const UserManagementDashboard = () => {
     setShowRejectModal(false);
     setSelectedUserId(null);
     setRejectionReason('');
+  };
+
+  // Function to open image in new tab
+  const openImageInNewTab = (imageUrl) => {
+    if (imageUrl) {
+      window.open(imageUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   const formatDate = (dateString) => {
@@ -201,26 +208,15 @@ const UserManagementDashboard = () => {
     }
   };
 
-  const openImageModal = (imageUrl) => {
-    setModalImage(imageUrl);
-  };
-
-  const closeImageModal = () => {
-    setModalImage(null);
-  };
-
   // Close modal on escape key press
   useEffect(() => {
     const handleEscape = (event) => {
-      if (event.key === 'Escape') {
-        closeImageModal();
-        if (showRejectModal) {
-          closeRejectModal();
-        }
+      if (event.key === 'Escape' && showRejectModal) {
+        closeRejectModal();
       }
     };
 
-    if (modalImage || showRejectModal) {
+    if (showRejectModal) {
       document.addEventListener('keydown', handleEscape);
       document.body.style.overflow = 'hidden';
     }
@@ -229,7 +225,7 @@ const UserManagementDashboard = () => {
       document.removeEventListener('keydown', handleEscape);
       document.body.style.overflow = 'unset';
     };
-  }, [modalImage, showRejectModal]);
+  }, [showRejectModal]);
 
   if (loading) {
     return (
@@ -297,19 +293,25 @@ const UserManagementDashboard = () => {
 
                   {/* Quick Info */}
                   <div className="row mt-3 g-3">
-                    <div className="col-md-4">
+                    <div className="col-md-3">
                       <div className="d-flex align-items-center">
                         <Phone className="text-muted me-2" size={16} />
                         <small>{user.phoneNo}</small>
                       </div>
                     </div>
-                    <div className="col-md-4">
+                    <div className="col-md-3">
                       <div className="d-flex align-items-center">
                         <MapPin className="text-muted me-2" size={16} />
                         <small>{user.city || 'N/A'}, {user.state || 'N/A'}</small>
                       </div>
                     </div>
-                    <div className="col-md-4">
+                    <div className="col-md-3">
+                      <div className="d-flex align-items-center">
+                        <FileText className="text-muted me-2" size={16} />
+                        <small>PAN: {user.panNumber || 'Not provided'}</small>
+                      </div>
+                    </div>
+                    <div className="col-md-3">
                       <div className="d-flex align-items-center">
                         <Calendar className="text-muted me-2" size={16} />
                         <small>{formatDate(user.createdAt)}</small>
@@ -334,6 +336,10 @@ const UserManagementDashboard = () => {
                             <span className="text-muted">My Referral ID:</span>
                             <span className="fw-medium">{user.userIds?.myrefrelid || user.referralId || 'N/A'}</span>
                           </div>
+                          <div className="detail-row d-flex justify-content-between py-2">
+                            <span className="text-muted">PAN Number:</span>
+                            <span className="fw-medium">{user.panNumber || 'Not provided'}</span>
+                          </div>
                           <div className="detail-row d-flex justify-content-between py-2 align-items-center">
                             <span className="text-muted">Tokens:</span>
                             <div className="d-flex align-items-center">
@@ -353,10 +359,47 @@ const UserManagementDashboard = () => {
                         <h6 className="fw-semibold mb-3">KYC Documents</h6>
                         {user.kyc ? (
                           <div className="kyc-documents">
+                            {/* PAN Card - Mandatory */}
+                            {user.kyc.panCardUrl && (
+                              <div className="mb-3">
+                                <label className="form-label small fw-medium d-flex align-items-center">
+                                  PAN Card 
+                                  <span className="text-danger ms-1">*</span>
+                                </label>
+                                <div 
+                                  className="kyc-image-container" 
+                                  onClick={() => openImageInNewTab(user.kyc.panCardUrl)} 
+                                  style={{cursor: 'pointer'}}
+                                  title="Click to open in new tab"
+                                >
+                                  <img 
+                                    src={user.kyc.panCardUrl} 
+                                    alt="PAN Card" 
+                                    className="img-fluid kyc-image rounded"
+                                    style={{maxHeight: '150px', objectFit: 'cover'}}
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      e.target.nextSibling.style.display = 'block';
+                                    }}
+                                  />
+                                  <div className="kyc-fallback text-center p-3 bg-light rounded" style={{display: 'none'}}>
+                                    <CreditCard className="text-muted mb-2" size={24} />
+                                    <p className="small text-muted mb-0">Image not available</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Aadhar Card */}
                             {user.kyc.aadharCardUrl && (
                               <div className="mb-3">
                                 <label className="form-label small fw-medium">Aadhar Card</label>
-                                <div className="kyc-image-container" onClick={() => openImageModal(user.kyc.aadharCardUrl)} style={{cursor: 'pointer'}}>
+                                <div 
+                                  className="kyc-image-container" 
+                                  onClick={() => openImageInNewTab(user.kyc.aadharCardUrl)} 
+                                  style={{cursor: 'pointer'}}
+                                  title="Click to open in new tab"
+                                >
                                   <img 
                                     src={user.kyc.aadharCardUrl} 
                                     alt="Aadhar Card" 
@@ -375,32 +418,16 @@ const UserManagementDashboard = () => {
                               </div>
                             )}
                             
-                            {user.kyc.panCardUrl && (
-                              <div className="mb-3">
-                                <label className="form-label small fw-medium">PAN Card</label>
-                                <div className="kyc-image-container" onClick={() => openImageModal(user.kyc.panCardUrl)} style={{cursor: 'pointer'}}>
-                                  <img 
-                                    src={user.kyc.panCardUrl} 
-                                    alt="PAN Card" 
-                                    className="img-fluid kyc-image rounded"
-                                    style={{maxHeight: '150px', objectFit: 'cover'}}
-                                    onError={(e) => {
-                                      e.target.style.display = 'none';
-                                      e.target.nextSibling.style.display = 'block';
-                                    }}
-                                  />
-                                  <div className="kyc-fallback text-center p-3 bg-light rounded" style={{display: 'none'}}>
-                                    <CreditCard className="text-muted mb-2" size={24} />
-                                    <p className="small text-muted mb-0">Image not available</p>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                            
+                            {/* Bank Passbook */}
                             {user.kyc.bankPassbookUrl && (
                               <div className="mb-3">
                                 <label className="form-label small fw-medium">Bank Passbook</label>
-                                <div className="kyc-image-container" onClick={() => openImageModal(user.kyc.bankPassbookUrl)} style={{cursor: 'pointer'}}>
+                                <div 
+                                  className="kyc-image-container" 
+                                  onClick={() => openImageInNewTab(user.kyc.bankPassbookUrl)} 
+                                  style={{cursor: 'pointer'}}
+                                  title="Click to open in new tab"
+                                >
                                   <img 
                                     src={user.kyc.bankPassbookUrl} 
                                     alt="Bank Passbook" 
@@ -419,11 +446,44 @@ const UserManagementDashboard = () => {
                               </div>
                             )}
 
-                            {/* Added Selfie Section */}
+                            {/* Cancelled Cheque - Optional */}
+                            {user.kyc.cancelledChequeUrl && (
+                              <div className="mb-3">
+                                <label className="form-label small fw-medium">Cancelled Cheque (Optional)</label>
+                                <div 
+                                  className="kyc-image-container" 
+                                  onClick={() => openImageInNewTab(user.kyc.cancelledChequeUrl)} 
+                                  style={{cursor: 'pointer'}}
+                                  title="Click to open in new tab"
+                                >
+                                  <img 
+                                    src={user.kyc.cancelledChequeUrl} 
+                                    alt="Cancelled Cheque" 
+                                    className="img-fluid kyc-image rounded"
+                                    style={{maxHeight: '150px', objectFit: 'cover'}}
+                                    onError={(e) => {
+                                      e.target.style.display = 'none';
+                                      e.target.nextSibling.style.display = 'block';
+                                    }}
+                                  />
+                                  <div className="kyc-fallback text-center p-3 bg-light rounded" style={{display: 'none'}}>
+                                    <FileText className="text-muted mb-2" size={24} />
+                                    <p className="small text-muted mb-0">Image not available</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Selfie */}
                             {user.kyc.selfieUrl && (
                               <div className="mb-3">
                                 <label className="form-label small fw-medium">Selfie</label>
-                                <div className="kyc-image-container" onClick={() => openImageModal(user.kyc.selfieUrl)} style={{cursor: 'pointer'}}>
+                                <div 
+                                  className="kyc-image-container" 
+                                  onClick={() => openImageInNewTab(user.kyc.selfieUrl)} 
+                                  style={{cursor: 'pointer'}}
+                                  title="Click to open in new tab"
+                                >
                                   <img 
                                     src={user.kyc.selfieUrl} 
                                     alt="User Selfie" 
@@ -538,50 +598,6 @@ const UserManagementDashboard = () => {
               </div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Fullscreen Image Modal */}
-      {modalImage && (
-        <div 
-          className="position-fixed top-0 start-0 w-100 h-100 d-flex justify-content-center align-items-center"
-          style={{
-            backgroundColor: 'rgba(0, 0, 0, 0.9)',
-            zIndex: 1055,
-            cursor: 'pointer'
-          }}
-          onClick={closeImageModal}
-        >
-          {/* Close Button */}
-          <button 
-            type="button" 
-            className="position-absolute btn p-2"
-            onClick={closeImageModal}
-            style={{
-              top: '20px',
-              right: '20px',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              borderRadius: '50%',
-              border: 'none',
-              zIndex: 1056
-            }}
-          >
-            <X size={24} color="white" />
-          </button>
-
-          {/* Centered Image */}
-          <img 
-            src={modalImage} 
-            alt="KYC Document" 
-            className="img-fluid"
-            style={{
-              maxWidth: '90vw',
-              maxHeight: '90vh',
-              objectFit: 'contain',
-              cursor: 'default'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          />
         </div>
       )}
     </div>

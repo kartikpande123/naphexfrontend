@@ -10,7 +10,8 @@ const AdminLogin = () => {
     const ADMIN_CREDENTIALS = [
         { phone: '7022852377', password: 'naphex123#' },
         { phone: '9019842426', password: 'naphex123#' },
-        { phone: '7899527911', password: 'admin2000@' }
+        { phone: '7899527911', password: 'admin2000@' },
+        { phone: '6360781349', password: 'adminpranav@' }
     ];
 
     // Hooks

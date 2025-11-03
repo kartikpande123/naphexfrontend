@@ -188,7 +188,7 @@ const AdminEntryFeeVerification = () => {
                   <CreditCard size={32} style={{ color: '#0d6efd' }} />
                 </div>
                 <div>
-                  <h2 style={{ color: 'white', marginBottom: '0.25rem', fontWeight: 'bold', fontSize: '1.75rem' }}>Entry Fee Verification</h2>
+                  <h2 style={{ color: 'white', marginBottom: '0.25rem', fontWeight: 'bold', fontSize: '1.75rem' }}>Registration Fee Verification</h2>
                   <p style={{ color: 'white', marginBottom: 0, opacity: 0.9 }}>Manage and verify pending payment requests</p>
                 </div>
               </div>

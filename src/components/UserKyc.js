@@ -81,11 +81,18 @@ const UserKyc = () => {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
 
-  // KYC State - Added selfie
+  // PAN Number state
+  const [panNumber, setPanNumber] = useState('');
+  const [panNumberError, setPanNumberError] = useState('');
+  const [isPanChecking, setIsPanChecking] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
+
+  // KYC State - Added cancelledCheque
   const [kycData, setKycData] = useState({
     aadharCard: null,
     panCard: null,
     bankPassbook: null,
+    cancelledCheque: null,
     selfie: null
   });
 
@@ -93,6 +100,7 @@ const UserKyc = () => {
     aadharCard: '',
     panCard: '',
     bankPassbook: '',
+    cancelledCheque: '',
     selfie: ''
   });
 
@@ -100,6 +108,7 @@ const UserKyc = () => {
     aadharCard: false,
     panCard: false,
     bankPassbook: false,
+    cancelledCheque: false,
     selfie: false
   });
 
@@ -117,6 +126,30 @@ const UserKyc = () => {
       });
       setTimeout(() => navigate('/signup'), 2000);
     }
+
+    // Set up SSE connection to fetch all users
+    const eventSource = new EventSource(`${API_BASE_URL}/api/users`);
+
+    eventSource.onmessage = (event) => {
+      try {
+        const response = JSON.parse(event.data);
+        if (response.success && response.data) {
+          setAllUsers(response.data);
+        }
+      } catch (error) {
+        console.error('Error parsing SSE data:', error);
+      }
+    };
+
+    eventSource.onerror = (error) => {
+      console.error('SSE connection error:', error);
+      eventSource.close();
+    };
+
+    // Cleanup on unmount
+    return () => {
+      eventSource.close();
+    };
   }, [navigate]);
 
   // Prevent going back when KYC process has started
@@ -153,6 +186,48 @@ const UserKyc = () => {
       }
     };
   }, [stream]);
+
+  // Validate PAN number format
+  const validatePanNumber = (pan) => {
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    return panRegex.test(pan);
+  };
+
+  // Check if PAN number already exists
+  const checkPanExists = (pan) => {
+    if (!pan || allUsers.length === 0) return false;
+    
+    return allUsers.some(user => 
+      user.panNumber && user.panNumber.toUpperCase() === pan.toUpperCase()
+    );
+  };
+
+  const handlePanNumberChange = (e) => {
+    const value = e.target.value.toUpperCase();
+    setPanNumber(value);
+    
+    if (!value) {
+      setPanNumberError('');
+      return;
+    }
+
+    // Check format first
+    if (!validatePanNumber(value)) {
+      setPanNumberError('Invalid PAN format. Example: ABCDE1234F');
+      return;
+    }
+
+    // Check if PAN already exists
+    setIsPanChecking(true);
+    setTimeout(() => {
+      if (checkPanExists(value)) {
+        setPanNumberError('This PAN number is already registered. Please use a different PAN number.');
+      } else {
+        setPanNumberError('');
+      }
+      setIsPanChecking(false);
+    }, 300);
+  };
 
   const handleFileUpload = async (event, documentType) => {
     // Only handle non-selfie documents since selfie is camera-only
@@ -289,7 +364,39 @@ const UserKyc = () => {
   };
 
   const handleKYCSubmit = () => {
-    // Validate only required documents (aadharCard, panCard, selfie) - bankPassbook is optional
+    // Validate PAN number
+    if (!panNumber) {
+      setAlert({
+        show: true,
+        message: 'Please enter your PAN number',
+        isError: true
+      });
+      setTimeout(() => setAlert({ show: false, message: '', isError: false }), 3000);
+      return;
+    }
+
+    if (!validatePanNumber(panNumber)) {
+      setAlert({
+        show: true,
+        message: 'Please enter a valid PAN number (Format: ABCDE1234F)',
+        isError: true
+      });
+      setTimeout(() => setAlert({ show: false, message: '', isError: false }), 3000);
+      return;
+    }
+
+    // Check if PAN already exists
+    if (checkPanExists(panNumber)) {
+      setAlert({
+        show: true,
+        message: 'This PAN number is already registered. Please use a different PAN number.',
+        isError: true
+      });
+      setTimeout(() => setAlert({ show: false, message: '', isError: false }), 3000);
+      return;
+    }
+
+    // Validate only required documents (aadharCard, panCard, selfie) - bankPassbook and cancelledCheque are optional
     const { aadharCard, panCard, selfie } = kycData;
 
     if (!aadharCard || !panCard || !selfie) {
@@ -329,9 +436,14 @@ const UserKyc = () => {
         throw new Error('Required signup data is missing');
       }
 
-      // Validate required KYC documents (aadharCard, panCard, selfie) - bankPassbook is optional
+      // Validate required KYC documents (aadharCard, panCard, selfie) - bankPassbook and cancelledCheque are optional
       if (!kycData.aadharCard || !kycData.panCard || !kycData.selfie) {
         throw new Error('Required KYC documents (Aadhar Card, PAN Card, and Selfie) are required');
+      }
+
+      // Validate PAN number
+      if (!panNumber || !validatePanNumber(panNumber)) {
+        throw new Error('Valid PAN number is required');
       }
 
       // Create FormData for file upload
@@ -347,15 +459,20 @@ const UserKyc = () => {
       formData.append('email', signupData.email?.trim() || '');
       formData.append('city', signupData.city?.trim() || '');
       formData.append('state', signupData.state?.trim() || '');
+      formData.append('panNumber', panNumber);
 
-      // Add KYC files including selfie (bankPassbook is optional)
+      // Add required KYC files
       formData.append('aadharCard', kycData.aadharCard);
       formData.append('panCard', kycData.panCard);
       formData.append('selfie', kycData.selfie);
 
-      // Add bankPassbook only if it exists
+      // Add optional files only if they exist
       if (kycData.bankPassbook) {
         formData.append('bankPassbook', kycData.bankPassbook);
+      }
+
+      if (kycData.cancelledCheque) {
+        formData.append('cancelledCheque', kycData.cancelledCheque);
       }
 
       // Make API call to the updated endpoint
@@ -521,6 +638,84 @@ const UserKyc = () => {
             <h3 className="kyc-title">KYC Document Verification</h3>
             <p className="kyc-subtitle">Please upload the following document Images (Max 5MB each)</p>
 
+            {/* PAN Number Input */}
+            <div className="document-upload">
+              <label className="document-label">
+                <i className="bi bi-credit-card-2-front"></i>
+                PAN Number *
+              </label>
+              <div className="upload-area" style={{ padding: '0' }}>
+                <input
+                  type="text"
+                  value={panNumber}
+                  onChange={handlePanNumberChange}
+                  placeholder="Enter PAN Number (e.g., ABCDE1234F)"
+                  maxLength="10"
+                  disabled={isPanChecking}
+                  style={{
+                    width: '100%',
+                    padding: '16px',
+                    border: panNumberError ? '2px solid #DC2626' : '2px solid #D1D5DB',
+                    borderRadius: '12px',
+                    fontSize: '16px',
+                    fontWeight: '600',
+                    textTransform: 'uppercase',
+                    textAlign: 'center',
+                    backgroundColor: isPanChecking ? '#F3F4F6' : 'white',
+                    outline: 'none',
+                    letterSpacing: '1px',
+                    cursor: isPanChecking ? 'wait' : 'text'
+                  }}
+                />
+                {isPanChecking && (
+                  <p style={{
+                    color: '#4F46E5',
+                    fontSize: '13px',
+                    textAlign: 'center',
+                    marginTop: '8px',
+                    marginBottom: '0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}>
+                    <i className="bi bi-arrow-clockwise spin"></i>
+                    Checking PAN number...
+                  </p>
+                )}
+                {panNumberError && !isPanChecking && (
+                  <p className="error-text" style={{ marginTop: '8px' }}>{panNumberError}</p>
+                )}
+                {!panNumberError && !isPanChecking && panNumber && validatePanNumber(panNumber) && (
+                  <p style={{
+                    color: '#059669',
+                    fontSize: '13px',
+                    textAlign: 'center',
+                    marginTop: '8px',
+                    marginBottom: '0',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '6px'
+                  }}>
+                    <i className="bi bi-check-circle-fill"></i>
+                    PAN number is available
+                  </p>
+                )}
+                {!panNumber && (
+                  <p style={{
+                    color: '#6B7280',
+                    fontSize: '13px',
+                    textAlign: 'center',
+                    marginTop: '8px',
+                    marginBottom: '0'
+                  }}>
+                    Format: 5 letters, 4 digits, 1 letter (Example: ABCDE1234F)
+                  </p>
+                )}
+              </div>
+            </div>
+
             {/* Aadhar Card Upload */}
             <div className="document-upload">
               <label className="document-label">
@@ -635,6 +830,44 @@ const UserKyc = () => {
               </div>
             </div>
 
+            {/* Cancelled Cheque Upload - Optional */}
+            <div className="document-upload">
+              <label className="document-label">
+                <i className="bi bi-file-earmark-check"></i>
+                Cancelled Cheque (Optional)
+              </label>
+              <div className="upload-area">
+                <input
+                  type="file"
+                  id="cancelledCheque"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload(e, 'cancelledCheque')}
+                  className="file-input"
+                />
+                <label htmlFor="cancelledCheque" className="upload-label">
+                  {uploadProgress.cancelledCheque ? (
+                    <div className="upload-progress">
+                      <i className="bi bi-arrow-clockwise spin"></i>
+                      Uploading...
+                    </div>
+                  ) : kycData.cancelledCheque ? (
+                    <div className="upload-success">
+                      <CheckIcon />
+                      {kycData.cancelledCheque.name}
+                    </div>
+                  ) : (
+                    <div className="upload-placeholder">
+                      <UploadIcon />
+                      Click to upload Cancelled Cheque (Optional)
+                    </div>
+                  )}
+                </label>
+                {kycErrors.cancelledCheque && (
+                  <p className="error-text">{kycErrors.cancelledCheque}</p>
+                )}
+              </div>
+            </div>
+
             {/* Selfie Upload */}
             <div className="document-upload">
               <label className="document-label">
@@ -737,9 +970,9 @@ const UserKyc = () => {
             <button
               className="submit-kyc-btn"
               onClick={handleKYCSubmit}
-              disabled={!kycData.aadharCard || !kycData.panCard || !kycData.selfie}
+              disabled={!kycData.aadharCard || !kycData.panCard || !kycData.selfie || !panNumber || panNumberError || isPanChecking}
             >
-              Submit KYC Documents
+              {isPanChecking ? 'Validating PAN...' : 'Submit KYC Documents'}
             </button>
           </div>
         )}
@@ -750,7 +983,7 @@ const UserKyc = () => {
             <div className="kyc-success">
               <CheckIcon />
               <h3>KYC Submission Completed!</h3>
-              <p>Your documents including selfie have been uploaded successfully. You can now create your account.</p>
+              <p>Your documents including selfie and PAN number have been uploaded successfully. You can now create your account.</p>
             </div>
 
             <button
