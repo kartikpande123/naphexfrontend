@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CheckCircle, XCircle, Clock, User, Phone, CreditCard, Building, Hash, Loader, Users, X } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, User, Phone, CreditCard, Building, Hash, Loader, Users, X, Image, FileText } from 'lucide-react';
 import API_BASE_URL from './ApiConfig';
 
 const BankVerificationComponent = () => {
@@ -11,6 +11,9 @@ const BankVerificationComponent = () => {
   const [showVerifiedUsers, setShowVerifiedUsers] = useState(false);
   const [verifiedUsers, setVerifiedUsers] = useState([]);
   const [activeTab, setActiveTab] = useState('bank'); // 'bank' or 'upi'
+  const [kycUsers, setKycUsers] = useState([]); // Users with pending KYC image verification
+  const [verifyingKyc, setVerifyingKyc] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null); // For image modal
 
   // Internal CSS styles
   const styles = {
@@ -62,6 +65,16 @@ const BankVerificationComponent = () => {
       transition: 'all 0.3s ease',
       boxShadow: '0 4px 15px rgba(16, 185, 129, 0.3)'
     },
+    rejectBtn: {
+      background: 'linear-gradient(45deg, #ef4444, #dc2626)',
+      border: 'none',
+      borderRadius: '8px',
+      padding: '0.5rem 1.5rem',
+      color: 'white',
+      fontWeight: '600',
+      transition: 'all 0.3s ease',
+      boxShadow: '0 4px 15px rgba(239, 68, 68, 0.3)'
+    },
     loadingSpinner: {
       width: '40px',
       height: '40px',
@@ -86,6 +99,16 @@ const BankVerificationComponent = () => {
       fontWeight: '700',
       letterSpacing: '1px',
       color: '#1e40af'
+    },
+    imagePreview: {
+      width: '100%',
+      maxWidth: '300px',
+      height: '200px',
+      objectFit: 'cover',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      border: '2px solid #e3e8ff',
+      transition: 'all 0.3s ease'
     }
   };
 
@@ -98,6 +121,19 @@ const BankVerificationComponent = () => {
         if (data.success && data.data) {
           // Store all users data
           setAllUsers(data.data);
+          
+          // Filter users with pending KYC bank images (ByInGame)
+          const pendingKycUsers = data.data.filter(user => {
+            if (user.kyc) {
+              const hasBankPassbook = user.kyc.bankPassbookUrlByInGame;
+              const hasCancelledCheque = user.kyc.cancelledChequeUrlByInGame;
+              const isNotVerified = user.kyc.bankDocumentsStatus !== 'verified';
+              
+              return (hasBankPassbook || hasCancelledCheque) && isNotVerified;
+            }
+            return false;
+          });
+          setKycUsers(pendingKycUsers);
           
           // Filter to show only unverified or no status banking details
           const filteredUsers = data.data.map(user => {
@@ -250,6 +286,41 @@ const BankVerificationComponent = () => {
     }
   };
 
+  const handleKycAction = async (userId, action) => {
+    setVerifyingKyc(`${userId}-${action}`);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/verify-kyc-bank-images`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          action // 'verify' or 'reject'
+        }),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        // Remove the user from KYC list
+        setKycUsers(prevUsers => prevUsers.filter(user => user.userId !== userId));
+        
+        // Show success message
+        alert(`KYC bank images ${action === 'verify' ? 'verified' : 'rejected'} successfully!`);
+      } else {
+        throw new Error(result.message || `${action} failed`);
+      }
+      
+    } catch (error) {
+      console.error('KYC action error:', error);
+      alert(`Action failed: ${error.message}`);
+    } finally {
+      setVerifyingKyc(null);
+    }
+  };
+
   const formatBankAccountNo = (accountNo) => {
     if (!accountNo) return 'N/A';
     return accountNo.toString();
@@ -329,6 +400,10 @@ const BankVerificationComponent = () => {
             transform: translateY(-1px);
             box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
           }
+          .reject-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(239, 68, 68, 0.4);
+          }
           body {
             background-color: #f1f5f9;
           }
@@ -353,6 +428,10 @@ const BankVerificationComponent = () => {
           .nav-tab-custom.active:hover {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
+          }
+          .image-preview:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.2);
           }
         `}
       </style>
@@ -385,6 +464,9 @@ const BankVerificationComponent = () => {
                   <div className="badge bg-warning fs-6 me-3">
                     Pending Verifications: {users.length}
                   </div>
+                  <div className="badge bg-info fs-6 me-3">
+                    Pending KYC Images: {kycUsers.length}
+                  </div>
                   <div className="badge bg-success fs-6">
                     System Status: Online
                   </div>
@@ -392,6 +474,28 @@ const BankVerificationComponent = () => {
               </div>
             </div>
           </div>
+
+          {/* Image Modal */}
+          {selectedImage && (
+            <div className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center" 
+                 style={{ backgroundColor: 'rgba(0,0,0,0.8)', zIndex: 1060 }}
+                 onClick={() => setSelectedImage(null)}>
+              <div className="position-relative" style={{ maxWidth: '90%', maxHeight: '90%' }}>
+                <button
+                  className="btn btn-light position-absolute"
+                  style={{ top: '-40px', right: '0' }}
+                  onClick={() => setSelectedImage(null)}
+                >
+                  <X size={20} />
+                </button>
+                <img 
+                  src={selectedImage} 
+                  alt="Full size" 
+                  style={{ maxWidth: '100%', maxHeight: '85vh', objectFit: 'contain', borderRadius: '8px' }}
+                />
+              </div>
+            </div>
+          )}
 
           {/* Verified Users Modal */}
           {showVerifiedUsers && (
@@ -536,9 +640,154 @@ const BankVerificationComponent = () => {
             </div>
           )}
 
-          {/* Main Content */}
+          {/* KYC Bank Images Verification Section */}
+          {kycUsers.length > 0 && (
+            <div className="row mb-4">
+              <div className="col-12">
+                <h2 className="mb-4 d-flex align-items-center">
+                  <Image className="me-2 text-info" size={32} />
+                  KYC Bank Images Verification
+                </h2>
+                {kycUsers.map((user) => (
+                  <div key={user.userId} className="card detail-card" style={styles.customCard}>
+                    {/* User Header */}
+                    <div style={styles.gradientHeader}>
+                      <div className="d-flex align-items-center">
+                        <div style={styles.userAvatar}>
+                          <User size={28} />
+                        </div>
+                        <div className="ms-4 flex-grow-1">
+                          <h3 className="mb-2 fw-bold">
+                            {user.name || 'Unknown User'}
+                          </h3>
+                          <div className="row">
+                            <div className="col-md-6">
+                              <div className="d-flex align-items-center mb-2">
+                                <Phone size={16} className="me-2" />
+                                <span>{user.phoneNo || 'N/A'}</span>
+                              </div>
+                            </div>
+                            <div className="col-md-6">
+                              <div className="d-flex align-items-center">
+                                <Hash size={16} className="me-2" />
+                                <span>User ID: {user.userIds?.myuserid || 'N/A'}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* KYC Images */}
+                    <div className="card-body p-4">
+                      <div style={styles.detailCard}>
+                        <div className="d-flex align-items-center justify-content-between mb-3">
+                          <div className="d-flex align-items-center">
+                            <div style={styles.iconWrapper}>
+                              <FileText size={20} className="text-white" />
+                            </div>
+                            <h5 className="mb-0 fw-bold">Bank Document Images</h5>
+                          </div>
+                          <span 
+                            className="badge d-flex align-items-center"
+                            style={styles.pendingBadge}
+                          >
+                            <Clock size={14} className="me-1" />
+                            Pending Verification
+                          </span>
+                        </div>
+
+                        <div className="row g-3 mb-4">
+                          {user.kyc.bankPassbookUrlByInGame && (
+                            <div className="col-md-6">
+                              <label className="form-label fw-semibold text-muted">Bank Passbook</label>
+                              <div>
+                                <img 
+                                  src={user.kyc.bankPassbookUrlByInGame}
+                                  alt="Bank Passbook"
+                                  className="image-preview"
+                                  style={styles.imagePreview}
+                                  onClick={() => setSelectedImage(user.kyc.bankPassbookUrlByInGame)}
+                                />
+                              </div>
+                            </div>
+                          )}
+                          {user.kyc.cancelledChequeUrlByInGame && (
+                            <div className="col-md-6">
+                              <label className="form-label fw-semibold text-muted">Cancelled Cheque</label>
+                              <div>
+                                <img 
+                                  src={user.kyc.cancelledChequeUrlByInGame}
+                                  alt="Cancelled Cheque"
+                                  className="image-preview"
+                                  style={styles.imagePreview}
+                                  onClick={() => setSelectedImage(user.kyc.cancelledChequeUrlByInGame)}
+                                />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {user.kyc.bankDocumentsUploadedAt && (
+                          <div className="mb-3">
+                            <label className="form-label fw-semibold text-muted">Uploaded At</label>
+                            <p className="mb-0">{formatDate(user.kyc.bankDocumentsUploadedAt)}</p>
+                          </div>
+                        )}
+
+                        <div className="d-flex gap-2">
+                          <button
+                            onClick={() => handleKycAction(user.userId, 'verify')}
+                            disabled={verifyingKyc === `${user.userId}-verify`}
+                            className="btn verify-btn"
+                            style={styles.verifyBtn}
+                          >
+                            {verifyingKyc === `${user.userId}-verify` ? (
+                              <>
+                                <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                                Verifying...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle size={16} className="me-2" />
+                                Verify Images
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleKycAction(user.userId, 'reject')}
+                            disabled={verifyingKyc === `${user.userId}-reject`}
+                            className="btn reject-btn"
+                            style={styles.rejectBtn}
+                          >
+                            {verifyingKyc === `${user.userId}-reject` ? (
+                              <>
+                                <div className="spinner-border spinner-border-sm me-2" role="status"></div>
+                                Rejecting...
+                              </>
+                            ) : (
+                              <>
+                                <XCircle size={16} className="me-2" />
+                                Reject Images
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Main Banking Details Content */}
           <div className="row">
             <div className="col-12">
+              <h2 className="mb-4 d-flex align-items-center">
+                <CreditCard className="me-2 text-primary" size={32} />
+                Banking Details Verification
+              </h2>
               {users.length === 0 ? (
                 <div className="card" style={styles.customCard}>
                   <div className="card-body text-center py-5">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Edit, CreditCard, Smartphone, Shield, CheckCircle, AlertCircle, Plus } from 'lucide-react';
+import { Edit, CreditCard, Smartphone, Shield, CheckCircle, AlertCircle, Plus, Upload, FileText, X } from 'lucide-react';
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import API_BASE_URL from './ApiConfig';
@@ -13,6 +13,7 @@ const BankDetails = () => {
   const [editingUpi, setEditingUpi] = useState(false);
   const [showAddBank, setShowAddBank] = useState(false);
   const [showAddUpi, setShowAddUpi] = useState(false);
+  const [uploadingDocuments, setUploadingDocuments] = useState(false);
 
   // Form states
   const [bankForm, setBankForm] = useState({
@@ -25,6 +26,20 @@ const BankDetails = () => {
     upiId: '',
     bankingId: ''
   });
+
+  // Document upload states
+  const [documents, setDocuments] = useState({
+    passbookPhoto: null,
+    cancelledChequePhoto: null
+  });
+
+  const [documentPreviews, setDocumentPreviews] = useState({
+    passbookPhoto: null,
+    cancelledChequePhoto: null
+  });
+
+  // Track if documents already exist in database (from KYC)
+  const [hasExistingDocuments, setHasExistingDocuments] = useState(false);
 
   // Get user data from localStorage
   useEffect(() => {
@@ -94,6 +109,118 @@ const BankDetails = () => {
         setUpiDetails({ ...upiEntry[1], bankingId: upiEntry[0] });
       }
     }
+
+    // Check if documents exist in KYC first (from registration)
+    let hasKycDocs = false;
+    if (data.kyc) {
+      if (data.kyc.bankPassbookUrl) {
+        setDocumentPreviews(prev => ({ ...prev, passbookPhoto: data.kyc.bankPassbookUrl }));
+        hasKycDocs = true;
+      }
+      if (data.kyc.cancelledChequeUrl) {
+        setDocumentPreviews(prev => ({ ...prev, cancelledChequePhoto: data.kyc.cancelledChequeUrl }));
+        hasKycDocs = true;
+      }
+    }
+
+    // Check if documents uploaded from in-game
+    if (data.kyc) {
+      if (data.kyc.bankPassbookUrlByInGame) {
+        setDocumentPreviews(prev => ({ ...prev, passbookPhoto: data.kyc.bankPassbookUrlByInGame }));
+        hasKycDocs = true;
+      }
+      if (data.kyc.cancelledChequeUrlByInGame) {
+        setDocumentPreviews(prev => ({ ...prev, cancelledChequePhoto: data.kyc.cancelledChequeUrlByInGame }));
+        hasKycDocs = true;
+      }
+    }
+
+    // Set flag to hide upload section if documents already exist in database
+    setHasExistingDocuments(hasKycDocs);
+  };
+
+  // Handle file selection
+  const handleFileChange = (e, documentType) => {
+    const file = e.target.files[0];
+    if (file) {
+      // Validate file type
+      const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        toast.error('Please upload a valid image file (JPG, PNG, WEBP)');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('File size should not exceed 5MB');
+        return;
+      }
+
+      // Update documents state
+      setDocuments(prev => ({ ...prev, [documentType]: file }));
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setDocumentPreviews(prev => ({ ...prev, [documentType]: reader.result }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove selected file
+  const removeFile = (documentType) => {
+    setDocuments(prev => ({ ...prev, [documentType]: null }));
+    setDocumentPreviews(prev => ({ ...prev, [documentType]: null }));
+  };
+
+  // Upload documents
+  const handleUploadDocuments = async () => {
+    if (!documents.passbookPhoto && !documents.cancelledChequePhoto) {
+      toast.warning('Please select at least one document to upload');
+      return;
+    }
+
+    if (!userData?.phoneNo) {
+      toast.error('User information not found');
+      return;
+    }
+
+    setUploadingDocuments(true);
+
+    try {
+      const formData = new FormData();
+      formData.append('phoneNo', userData.phoneNo);
+      
+      if (documents.passbookPhoto) {
+        formData.append('passbookPhoto', documents.passbookPhoto);
+      }
+      if (documents.cancelledChequePhoto) {
+        formData.append('cancelledChequePhoto', documents.cancelledChequePhoto);
+      }
+
+      const response = await fetch(`${API_BASE_URL}/banking/upload-documents`, {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Documents uploaded successfully!');
+        // Mark that documents now exist in database
+        setHasExistingDocuments(true);
+        // Keep the previews but clear the file objects
+        setDocuments({ passbookPhoto: null, cancelledChequePhoto: null });
+      } else {
+        toast.error('Failed to upload documents: ' + result.error);
+      }
+    } catch (error) {
+      console.error('Error uploading documents:', error);
+      toast.error('Failed to upload documents');
+    } finally {
+      setUploadingDocuments(false);
+    }
   };
 
   // Add new bank details
@@ -124,7 +251,7 @@ const BankDetails = () => {
           ifsc: bankForm.ifsc,
           bankingId: result.bankingId,
           createdAt: Date.now(),
-          status: 'unverified' // Set initial status as unverified
+          status: 'unverified'
         });
         setBankForm({ bankAccountNo: '', ifsc: '', bankingId: '' });
         setShowAddBank(false);
@@ -164,7 +291,7 @@ const BankDetails = () => {
           upiId: upiForm.upiId,
           bankingId: result.bankingId,
           createdAt: Date.now(),
-          status: 'unverified' // Set initial status as unverified
+          status: 'unverified'
         });
         setUpiForm({ upiId: '', bankingId: '' });
         setShowAddUpi(false);
@@ -197,7 +324,7 @@ const BankDetails = () => {
           bankingId: bankForm.bankingId,
           bankAccountNo: bankForm.bankAccountNo,
           ifsc: bankForm.ifsc,
-          status: 'unverified' // Add status flag when editing
+          status: 'unverified'
         })
       });
 
@@ -207,7 +334,7 @@ const BankDetails = () => {
           ...prev,
           bankAccountNo: bankForm.bankAccountNo,
           ifsc: bankForm.ifsc,
-          status: 'unverified' // Update local state with status
+          status: 'unverified'
         }));
         setEditingBank(false);
         toast.success('Bank details updated successfully! Status set to unverified for admin review.');
@@ -238,7 +365,7 @@ const BankDetails = () => {
           phoneNo: userData.phoneNo,
           bankingId: upiForm.bankingId,
           upiId: upiForm.upiId,
-          status: 'unverified' // Add status flag when editing
+          status: 'unverified'
         })
       });
 
@@ -247,7 +374,7 @@ const BankDetails = () => {
         setUpiDetails(prev => ({
           ...prev,
           upiId: upiForm.upiId,
-          status: 'unverified' // Update local state with status
+          status: 'unverified'
         }));
         setEditingUpi(false);
         toast.success('UPI details updated successfully! Status set to unverified for admin review.');
@@ -316,6 +443,129 @@ const BankDetails = () => {
               </div>
             </div>
           </div>
+
+          {/* Document Upload Section - Only show if documents don't exist in database */}
+          {!hasExistingDocuments && (
+            <div className="card border-0 shadow-sm mb-4">
+              <div 
+                className="card-header py-3" 
+                style={{ backgroundColor: '#2563eb', border: 'none' }}
+              >
+                <h5 className="text-white mb-0 d-flex align-items-center">
+                  <FileText className="me-3" size={20} />
+                  Bank Documents
+                  <span className="badge bg-info text-dark ms-3" style={{ fontSize: '0.75rem' }}>
+                    Upload One or Both
+                  </span>
+                </h5>
+              </div>
+
+              <div className="card-body p-4">
+                <div className="alert alert-info d-flex align-items-center mb-4" role="alert">
+                  <AlertCircle size={20} className="me-2" />
+                  <small>You can upload either Bank Passbook OR Cancelled Cheque, or both documents for verification.</small>
+                </div>
+                
+                <div className="row">
+                  {/* Bank Passbook Photo */}
+                  <div className="col-md-6 mb-4">
+                    <label className="form-label fw-semibold">Bank Passbook Photo</label>
+                    <div className="mb-2">
+                      <input
+                        type="file"
+                        id="passbookPhoto"
+                        className="form-control"
+                        style={{ borderRadius: '8px' }}
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={(e) => handleFileChange(e, 'passbookPhoto')}
+                      />
+                      <small className="text-muted d-block mt-1">
+                        Accepted formats: JPG, PNG, WEBP (Max 5MB)
+                      </small>
+                    </div>
+                    
+                    {documentPreviews.passbookPhoto && (
+                      <div className="position-relative mt-3">
+                        <img 
+                          src={documentPreviews.passbookPhoto} 
+                          alt="Passbook preview" 
+                          className="img-fluid rounded border"
+                          style={{ maxHeight: '200px', objectFit: 'cover' }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
+                          style={{ borderRadius: '50%', width: '32px', height: '32px', padding: '0' }}
+                          onClick={() => removeFile('passbookPhoto')}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Cancelled Cheque Photo */}
+                  <div className="col-md-6 mb-4">
+                    <label className="form-label fw-semibold">Cancelled Cheque Photo</label>
+                    <div className="mb-2">
+                      <input
+                        type="file"
+                        id="cancelledChequePhoto"
+                        className="form-control"
+                        style={{ borderRadius: '8px' }}
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        onChange={(e) => handleFileChange(e, 'cancelledChequePhoto')}
+                      />
+                      <small className="text-muted d-block mt-1">
+                        Accepted formats: JPG, PNG, WEBP (Max 5MB)
+                      </small>
+                    </div>
+                    
+                    {documentPreviews.cancelledChequePhoto && (
+                      <div className="position-relative mt-3">
+                        <img 
+                          src={documentPreviews.cancelledChequePhoto} 
+                          alt="Cancelled cheque preview" 
+                          className="img-fluid rounded border"
+                          style={{ maxHeight: '200px', objectFit: 'cover' }}
+                        />
+                        <button
+                          type="button"
+                          className="btn btn-sm btn-danger position-absolute top-0 end-0 m-2"
+                          style={{ borderRadius: '50%', width: '32px', height: '32px', padding: '0' }}
+                          onClick={() => removeFile('cancelledChequePhoto')}
+                        >
+                          <X size={16} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="d-flex gap-3 mt-3">
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    style={{ borderRadius: '8px' }}
+                    disabled={uploadingDocuments || (!documents.passbookPhoto && !documents.cancelledChequePhoto)}
+                    onClick={handleUploadDocuments}
+                  >
+                    {uploadingDocuments ? (
+                      <>
+                        <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                        Uploading...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={16} className="me-2" />
+                        Upload Documents
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Bank Details Section */}
           <div className="card border-0 shadow-sm mb-4">
@@ -575,6 +825,10 @@ const BankDetails = () => {
                 <div className="d-flex mb-2">
                   <span className="me-3" style={{ color: '#2563eb' }}>•</span>
                   <span>All details show as "Unverified" until manually verified by admin</span>
+                </div>
+                <div className="d-flex mb-2">
+                  <span className="me-3" style={{ color: '#2563eb' }}>•</span>
+                  <span>Upload clear photos of your bank passbook and cancelled cheque for verification</span>
                 </div>
                 <div className="d-flex mb-2">
                   <span className="me-3" style={{ color: '#2563eb' }}>•</span>
