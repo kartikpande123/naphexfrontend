@@ -2,12 +2,13 @@
 .binary-tree-container {
   text-align: center;
   padding: 25px;
-  max-width: 1200px;
+  max-width: 100%; /* CHANGED from 1200px to 100% */
   margin: 0 auto;
   background-color: #f8faff;
   min-height: 500px;
   border-radius: 12px;
   box-shadow: 0 4px 20px rgba(63, 81, 181, 0.08);
+  overflow: visible; /* ADDED: Allow overflow */
 }
 
 .network-title {
@@ -202,9 +203,9 @@
   border: 2px solid #90caf9;
 }
 
-/* Tree display */
+/* FIX: Tree display - Improved horizontal scrolling */
 .binary-tree-wrapper {
-  overflow-x: auto;
+  overflow-x: auto !important; /* ADDED !important */
   overflow-y: auto;
   max-height: 600px;
   padding: 20px 0;
@@ -212,14 +213,19 @@
   border-radius: 8px;
   background-color: white;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  scroll-behavior: smooth; /* Add smooth scrolling for search results */
+  scroll-behavior: smooth;
+  width: 100%; /* ADDED: Ensure full width */
+  position: relative; /* ADDED: For scroll indicators */
 }
 
+/* FIX: Allow binary tree to expand beyond viewport */
 .binary-tree {
   display: inline-flex;
-  justify-content: center;
+  justify-content: flex-start; /* CHANGED from center to flex-start */
   min-width: max-content;
   padding: 30px 40px;
+  width: auto; /* ADDED: Allow natural width */
+  margin: 0 auto;
 }
 
 /* Node styling */
@@ -228,6 +234,7 @@
   flex-direction: column;
   align-items: center;
   position: relative;
+  overflow: visible !important; /* ADDED: Ensure no overflow hidden */
 }
 
 /* Updated user-box styling for the new detailed view */
@@ -363,13 +370,15 @@
   border-color: #3f51b5;
 }
 
-/* Improved tree lines - vertical and horizontal connections */
+/* FIX: Improved tree lines - vertical and horizontal connections */
 .node-children {
   display: flex;
   flex-direction: column;
   align-items: center;
   padding-top: 20px;
   position: relative;
+  width: auto; /* CHANGED from 100% to auto */
+  min-width: max-content; /* ADDED: Allow expansion */
 }
 
 /* Vertical line from parent to horizontal connector */
@@ -384,12 +393,14 @@
   transform: translateX(-50%);
 }
 
+/* FIX: Remove width constraints from children container */
 .children-container {
   display: flex;
-  justify-content: space-between !important; /* Override previous setting */
+  justify-content: space-between !important;
   gap: 40px;
   position: relative;
-  min-width: 500px; /* Provide minimum width for balanced layout */
+  min-width: max-content; /* CHANGED from fixed width to allow expansion */
+  width: auto; /* ADDED: Allow natural width */
 }
 
 .empty-node-placeholder {
@@ -412,15 +423,15 @@
   z-index: 1;
 }
 
+/* FIX: Ensure child wrappers don't constrain width */
 .child-wrapper {
   position: relative;
-  flex: 1;
+  flex: 0 1 auto; /* CHANGED from flex: 1 to allow natural width */
   min-width: 220px; /* Match the user-box min-width */
   display: flex;
   flex-direction: column;
   align-items: center;
 }
-
 
 /* Vertical line from horizontal connector to child */
 .child-wrapper:empty::before,
@@ -435,16 +446,33 @@
   transform: translateX(-50%);
 }
 
-/* For levels deeper than 2 */
+/* FIX: Improved scrolling behavior for deep levels */
 .tree-node[data-level="2"] .children-container,
 .tree-node[data-level="3"] .children-container,
 .tree-node[data-level="4"] .children-container {
   gap: 30px;
+  min-width: max-content; /* ADDED */
+  width: auto; /* ADDED */
 }
 
 .tree-node[data-level="5"] .children-container,
 .tree-node[data-level="6"] .children-container {
   gap: 20px;
+  min-width: max-content; /* ADDED */
+  width: auto; /* ADDED */
+}
+
+/* FIX: Better horizontal spacing for deep tree levels */
+.tree-node[data-level="3"] .child-wrapper,
+.tree-node[data-level="4"] .child-wrapper {
+  flex: 0 1 auto; /* CHANGED */
+  min-width: 200px;
+}
+
+.tree-node[data-level="5"] .child-wrapper,
+.tree-node[data-level="6"] .child-wrapper {
+  flex: 0 1 auto; /* CHANGED */
+  min-width: 180px;
 }
 
 /* Make nodes smaller as we go deeper */
@@ -584,6 +612,67 @@
     font-size: 14px;
     display: inline-block;
   }
+
+  /* FIX: Enhanced scrollbar visibility */
+.binary-tree-wrapper::-webkit-scrollbar {
+  width: 12px;
+  height: 12px;
+}
+
+.binary-tree-wrapper::-webkit-scrollbar-track {
+  background: #f1f3f9;
+  border-radius: 6px;
+}
+
+.binary-tree-wrapper::-webkit-scrollbar-thumb {
+  background: #3f51b5;
+  border-radius: 6px;
+  border: 2px solid #f1f3f9;
+}
+
+.binary-tree-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #303f9f;
+}
+
+.binary-tree-wrapper::-webkit-scrollbar-corner {
+  background: #f1f3f9;
+}
+
+/* FIX: Ensure horizontal scroll indicators are visible */
+.binary-tree-wrapper {
+  scrollbar-width: thin;
+  scrollbar-color: #3f51b5 #f1f3f9;
+}
+
+/* FIX: Add visual indicator when content overflows */
+.binary-tree-wrapper.scrollable::after {
+  content: "→";
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #3f51b5;
+  font-size: 20px;
+  opacity: 0.7;
+  animation: bounce-horizontal 2s infinite;
+}
+
+@keyframes bounce-horizontal {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(-50%) translateX(0);
+  }
+  40% {
+    transform: translateY(-50%) translateX(-5px);
+  }
+  60% {
+    transform: translateY(-50%) translateX(-3px);
+  }
+}
+
+/* FIX: Add JavaScript helper class for scroll detection */
+.binary-tree-wrapper.has-overflow {
+  border-right: 2px dashed rgba(63, 81, 181, 0.3);
+}
   
   /* Responsive adjustments */
   @media (max-width: 768px) {
@@ -602,7 +691,71 @@
       justify-content: center;
       flex-wrap: wrap;
     }
+
+    .binary-tree-wrapper {
+      margin: 0 -5px;
+      padding: 15px 0;
+    }
+    
+    .binary-tree {
+      padding: 20px 25px;
+      justify-content: flex-start;
+    }
+    
+    .children-container {
+      gap: 25px;
+    }
+    
+    .tree-node[data-level="3"] .children-container,
+    .tree-node[data-level="4"] .children-container {
+      gap: 20px;
+    }
+    
+    .tree-node[data-level="5"] .children-container,
+    .tree-node[data-level="6"] .children-container {
+      gap: 15px;
+    }
   }
+
+  /* Extra small devices */
+@media (max-width: 480px) {
+  .binary-tree-container {
+    padding: 15px 10px;
+  }
+  
+  .user-box {
+    min-width: 130px;
+    padding: 8px 10px;
+  }
+  
+  .financial-item {
+    font-size: 10px;
+  }
+  
+  .children-container {
+    gap: 15px;
+  }
+}
+
+/* Scrollbar styling for better UX */
+.binary-tree-wrapper::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.binary-tree-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.binary-tree-wrapper::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 4px;
+}
+
+.binary-tree-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
   
   /* Additional CSS for Empty Slots Feature */
 /* Empty Slots Button Styling */

@@ -14,6 +14,9 @@ const AdminBinaryTree = () => {
   const [maxLevel, setMaxLevel] = useState(2);
   const [levelOptions, setLevelOptions] = useState([1, 2, 3, 4, 5, 6]);
   const [searchPaths, setSearchPaths] = useState([]);
+
+
+  
   
   // New states for search suggestions
   const [suggestions, setSuggestions] = useState([]);
@@ -31,6 +34,38 @@ const AdminBinaryTree = () => {
   const nodeRefs = useRef({});
   const searchInputRef = useRef(null);
   const suggestionsRef = useRef(null);
+
+
+  useEffect(() => {
+  const checkScrollable = () => {
+    const wrapper = treeWrapperRef.current;
+    if (wrapper) {
+      const hasHorizontalScroll = wrapper.scrollWidth > wrapper.clientWidth;
+      if (hasHorizontalScroll) {
+        wrapper.classList.add('has-overflow');
+        wrapper.classList.add('scrollable');
+      } else {
+        wrapper.classList.remove('has-overflow');
+        wrapper.classList.remove('scrollable');
+      }
+    }
+  };
+
+  // Check initially and after tree updates
+  checkScrollable();
+  
+  // Add resize listener
+  window.addEventListener('resize', checkScrollable);
+  
+  // Check after tree data loads
+  if (!loading && treeData) {
+    setTimeout(checkScrollable, 500);
+  }
+
+  return () => {
+    window.removeEventListener('resize', checkScrollable);
+  };
+}, [loading, treeData, expandedNodes]);
 
   useEffect(() => {
     const fetchTreeData = async () => {
@@ -386,35 +421,35 @@ const AdminBinaryTree = () => {
   };
 
   // Scroll to a specific node
-  const scrollToNode = (nodeId) => {
-    // Use setTimeout to ensure the DOM has updated after expanding nodes
-    setTimeout(() => {
-      const nodeElement = nodeRefs.current[nodeId];
-      if (nodeElement && treeWrapperRef.current) {
-        // Calculate scroll position to center the node
-        const nodeRect = nodeElement.getBoundingClientRect();
-        const wrapperRect = treeWrapperRef.current.getBoundingClientRect();
-        const wrapper = treeWrapperRef.current;
+const scrollToNode = (nodeId) => {
+  setTimeout(() => {
+    const nodeElement = nodeRefs.current[nodeId];
+    if (nodeElement && treeWrapperRef.current) {
+      const nodeRect = nodeElement.getBoundingClientRect();
+      const wrapperRect = treeWrapperRef.current.getBoundingClientRect();
+      const wrapper = treeWrapperRef.current;
 
-        // Calculate the center position
-        const targetScrollLeft = nodeElement.offsetLeft - (wrapperRect.width / 2) + (nodeRect.width / 2);
-        const targetScrollTop = nodeElement.offsetTop - (wrapperRect.height / 2) + (nodeRect.height / 2);
+      // Calculate the center position with buffer
+      const targetScrollLeft = nodeElement.offsetLeft - (wrapperRect.width / 2) + (nodeRect.width / 2);
+      
+      // Add some buffer to ensure full visibility
+      const buffer = 50;
+      const finalScrollLeft = Math.max(0, targetScrollLeft - buffer);
 
-        // Smooth scroll to the target position
-        wrapper.scrollTo({
-          left: Math.max(0, targetScrollLeft),
-          top: Math.max(0, targetScrollTop),
-          behavior: 'smooth'
-        });
+      // Smooth scroll to the target position
+      wrapper.scrollTo({
+        left: finalScrollLeft,
+        behavior: 'smooth'
+      });
 
-        // Add a temporary highlight effect
-        nodeElement.classList.add('scroll-highlight');
-        setTimeout(() => {
-          nodeElement.classList.remove('scroll-highlight');
-        }, 2000);
-      }
-    }, 300); // Increased timeout to ensure nodes are expanded
-  };
+      // Enhanced highlight effect
+      nodeElement.classList.add('scroll-highlight');
+      setTimeout(() => {
+        nodeElement.classList.remove('scroll-highlight');
+      }, 3000);
+    }
+  }, 400); // Increased timeout for better reliability
+};
 
   // Close suggestions when clicking outside
   useEffect(() => {
