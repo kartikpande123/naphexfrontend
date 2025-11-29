@@ -7,15 +7,19 @@ import payBgImage from '../images/pay-bg.png';
 
 const TokenWithdrawal = () => {
   const [userData, setUserData] = useState(null);
-  const [tokens, setTokens] = useState(0);
+  const [binaryTokens, setBinaryTokens] = useState(0);
+  const [wonTokens, setWonTokens] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOption, setSelectedOption] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
   const [netAmount, setNetAmount] = useState(0);
+  const [taxAmount, setTaxAmount] = useState(0);
+  const [taxPercentage, setTaxPercentage] = useState(23);
   const [submitting, setSubmitting] = useState(false);
-  const [canWithdraw, setCanWithdraw] = useState(false);
+  const [canWithdraw, setCanWithdraw] = useState(true);
   const [withdrawalMessage, setWithdrawalMessage] = useState("");
+  const [tokenType, setTokenType] = useState("binaryTokens"); // "binaryTokens" or "wonTokens"
 
   const navigate = useNavigate();
 
@@ -30,57 +34,70 @@ const TokenWithdrawal = () => {
     }
   }, []);
 
-  const checkWithdrawalEligibility = (userDataObj) => {
-    const currentDate = new Date();
-    const currentDay = currentDate.getDay(); // 0 = Sunday, 1 = Monday, etc.
-    const currentTimestamp = currentDate.getTime();
+  // Check if today is Sunday
+  const isSunday = () => {
+    const today = new Date();
+    return today.getDay() === 0; // 0 represents Sunday
+  };
 
-    // Check if today is Sunday
-    const isSunday = currentDay === 0;
+  // Validate amount format (allows 1 decimal place)
+  const validateAmountFormat = (amount) => {
+    const regex = /^\d+(\.\d)?$/;
+    return regex.test(amount);
+  };
 
-    // Check for recent wins within 48 hours
-    let hasRecentWin = false;
-    let latestWinTime = null;
+  // Format number to 1 decimal place
+  const formatToOneDecimal = (num) => {
+    return parseFloat(num).toFixed(1);
+  };
 
-    if (userDataObj.game1 && userDataObj.game1.wins) {
-      const wins = userDataObj.game1.wins;
-      const winsArray = Object.values(wins);
-
-      // Find the most recent win
-      winsArray.forEach((win) => {
-        if (win.timestamp) {
-          const winTime = win.timestamp;
-          const timeDiff = currentTimestamp - winTime;
-          const hoursDiff = timeDiff / (1000 * 60 * 60);
-
-          if (hoursDiff <= 48) {
-            hasRecentWin = true;
-            if (!latestWinTime || winTime > latestWinTime) {
-              latestWinTime = winTime;
-            }
-          }
-        }
-      });
+  // Handle amount input change with decimal validation
+  const handleAmountChange = (e) => {
+    let value = e.target.value;
+    
+    // Allow only numbers and one decimal point
+    value = value.replace(/[^\d.]/g, '');
+    
+    // Ensure only one decimal point
+    const decimalCount = (value.match(/\./g) || []).length;
+    if (decimalCount > 1) {
+      value = value.substring(0, value.lastIndexOf('.'));
     }
+    
+    // Limit to 1 decimal place
+    if (value.includes('.')) {
+      const parts = value.split('.');
+      if (parts[1].length > 1) {
+        value = parts[0] + '.' + parts[1].substring(0, 1);
+      }
+    }
+    
+    setWithdrawAmount(value);
+  };
 
-    // Determine eligibility and message
-    if (isSunday) {
-      setCanWithdraw(true);
-      setWithdrawalMessage("✅ Today is Sunday! You can withdraw your tokens.");
-    } else if (hasRecentWin && latestWinTime) {
-      setCanWithdraw(true);
-      const hoursLeft = 48 - ((currentTimestamp - latestWinTime) / (1000 * 60 * 60));
-      const hoursLeftRounded = Math.ceil(hoursLeft);
-      setWithdrawalMessage(
-        `✅ Congratulations on your recent win! You have ${hoursLeftRounded} hours left to withdraw.`
-      );
+  const checkWithdrawalEligibility = (userDataObj) => {
+    if (tokenType === "binaryTokens") {
+      // Binary tokens can only be withdrawn on Sundays
+      if (isSunday()) {
+        setCanWithdraw(true);
+        setWithdrawalMessage("✅ You can withdraw your binary tokens today (Sunday).");
+      } else {
+        setCanWithdraw(false);
+        const daysUntilSunday = 7 - new Date().getDay(); // 0 for Sunday, so 7-0=7, but we want 0 days until next Sunday
+        const nextSunday = new Date();
+        nextSunday.setDate(nextSunday.getDate() + (7 - nextSunday.getDay()));
+        const formattedDate = nextSunday.toLocaleDateString('en-US', { 
+          weekday: 'long', 
+          year: 'numeric', 
+          month: 'long', 
+          day: 'numeric' 
+        });
+        setWithdrawalMessage(`⏳ Binary tokens can only be withdrawn on Sundays. Next withdrawal: ${formattedDate}`);
+      }
     } else {
-      setCanWithdraw(false);
-      // Calculate days until next Sunday
-      const daysUntilSunday = (7 - currentDay) % 7 || 7;
-      setWithdrawalMessage(
-        `⏰ Withdrawals are only allowed on Sundays or within 48 hours of a win. Next Sunday is in ${daysUntilSunday} day${daysUntilSunday > 1 ? 's' : ''}.`
-      );
+      // Won tokens can be withdrawn anytime
+      setCanWithdraw(true);
+      setWithdrawalMessage("✅ You can withdraw your won tokens anytime.");
     }
   };
 
@@ -97,7 +114,9 @@ const TokenWithdrawal = () => {
         const parsed = JSON.parse(match[1]);
         if (parsed.success) {
           setUserData(parsed.userData);
-          setTokens(parsed.tokens);
+          setBinaryTokens(parsed.userData.binaryTokens || 0);
+          // FIX: Use lowercase 'wontokens' to match database
+          setWonTokens(parsed.userData.wontokens || 0);
 
           // Check withdrawal eligibility
           checkWithdrawalEligibility(parsed.userData);
@@ -122,15 +141,44 @@ const TokenWithdrawal = () => {
     }
   };
 
+  // Update tax calculation when token type or amount changes
   useEffect(() => {
-    if (withdrawAmount && parseInt(withdrawAmount) > 0) {
-      const amt = parseInt(withdrawAmount);
-      const tax = Math.floor(amt * 0.3);
-      setNetAmount(amt - tax);
+    if (withdrawAmount && parseFloat(withdrawAmount) > 0) {
+      const amt = parseFloat(withdrawAmount);
+      // Different tax rates for different token types
+      const taxRate = tokenType === "binaryTokens" ? 0.23 : 0.30;
+      const tax = parseFloat((amt * taxRate).toFixed(1));
+      const net = parseFloat((amt - tax).toFixed(1));
+      setTaxAmount(tax);
+      setNetAmount(net);
+      setTaxPercentage(tokenType === "binaryTokens" ? 23 : 30);
     } else {
+      setTaxAmount(0);
       setNetAmount(0);
+      setTaxPercentage(tokenType === "binaryTokens" ? 23 : 30);
     }
-  }, [withdrawAmount]);
+  }, [withdrawAmount, tokenType]);
+
+  // Update withdrawal message when token type changes
+  useEffect(() => {
+    if (userData) {
+      checkWithdrawalEligibility(userData);
+    }
+  }, [tokenType]);
+
+  const getCurrentBalance = () => {
+    return tokenType === "binaryTokens" ? binaryTokens : wonTokens;
+  };
+
+  const getTokenTypeDisplayName = () => {
+    return tokenType === "binaryTokens" ? "Binary Tokens" : "Won Tokens";
+  };
+
+  const getEndpointUrl = () => {
+    return tokenType === "binaryTokens" 
+      ? `${API_BASE_URL}/request-withdrawal`
+      : `${API_BASE_URL}/request-won-withdrawal`;
+  };
 
   const handleWithdraw = async () => {
     if (!canWithdraw) {
@@ -138,14 +186,25 @@ const TokenWithdrawal = () => {
       return;
     }
 
-    if (!withdrawAmount || parseInt(withdrawAmount) <= 0) {
+    if (!withdrawAmount || parseFloat(withdrawAmount) <= 0) {
       toast.warning("Please enter a valid amount");
       return;
     }
-    if (parseInt(withdrawAmount) > tokens) {
-      toast.error("You don't have enough tokens");
+
+    // Validate amount format (allows 1 decimal place)
+    if (!validateAmountFormat(withdrawAmount)) {
+      toast.warning("Only 1 decimal place allowed (e.g., 10.5)");
       return;
     }
+
+    const amount = parseFloat(withdrawAmount);
+    const currentBalance = getCurrentBalance();
+    
+    if (amount > currentBalance) {
+      toast.error(`You don't have enough ${getTokenTypeDisplayName().toLowerCase()}`);
+      return;
+    }
+    
     if (!selectedOption) {
       toast.warning("Please select a withdrawal method");
       return;
@@ -162,12 +221,12 @@ const TokenWithdrawal = () => {
     try {
       setSubmitting(true);
 
-      const response = await fetch(`${API_BASE_URL}/request-withdrawal`, {
+      const response = await fetch(getEndpointUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           phoneNo: userData.phoneNo,
-          tokens: parseInt(withdrawAmount),
+          tokens: amount,
           method: selectedDetail?.bankAccountNo
             ? `Bank - ${selectedDetail.bankAccountNo}`
             : `UPI - ${selectedDetail?.upiId}`,
@@ -180,11 +239,31 @@ const TokenWithdrawal = () => {
         toast.error(data.error || "Withdrawal failed");
       } else {
         toast.success(
-          `Withdrawal successful! Requested: ${withdrawAmount}, After Tax (30%): ${netAmount}`
+          `${getTokenTypeDisplayName()} withdrawal successful! Requested: ${formatToOneDecimal(withdrawAmount)}, After Tax (${taxPercentage}%): ${formatToOneDecimal(netAmount)}`
         );
-        setTokens((prev) => prev - parseInt(withdrawAmount));
+        
+        // Update respective token balance
+        if (tokenType === "binaryTokens") {
+          setBinaryTokens((prev) => parseFloat((prev - amount).toFixed(1)));
+        } else {
+          setWonTokens((prev) => parseFloat((prev - amount).toFixed(1)));
+        }
+        
         setWithdrawAmount("");
         setNetAmount(0);
+        setTaxAmount(0);
+        
+        // Update localStorage
+        const storedData = JSON.parse(localStorage.getItem('userData'));
+        if (storedData) {
+          if (tokenType === "binaryTokens") {
+            storedData.binaryTokens = parseFloat((binaryTokens - amount).toFixed(1));
+          } else {
+            // FIX: Use lowercase 'wontokens' to match database
+            storedData.wontokens = parseFloat((wonTokens - amount).toFixed(1));
+          }
+          localStorage.setItem('userData', JSON.stringify(storedData));
+        }
       }
     } catch (err) {
       console.error(err);
@@ -423,27 +502,123 @@ const TokenWithdrawal = () => {
               minHeight: 0
             }}
           >
-            {/* Token Balance Card */}
-            <div
-              style={{
-                background: 'linear-gradient(135deg, #f8fafc, #e2e8f0)',
-                borderRadius: '12px',
-                padding: '1rem',
-                marginBottom: '1.5rem',
-                textAlign: 'center'
-              }}
-            >
-              <div style={{ color: '#64748b', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
-                Available Balance
+            {/* Token Type Selection */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <label style={{
+                display: 'block',
+                fontSize: '0.95rem',
+                fontWeight: '600',
+                color: '#374151',
+                marginBottom: '0.75rem'
+              }}>
+                Select Token Type
+              </label>
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setTokenType("binaryTokens")}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    border: `2px solid ${tokenType === "binaryTokens" ? '#2563eb' : '#e5e7eb'}`,
+                    borderRadius: '12px',
+                    background: tokenType === "binaryTokens" ? '#eff6ff' : '#ffffff',
+                    color: tokenType === "binaryTokens" ? '#2563eb' : '#6b7280',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'center'
+                  }}
+                >
+                  Binary Tokens
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTokenType("wonTokens")}
+                  style={{
+                    flex: 1,
+                    padding: '0.75rem',
+                    border: `2px solid ${tokenType === "wonTokens" ? '#10b981' : '#e5e7eb'}`,
+                    borderRadius: '12px',
+                    background: tokenType === "wonTokens" ? '#f0fdf4' : '#ffffff',
+                    color: tokenType === "wonTokens" ? '#10b981' : '#6b7280',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    textAlign: 'center'
+                  }}
+                >
+                  Won Tokens
+                </button>
               </div>
+            </div>
+
+            {/* Token Balance Cards */}
+            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+              {/* Binary Tokens Balance */}
               <div
                 style={{
-                  fontSize: '1.5rem',
-                  fontWeight: '700',
-                  color: '#1e293b'
+                  flex: 1,
+                  background: tokenType === "binaryTokens" 
+                    ? 'linear-gradient(135deg, #eff6ff, #dbeafe)' 
+                    : 'linear-gradient(135deg, #f8fafc, #e2e8f0)',
+                  border: `2px solid ${tokenType === "binaryTokens" ? '#2563eb' : '#e5e7eb'}`,
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
                 }}
+                onClick={() => setTokenType("binaryTokens")}
               >
-                {tokens.toLocaleString()} tokens
+                <div style={{ color: tokenType === "binaryTokens" ? '#2563eb' : '#64748b', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                  Binary Tokens
+                </div>
+                <div
+                  style={{
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: tokenType === "binaryTokens" ? '#1e40af' : '#1e293b'
+                  }}
+                >
+                  {formatToOneDecimal(binaryTokens)}
+                </div>
+                <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                  23% tax
+                </div>
+              </div>
+
+              {/* Won Tokens Balance */}
+              <div
+                style={{
+                  flex: 1,
+                  background: tokenType === "wonTokens" 
+                    ? 'linear-gradient(135deg, #f0fdf4, #dcfce7)' 
+                    : 'linear-gradient(135deg, #f8fafc, #e2e8f0)',
+                  border: `2px solid ${tokenType === "wonTokens" ? '#10b981' : '#e5e7eb'}`,
+                  borderRadius: '12px',
+                  padding: '1rem',
+                  textAlign: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => setTokenType("wonTokens")}
+              >
+                <div style={{ color: tokenType === "wonTokens" ? '#10b981' : '#64748b', fontSize: '0.85rem', marginBottom: '0.25rem' }}>
+                  Won Tokens
+                </div>
+                <div
+                  style={{
+                    fontSize: '1.25rem',
+                    fontWeight: '700',
+                    color: tokenType === "wonTokens" ? '#047857' : '#1e293b'
+                  }}
+                >
+                  {formatToOneDecimal(wonTokens)}
+                </div>
+                <div style={{ color: '#64748b', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                  30% tax
+                </div>
               </div>
             </div>
 
@@ -451,9 +626,9 @@ const TokenWithdrawal = () => {
             <div 
               style={{
                 background: canWithdraw 
-                  ? 'linear-gradient(135deg, #f0fdf4, #dcfce7)'
-                  : 'linear-gradient(135deg, #fef2f2, #fee2e2)',
-                border: `2px solid ${canWithdraw ? '#10b981' : '#ef4444'}`,
+                  ? 'linear-gradient(135deg, #f0fdf4, #dcfce7)' 
+                  : 'linear-gradient(135deg, #fffbeb, #fef3c7)',
+                border: `2px solid ${canWithdraw ? '#10b981' : '#f59e0b'}`,
                 borderRadius: '12px',
                 padding: '1rem',
                 marginBottom: '1.5rem'
@@ -469,19 +644,19 @@ const TokenWithdrawal = () => {
                   flexShrink: 0,
                   marginTop: '0.1rem'
                 }}>
-                  {canWithdraw ? '✅' : '⏰'}
+                  {canWithdraw ? '✅' : '⏳'}
                 </div>
                 <div>
                   <div style={{ 
                     fontWeight: '600', 
-                    color: canWithdraw ? '#065f46' : '#991b1b', 
+                    color: canWithdraw ? '#065f46' : '#92400e', 
                     fontSize: '0.9rem',
                     marginBottom: '0.5rem' 
                   }}>
-                    {canWithdraw ? 'Withdrawal Available' : 'Withdrawal Restricted'}
+                    {canWithdraw ? 'Withdrawal Available' : 'Withdrawal Schedule'}
                   </div>
                   <div style={{ 
-                    color: canWithdraw ? '#065f46' : '#991b1b', 
+                    color: canWithdraw ? '#065f46' : '#92400e', 
                     fontSize: '0.85rem', 
                     lineHeight: '1.4' 
                   }}>
@@ -555,12 +730,12 @@ const TokenWithdrawal = () => {
                             }`,
                             borderRadius: '12px',
                             padding: '1rem',
-                            cursor: isVerified && canWithdraw ? 'pointer' : 'not-allowed',
-                            opacity: isVerified && canWithdraw ? 1 : 0.6,
+                            cursor: isVerified ? 'pointer' : 'not-allowed',
+                            opacity: isVerified ? 1 : 0.6,
                             transition: 'all 0.2s ease',
                             background: selectedOption === value ? '#eff6ff' : '#ffffff'
                           }}
-                          onClick={isVerified && canWithdraw ? () => setSelectedOption(value) : undefined}
+                          onClick={isVerified ? () => setSelectedOption(value) : undefined}
                         >
                           <div style={{ display: 'flex', alignItems: 'center' }}>
                             <input
@@ -568,7 +743,7 @@ const TokenWithdrawal = () => {
                               id={value}
                               value={value}
                               checked={selectedOption === value}
-                              disabled={!isVerified || !canWithdraw}
+                              disabled={!isVerified}
                               onChange={(e) => setSelectedOption(e.target.value)}
                               style={{ marginRight: '0.75rem', transform: 'scale(1.2)' }}
                             />
@@ -634,14 +809,14 @@ const TokenWithdrawal = () => {
                     color: '#374151',
                     marginBottom: '0.5rem'
                   }}>
-                    Withdrawal Amount
+                    Withdrawal Amount ({getTokenTypeDisplayName()})
                   </label>
                   <div style={{ position: 'relative' }}>
                     <input
-                      type="number"
-                      placeholder="Enter tokens to withdraw"
+                      type="text"
+                      placeholder={`Enter ${getTokenTypeDisplayName().toLowerCase()} to withdraw`}
                       value={withdrawAmount}
-                      onChange={(e) => setWithdrawAmount(e.target.value)}
+                      onChange={handleAmountChange}
                       onWheel={(e) => e.target.blur()}
                       disabled={!hasVerified || !canWithdraw}
                       style={{
@@ -694,19 +869,19 @@ const TokenWithdrawal = () => {
                       <div style={{ flex: 1 }}>
                         <div style={{ color: '#065f46', fontSize: '0.8rem' }}>Requested</div>
                         <div style={{ fontWeight: '700', color: '#065f46' }}>
-                          {parseInt(withdrawAmount).toLocaleString()}
+                          {formatToOneDecimal(withdrawAmount)}
                         </div>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>Tax (30%)</div>
+                        <div style={{ color: '#dc2626', fontSize: '0.8rem' }}>Tax ({taxPercentage}%)</div>
                         <div style={{ fontWeight: '700', color: '#dc2626' }}>
-                          -{(parseInt(withdrawAmount) - netAmount).toLocaleString()}
+                          -{formatToOneDecimal(taxAmount)}
                         </div>
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={{ color: '#065f46', fontSize: '0.8rem' }}>You Receive</div>
                         <div style={{ fontWeight: '700', color: '#065f46', fontSize: '1.1rem' }}>
-                          {netAmount.toLocaleString()}
+                          {formatToOneDecimal(netAmount)}
                         </div>
                       </div>
                     </div>
@@ -716,7 +891,7 @@ const TokenWithdrawal = () => {
                 {/* Withdraw Button */}
                 <button
                   onClick={handleWithdraw}
-                  disabled={!hasVerified || !canWithdraw || submitting || !withdrawAmount}
+                  disabled={!hasVerified || submitting || !withdrawAmount || !validateAmountFormat(withdrawAmount) || !canWithdraw}
                   style={{
                     width: '100%',
                     padding: '0.875rem',
@@ -724,13 +899,15 @@ const TokenWithdrawal = () => {
                     fontWeight: '600',
                     borderRadius: '12px',
                     border: 'none',
-                    background: (!hasVerified || !canWithdraw || submitting || !withdrawAmount) 
+                    background: (!hasVerified || submitting || !withdrawAmount || !validateAmountFormat(withdrawAmount) || !canWithdraw) 
                       ? '#9ca3af' 
-                      : 'linear-gradient(135deg, #2563eb, #1d4ed8)',
+                      : tokenType === 'binaryTokens' 
+                        ? 'linear-gradient(135deg, #2563eb, #1d4ed8)'
+                        : 'linear-gradient(135deg, #10b981, #059669)',
                     color: 'white',
-                    cursor: (!hasVerified || !canWithdraw || submitting || !withdrawAmount) ? 'not-allowed' : 'pointer',
+                    cursor: (!hasVerified || submitting || !withdrawAmount || !validateAmountFormat(withdrawAmount) || !canWithdraw) ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s ease',
-                    boxShadow: (!hasVerified || !canWithdraw || submitting || !withdrawAmount) ? 'none' : '0 4px 20px rgba(37, 99, 235, 0.3)'
+                    boxShadow: (!hasVerified || submitting || !withdrawAmount || !validateAmountFormat(withdrawAmount) || !canWithdraw) ? 'none' : '0 4px 20px rgba(0, 0, 0, 0.3)'
                   }}
                 >
                   {submitting ? (
@@ -748,7 +925,7 @@ const TokenWithdrawal = () => {
                       Processing Withdrawal...
                     </span>
                   ) : (
-                    "Withdraw Tokens"
+                    `Withdraw ${getTokenTypeDisplayName()}`
                   )}
                 </button>
               </>
@@ -790,10 +967,12 @@ const TokenWithdrawal = () => {
                     fontSize: '0.85rem', 
                     lineHeight: '1.4' 
                   }}>
-                    • Withdrawals are available only on Sundays<br/>
-                    • Winners can withdraw within 48 hours of their win<br/>
-                    • 30% tax is automatically deducted from all withdrawals<br/>
-                    • Only verified payment methods can be used
+                    • Won tokens: Can be withdrawn anytime<br/>
+                    • Binary tokens: Can only be withdrawn on Sundays<br/>
+                    • Binary tokens: 23% tax, Won tokens: 30% tax<br/>
+                    • Only 1 decimal place allowed for amounts (e.g., 10.5)<br/>
+                    • Only verified payment methods can be used<br/>
+                    • Binary tokens and won tokens are withdrawn separately
                   </div>
                 </div>
               </div>

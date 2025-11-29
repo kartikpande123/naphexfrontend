@@ -18,6 +18,7 @@ export default function AdminWithdrawReq() {
 
           let allWithdrawals = [];
           users.forEach((user) => {
+            // Process binary token withdrawals
             if (user.withdrawals) {
               Object.entries(user.withdrawals).forEach(([wid, wd]) => {
                 if (wd.status === "pending") {
@@ -27,6 +28,23 @@ export default function AdminWithdrawReq() {
                     phoneNo: user.phoneNo,
                     ...wd,
                     withdrawalId: wid,
+                    withdrawalType: "binary", // Mark as binary withdrawal
+                  });
+                }
+              });
+            }
+
+            // Process won token withdrawals
+            if (user.wonWithdrawals) {
+              Object.entries(user.wonWithdrawals).forEach(([wid, wd]) => {
+                if (wd.status === "pending") {
+                  allWithdrawals.push({
+                    userId: user.userId,
+                    name: user.name,
+                    phoneNo: user.phoneNo,
+                    ...wd,
+                    withdrawalId: wid,
+                    withdrawalType: "won", // Mark as won withdrawal
                   });
                 }
               });
@@ -64,8 +82,13 @@ export default function AdminWithdrawReq() {
     });
   };
 
-  const handleAction = (userId, withdrawalId, action, userName) => {
-    fetch(`${API_BASE_URL}/withdrawals/${userId}/${withdrawalId}`, {
+  const handleAction = (userId, withdrawalId, action, userName, withdrawalType) => {
+    // Determine the correct API endpoint based on withdrawal type
+    const endpoint = withdrawalType === "won" 
+      ? `${API_BASE_URL}/won-withdrawals/${userId}/${withdrawalId}`
+      : `${API_BASE_URL}/withdrawals/${userId}/${withdrawalId}`;
+
+    fetch(endpoint, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: action }),
@@ -82,6 +105,22 @@ export default function AdminWithdrawReq() {
         console.error(err);
         toast.error(`Error ${action}ing withdrawal for ${userName}`);
       });
+  };
+
+  const getTokenTypeBadge = (withdrawal) => {
+    if (withdrawal.withdrawalType === "won") {
+      return (
+        <div className="token-type-badge won-token">
+          🏆 Won Tokens
+        </div>
+      );
+    } else {
+      return (
+        <div className="token-type-badge binary-token">
+          ⚡ Binary Tokens
+        </div>
+      );
+    }
   };
 
   return (
@@ -211,6 +250,24 @@ export default function AdminWithdrawReq() {
           font-size: 1.125rem;
           font-weight: 600;
           color: #1f2937;
+        }
+        
+        .token-type-badge {
+          padding: 0.5rem 1rem;
+          border-radius: 20px;
+          font-weight: 600;
+          font-size: 0.9rem;
+          display: inline-block;
+          margin-top: 0.5rem;
+          color: white;
+        }
+        
+        .token-type-badge.binary-token {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        }
+        
+        .token-type-badge.won-token {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         }
         
         .final-amount {
@@ -410,7 +467,7 @@ export default function AdminWithdrawReq() {
           ) : (
             <div style={{ padding: '2rem' }}>
               {withdrawals.map((wd) => (
-                <div key={wd.withdrawalId} className="withdrawal-card">
+                <div key={`${wd.withdrawalType}-${wd.withdrawalId}`} className="withdrawal-card">
                   <div className="card-header">
                     <div className="user-info">
                       <div>
@@ -426,9 +483,10 @@ export default function AdminWithdrawReq() {
                       <div className="amount-item">
                         <div className="amount-label">Requested Amount</div>
                         <div className="amount-value">{wd.requestedTokens} tokens</div>
+                        {getTokenTypeBadge(wd)}
                       </div>
                       <div className="amount-item">
-                        <div className="amount-label">Tax Deduction (30%)</div>
+                        <div className="amount-label">Tax Deduction</div>
                         <div className="amount-value">{wd.tax}</div>
                       </div>
                       <div className="amount-item">
@@ -493,13 +551,13 @@ export default function AdminWithdrawReq() {
                   <div className="action-buttons">
                     <button
                       className="approve-btn"
-                      onClick={() => handleAction(wd.userId, wd.withdrawalId, "approved", wd.name)}
+                      onClick={() => handleAction(wd.userId, wd.withdrawalId, "approved", wd.name, wd.withdrawalType)}
                     >
                       ✓ Approve
                     </button>
                     <button
                       className="reject-btn"
-                      onClick={() => handleAction(wd.userId, wd.withdrawalId, "rejected", wd.name)}
+                      onClick={() => handleAction(wd.userId, wd.withdrawalId, "rejected", wd.name, wd.withdrawalType)}
                     >
                       ✕ Reject
                     </button>

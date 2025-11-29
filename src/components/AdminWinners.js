@@ -14,31 +14,38 @@ const WinnersDetailsComponent = () => {
     }, []);
 
     const fetchWinners = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-        const response = await fetch(`${API_BASE_URL}/get-winners`);
-        const data = await response.json();
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await fetch(`${API_BASE_URL}/get-winners`);
+            const data = await response.json();
 
-        if (data.success) {
-            // Already flattened array, just sort by date
-            const sortedWinners = data.winners.sort((a, b) => 
-                moment(b.date).valueOf() - moment(a.date).valueOf()
-            );
+            if (data.success) {
+                // Sort by amount won (descending) and then by date (descending)
+                const sortedWinners = data.winners.sort((a, b) => {
+                    const amountA = parseFloat(a.amountWon) || 0;
+                    const amountB = parseFloat(b.amountWon) || 0;
+                    
+                    // Primary sort by amount won (highest first)
+                    if (amountB !== amountA) {
+                        return amountB - amountA;
+                    }
+                    // Secondary sort by date (most recent first) if amounts are equal
+                    return moment(b.date).valueOf() - moment(a.date).valueOf();
+                });
 
-            setWinners(sortedWinners);
-            setFilteredWinners(sortedWinners);
-        } else {
-            setError(data.message);
+                setWinners(sortedWinners);
+                setFilteredWinners(sortedWinners);
+            } else {
+                setError(data.message);
+            }
+        } catch (err) {
+            console.error('Failed to fetch winners:', err);
+            setError('Failed to fetch winners. Please try again.');
+        } finally {
+            setLoading(false);
         }
-    } catch (err) {
-        console.error('Failed to fetch winners:', err);
-        setError('Failed to fetch winners. Please try again.');
-    } finally {
-        setLoading(false);
-    }
-};
-
+    };
 
     const handleSearch = (e) => {
         setSearchDate(e.target.value);

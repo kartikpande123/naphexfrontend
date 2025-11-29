@@ -1,25 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import API_BASE_URL from './ApiConfig';
+import React, { useState, useEffect, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import axios from "axios";
+import API_BASE_URL from "./ApiConfig";
 
 const SignupPage = () => {
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [referralId, setReferralId] = useState('');
-  const [otp, setOtp] = useState('');
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  const [referralId, setReferralId] = useState("");
+  const [otp, setOtp] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [alertMessage, setAlertMessage] = useState('');
-  const [alertType, setAlertType] = useState('success');
-  const [city, setCity] = useState('');
-  const [state, setState] = useState('');
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertType, setAlertType] = useState("success");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
 
   // New state for OTP timer
   const [otpTimer, setOtpTimer] = useState(60);
@@ -38,15 +38,34 @@ const SignupPage = () => {
 
   // List of all Indian states
   const INDIAN_STATES = [
-    'Bihar', 'Chhattisgarh',
-    'Goa', 'Gujarat', 'Haryana', 'Himachal Pradesh', 'Jharkhand',
-    'Karnataka', 'Kerala', 'Madhya Pradesh', 'Maharashtra', 'Manipur',
-    'Meghalaya', 'Mizoram', 'Punjab',
-    'Rajasthan', 'Tripura',
-    'Uttar Pradesh', 'Uttarakhand', 'West Bengal',
-    'Andaman and Nicobar Islands', 'Chandigarh',
-    'Dadra and Nagar Haveli and Daman and Diu', 'Delhi',
-    'Jammu and Kashmir', 'Ladakh', 'Lakshadweep', 'Puducherry'
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Punjab",
+    "Rajasthan",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+    "Andaman and Nicobar Islands",
+    "Chandigarh",
+    "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi",
+    "Jammu and Kashmir",
+    "Ladakh",
+    "Lakshadweep",
+    "Puducherry",
   ];
 
   const navigate = useNavigate();
@@ -59,15 +78,15 @@ const SignupPage = () => {
 
   const [referralStatus, setReferralStatus] = useState({
     isValid: false,
-    message: '',
-    referrerName: '',
-    isChecking: false
+    message: "",
+    referrerName: "",
+    isChecking: false,
   });
 
   // Function to sanitize referral ID (remove invalid characters)
   const sanitizeReferralId = (value) => {
     // Remove any characters that aren't alphanumeric
-    return value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+    return value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
   };
 
   // Function to scroll to first error field
@@ -81,17 +100,27 @@ const SignupPage = () => {
       referralId: referralIdRef,
       password: passwordRef,
       confirmPassword: confirmPasswordRef,
-      otp: otpRef
+      otp: otpRef,
     };
 
     // Find the first error field in the order they appear on the form
-    const fieldOrder = ['displayName', 'email', 'phone', 'city', 'state', 'referralId', 'password', 'confirmPassword', 'otp'];
-    
+    const fieldOrder = [
+      "displayName",
+      "email",
+      "phone",
+      "city",
+      "state",
+      "referralId",
+      "password",
+      "confirmPassword",
+      "otp",
+    ];
+
     for (const field of fieldOrder) {
       if (newErrors[field] && errorFieldRefs[field]?.current) {
         errorFieldRefs[field].current.scrollIntoView({
-          behavior: 'smooth',
-          block: 'center'
+          behavior: "smooth",
+          block: "center",
         });
         // Focus on the input field
         setTimeout(() => {
@@ -104,14 +133,14 @@ const SignupPage = () => {
 
   // Load data from localStorage
   useEffect(() => {
-    const storedData = JSON.parse(localStorage.getItem('signupData'));
+    const storedData = JSON.parse(localStorage.getItem("signupData"));
     if (storedData) {
-      setEmail(storedData.email || '');
-      setPhone(storedData.phone || '');
-      setPassword(storedData.password || '');
-      setConfirmPassword(storedData.confirmPassword || '');
-      setDisplayName(storedData.displayName || '');
-      setReferralId(storedData.referralId || '');
+      setEmail(storedData.email || "");
+      setPhone(storedData.phone || "");
+      setPassword(storedData.password || "");
+      setConfirmPassword(storedData.confirmPassword || "");
+      setDisplayName(storedData.displayName || "");
+      setReferralId(storedData.referralId || "");
     }
   }, []);
 
@@ -180,46 +209,49 @@ const SignupPage = () => {
   const checkReferralId = async (id) => {
     // Sanitize the ID first
     const sanitizedId = sanitizeReferralId(id);
-    
+
     if (!sanitizedId) {
       setReferralStatus({
         isValid: false,
-        message: 'Referral ID is required',
-        referrerName: '',
-        isChecking: false
+        message: "Referral ID is required",
+        referrerName: "",
+        isChecking: false,
       });
       return;
     }
 
-    setReferralStatus(prev => ({ ...prev, isChecking: true }));
+    setReferralStatus((prev) => ({ ...prev, isChecking: true }));
 
     try {
       // Use sanitized ID in API call
-      const response = await axios.get(`${API_BASE_URL}/checkReferralSlots/${sanitizedId}`);
-      
+      const response = await axios.get(
+        `${API_BASE_URL}/checkReferralSlots/${sanitizedId}`
+      );
+
       if (response.data.success) {
         if (response.data.slotsAvailable) {
           setReferralStatus({
             isValid: true,
             message: response.data.message,
             referrerName: response.data.referrerName,
-            isChecking: false
+            isChecking: false,
           });
         } else {
           setReferralStatus({
             isValid: false,
-            message: 'Both slots are occupied. Please use a different referral ID.',
-            referrerName: '',
-            isChecking: false
+            message:
+              "Both slots are occupied. Please use a different referral ID.",
+            referrerName: "",
+            isChecking: false,
           });
         }
       }
     } catch (error) {
       setReferralStatus({
         isValid: false,
-        message: error.response?.data?.error || 'Invalid referral ID',
-        referrerName: '',
-        isChecking: false
+        message: error.response?.data?.error || "Invalid referral ID",
+        referrerName: "",
+        isChecking: false,
       });
     }
   };
@@ -242,11 +274,13 @@ const SignupPage = () => {
 
     // Sanitize and validate referral ID
     const sanitizedReferralId = sanitizeReferralId(referralId);
-    
+
     if (!sanitizedReferralId) {
-      newErrors.referralId = "Referral ID is required and must contain only letters and numbers";
+      newErrors.referralId =
+        "Referral ID is required and must contain only letters and numbers";
     } else if (!referralStatus.isValid) {
-      newErrors.referralId = "Please enter a valid referral ID with available slots";
+      newErrors.referralId =
+        "Please enter a valid referral ID with available slots";
     }
 
     // Validate phone number
@@ -284,12 +318,17 @@ const SignupPage = () => {
 
     try {
       // Check phone availability
-      const checkPhoneResponse = await axios.post(`${API_BASE_URL}/check-phone`, {
-        phoneNo: phone,
-      });
+      const checkPhoneResponse = await axios.post(
+        `${API_BASE_URL}/check-phone`,
+        {
+          phoneNo: phone,
+        }
+      );
 
       if (!checkPhoneResponse.data.success) {
-        const phoneError = { phone: "Phone number already registered. Please log in." };
+        const phoneError = {
+          phone: "Phone number already registered. Please log in.",
+        };
         setErrors(phoneError);
         scrollToFirstError(phoneError);
         setIsLoading(false);
@@ -303,31 +342,31 @@ const SignupPage = () => {
 
       if (sendOtpResponse.data.success) {
         setOtpSent(true);
-        setAlertMessage('OTP sent successfully!');
-        setAlertType('success');
+        setAlertMessage("OTP sent successfully!");
+        setAlertType("success");
 
         // Auto-dismiss alert after 3 seconds
         setTimeout(() => {
-          setAlertMessage('');
+          setAlertMessage("");
         }, 3000);
 
         // Store debug OTP for testing (remove this in production)
-        localStorage.setItem('debug_otp', sendOtpResponse.data.debug.otp);
+        localStorage.setItem("debug_otp", sendOtpResponse.data.debug.otp);
       } else {
-        setAlertMessage('Failed to send OTP. Please try again.');
-        setAlertType('error');
+        setAlertMessage("Failed to send OTP. Please try again.");
+        setAlertType("error");
 
         setTimeout(() => {
-          setAlertMessage('');
+          setAlertMessage("");
         }, 3000);
       }
     } catch (error) {
-      console.error('Error:', error);
-      setAlertMessage('An error occurred. Please try again.');
-      setAlertType('error');
+      console.error("Error:", error);
+      setAlertMessage("An error occurred. Please try again.");
+      setAlertType("error");
 
       setTimeout(() => {
-        setAlertMessage('');
+        setAlertMessage("");
       }, 3000);
     } finally {
       setIsLoading(false);
@@ -346,21 +385,25 @@ const SignupPage = () => {
       });
 
       if (sendOtpResponse.data.success) {
-        localStorage.setItem('debug_otp', sendOtpResponse.data.debug.otp);
+        localStorage.setItem("debug_otp", sendOtpResponse.data.debug.otp);
         setOtpSent(true);
-        setAlertMessage('OTP resent successfully!');
-        setAlertType('success');
-        
+        setAlertMessage("OTP resent successfully!");
+        setAlertType("success");
+
         setTimeout(() => {
-          setAlertMessage('');
+          setAlertMessage("");
         }, 3000);
       } else {
         const apiError = { api: "Failed to resend OTP. Please try again." };
         setErrors(apiError);
       }
     } catch (error) {
-      console.error('Error:', error);
-      const apiError = { api: error.response?.data?.message || "An error occurred. Please try again." };
+      console.error("Error:", error);
+      const apiError = {
+        api:
+          error.response?.data?.message ||
+          "An error occurred. Please try again.",
+      };
       setErrors(apiError);
     } finally {
       setIsLoading(false);
@@ -379,7 +422,7 @@ const SignupPage = () => {
     }
 
     // For development: verify against stored OTP
-    const storedOtp = localStorage.getItem('debug_otp');
+    const storedOtp = localStorage.getItem("debug_otp");
     if (otp !== storedOtp) {
       newErrors.otp = "Invalid OTP. Please try again.";
     }
@@ -399,32 +442,32 @@ const SignupPage = () => {
     }
 
     try {
-        // Sanitize referral ID before saving
-        const sanitizedReferralId = sanitizeReferralId(referralId);
-        
-        // Prepare user data for localStorage
-        const signupData = {
-            name: displayName,
-            phoneNo: phone,
-            email,
-            password,
-            city,
-            state,
-            referralId: sanitizedReferralId // Use sanitized version
-        };
+      // Sanitize referral ID before saving
+      const sanitizedReferralId = sanitizeReferralId(referralId);
 
-        // Save data to localStorage
-        localStorage.setItem('signupData', JSON.stringify(signupData));
-        localStorage.removeItem('debug_otp');
+      // Prepare user data for localStorage
+      const signupData = {
+        name: displayName,
+        phoneNo: phone,
+        email,
+        password,
+        city,
+        state,
+        referralId: sanitizedReferralId, // Use sanitized version
+      };
 
-        // Navigate to next step
-        navigate('/userkyc');
+      // Save data to localStorage
+      localStorage.setItem("signupData", JSON.stringify(signupData));
+      localStorage.removeItem("debug_otp");
+
+      // Navigate to next step
+      navigate("/userkyc");
     } catch (error) {
-        console.error("Error saving user data locally:", error);
-        const apiError = { api: "Failed to save user data. Try again later." };
-        setErrors(apiError);
+      console.error("Error saving user data locally:", error);
+      const apiError = { api: "Failed to save user data. Try again later." };
+      setErrors(apiError);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -437,9 +480,10 @@ const SignupPage = () => {
           padding: 0;
         }
 
-        body, html {
+        body,
+        html {
           height: 100%;
-          font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+          font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
           background: linear-gradient(180deg, #f5f7fa 0%, #c3cfe2 100%);
           background-attachment: fixed;
           background-repeat: no-repeat;
@@ -469,7 +513,6 @@ const SignupPage = () => {
           animation: fadeIn 0.8s ease-out;
         }
 
-
         @keyframes fadeIn {
           from {
             opacity: 0;
@@ -480,7 +523,6 @@ const SignupPage = () => {
             transform: translateY(0);
           }
         }
-
 
         .signup-card {
           background: rgba(26, 42, 68, 0.95);
@@ -500,19 +542,27 @@ const SignupPage = () => {
         }
 
         .card-header::before {
-          content: '';
+          content: "";
           position: absolute;
           top: -50%;
           left: -50%;
           width: 200%;
           height: 200%;
-          background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+          background: radial-gradient(
+            circle,
+            rgba(255, 255, 255, 0.1) 0%,
+            transparent 70%
+          );
           animation: shimmer 3s infinite;
         }
 
         @keyframes shimmer {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
 
         .header-title {
@@ -598,7 +648,7 @@ const SignupPage = () => {
         .form-control:disabled {
           opacity: 0.6;
           cursor: not-allowed;
-          color:rgb(1, 14, 17);
+          color: rgb(1, 14, 17);
         }
 
         .input-group {
@@ -656,7 +706,7 @@ const SignupPage = () => {
         }
 
         .error-message::before {
-          content: '⚠';
+          content: "⚠";
           font-size: 0.9rem;
         }
 
@@ -825,13 +875,18 @@ const SignupPage = () => {
         }
 
         .btn-primary::before {
-          content: '';
+          content: "";
           position: absolute;
           top: 0;
           left: -100%;
           width: 100%;
           height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+          background: linear-gradient(
+            90deg,
+            transparent,
+            rgba(255, 255, 255, 0.2),
+            transparent
+          );
           transition: left 0.5s;
         }
 
@@ -859,8 +914,12 @@ const SignupPage = () => {
         }
 
         @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
+          0% {
+            transform: rotate(0deg);
+          }
+          100% {
+            transform: rotate(360deg);
+          }
         }
 
         .card-footer {
@@ -898,20 +957,20 @@ const SignupPage = () => {
           .signup-container {
             padding: 0 15px;
           }
-          
+
           .card-body {
             padding: 30px 20px;
           }
-          
+
           .card-header {
             padding: 25px 20px;
           }
-          
+
           .two-column {
             grid-template-columns: 1fr;
             gap: 20px;
           }
-          
+
           .header-title {
             font-size: 1.75rem;
           }
@@ -922,10 +981,12 @@ const SignupPage = () => {
         <div className="signup-card">
           <div className="card-header">
             <h1 className="header-title">Create Account</h1>
-            <p className="header-subtitle">Join us and start your journey today</p>
-            <h2 className='header'>NAPHEX</h2>
+            <p className="header-subtitle">
+              Join us and start your journey today
+            </p>
+            <h2 className="header">NAPHEX</h2>
           </div>
-          
+
           <div className="card-body">
             {errors.api && (
               <div className="alert alert-error" role="alert">
@@ -936,7 +997,7 @@ const SignupPage = () => {
 
             {alertMessage && (
               <div className={`alert alert-${alertType}`} role="alert">
-                <span>{alertType === 'success' ? '✓' : '⚠'}</span>
+                <span>{alertType === "success" ? "✓" : "⚠"}</span>
                 {alertMessage}
               </div>
             )}
@@ -945,13 +1006,17 @@ const SignupPage = () => {
               {/* Personal Information Section */}
               <div className="form-section">
                 <h3 className="section-title">Personal Information</h3>
-                
+
                 <div className="form-group">
-                  <label htmlFor="displayName" className="form-label">Full Name</label>
+                  <label htmlFor="displayName" className="form-label">
+                    Full Name
+                  </label>
                   <input
                     ref={displayNameRef}
                     type="text"
-                    className={`form-control ${errors.displayName ? 'error' : ''}`}
+                    className={`form-control ${
+                      errors.displayName ? "error" : ""
+                    }`}
                     id="displayName"
                     required
                     value={displayName}
@@ -959,53 +1024,67 @@ const SignupPage = () => {
                     placeholder="Enter name as per Aadhaar card"
                     disabled={otpSent}
                   />
-                  {errors.displayName && <div className="error-message">{errors.displayName}</div>}
+                  {errors.displayName && (
+                    <div className="error-message">{errors.displayName}</div>
+                  )}
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="email" className="form-label">Email Address (Optional)</label>
+                  <label htmlFor="email" className="form-label">
+                    Email Address (Optional)
+                  </label>
                   <input
                     ref={emailRef}
                     type="email"
-                    className={`form-control ${errors.email ? 'error' : ''}`}
+                    className={`form-control ${errors.email ? "error" : ""}`}
                     id="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email address"
                     disabled={otpSent}
                   />
-                  {errors.email && <div className="error-message">{errors.email}</div>}
+                  {errors.email && (
+                    <div className="error-message">{errors.email}</div>
+                  )}
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="phone" className="form-label">Phone Number</label>
+                  <label htmlFor="phone" className="form-label">
+                    Phone Number
+                  </label>
                   <input
                     ref={phoneRef}
                     type="tel"
-                    className={`form-control ${errors.phone ? 'error' : ''}`}
+                    className={`form-control ${errors.phone ? "error" : ""}`}
                     id="phone"
                     required
                     value={phone}
-                    onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+                    onChange={(e) =>
+                      setPhone(e.target.value.replace(/\D/g, ""))
+                    }
                     placeholder="Enter 10-digit phone number"
                     disabled={otpSent}
                     maxLength="10"
                   />
-                  {errors.phone && <div className="error-message">{errors.phone}</div>}
+                  {errors.phone && (
+                    <div className="error-message">{errors.phone}</div>
+                  )}
                 </div>
               </div>
 
               {/* Location Information Section */}
               <div className="form-section">
                 <h3 className="section-title">Location Details</h3>
-                
+
                 <div className="two-column">
                   <div className="form-group">
-                    <label htmlFor="city" className="form-label">City</label>
+                    <label htmlFor="city" className="form-label">
+                      City
+                    </label>
                     <input
                       ref={cityRef}
                       type="text"
-                      className={`form-control ${errors.city ? 'error' : ''}`}
+                      className={`form-control ${errors.city ? "error" : ""}`}
                       id="city"
                       required
                       value={city}
@@ -1013,14 +1092,18 @@ const SignupPage = () => {
                       placeholder="Enter your city"
                       disabled={otpSent}
                     />
-                    {errors.city && <div className="error-message">{errors.city}</div>}
+                    {errors.city && (
+                      <div className="error-message">{errors.city}</div>
+                    )}
                   </div>
 
                   <div className="form-group">
-                    <label htmlFor="state" className="form-label">State</label>
+                    <label htmlFor="state" className="form-label">
+                      State
+                    </label>
                     <select
                       ref={stateRef}
-                      className={`form-control ${errors.state ? 'error' : ''}`}
+                      className={`form-control ${errors.state ? "error" : ""}`}
                       id="state"
                       required
                       value={state}
@@ -1034,7 +1117,9 @@ const SignupPage = () => {
                         </option>
                       ))}
                     </select>
-                    {errors.state && <div className="error-message">{errors.state}</div>}
+                    {errors.state && (
+                      <div className="error-message">{errors.state}</div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -1042,13 +1127,17 @@ const SignupPage = () => {
               {/* Referral Information Section */}
               <div className="form-section">
                 <h3 className="section-title">Referral Information</h3>
-                
+
                 <div className="form-group">
-                  <label htmlFor="referralId" className="form-label">Referral ID</label>
+                  <label htmlFor="referralId" className="form-label">
+                    Referral ID
+                  </label>
                   <input
                     ref={referralIdRef}
                     type="text"
-                    className={`form-control ${errors.referralId ? 'error' : ''}`}
+                    className={`form-control ${
+                      errors.referralId ? "error" : ""
+                    }`}
                     id="referralId"
                     required
                     value={referralId}
@@ -1060,55 +1149,72 @@ const SignupPage = () => {
                       } else {
                         setReferralStatus({
                           isValid: false,
-                          message: 'Referral ID must contain only letters and numbers',
-                          referrerName: '',
-                          isChecking: false
+                          message:
+                            "Referral ID must contain only letters and numbers",
+                          referrerName: "",
+                          isChecking: false,
                         });
                       }
                     }}
                     placeholder="Enter Referral ID (letters and numbers only)"
                     style={{
-                      borderColor: referralStatus.isValid ? '#2ecc71' : referralStatus.message ? '#e74c3c' : 'rgba(255, 255, 255, 0.1)'
+                      borderColor: referralStatus.isValid
+                        ? "#2ecc71"
+                        : referralStatus.message
+                        ? "#e74c3c"
+                        : "rgba(255, 255, 255, 0.1)",
                     }}
                     disabled={otpSent}
                   />
-                  
+
                   {referralStatus.isChecking && (
                     <div className="referral-status checking">
                       <span>🔍</span>
                       Checking referral ID...
                     </div>
                   )}
-                  
+
                   {referralStatus.message && !referralStatus.isChecking && (
-                    <div className={`referral-status ${referralStatus.isValid ? 'valid' : 'invalid'}`}>
-                      <span>{referralStatus.isValid ? '✓' : '✗'}</span>
+                    <div
+                      className={`referral-status ${
+                        referralStatus.isValid ? "valid" : "invalid"
+                      }`}
+                    >
+                      <span>{referralStatus.isValid ? "✓" : "✗"}</span>
                       <div>
                         <div>{referralStatus.message}</div>
-                        {referralStatus.referrerName && (
+                        {referralStatus.slotsAvailable && (
                           <div className="referrer-name">
-                            Referrer: {referralStatus.referrerName}
+                            {referralStatus.slotsAvailable === "both"
+                              ? "Both slots are available"
+                              : "Right slot is available"}
                           </div>
                         )}
                       </div>
                     </div>
                   )}
-                  
-                  {errors.referralId && <div className="error-message">{errors.referralId}</div>}
+
+                  {errors.referralId && (
+                    <div className="error-message">{errors.referralId}</div>
+                  )}
                 </div>
               </div>
 
               {/* Security Information Section */}
               <div className="form-section">
                 <h3 className="section-title">Security Setup</h3>
-                
+
                 <div className="form-group">
-                  <label htmlFor="password" className="form-label">Password</label>
+                  <label htmlFor="password" className="form-label">
+                    Password
+                  </label>
                   <div className="input-group">
                     <input
                       ref={passwordRef}
                       type={showPassword ? "text" : "password"}
-                      className={`form-control ${errors.password ? 'error' : ''}`}
+                      className={`form-control ${
+                        errors.password ? "error" : ""
+                      }`}
                       id="password"
                       required
                       value={password}
@@ -1121,38 +1227,68 @@ const SignupPage = () => {
                       className="btn"
                       onClick={() => setShowPassword(!showPassword)}
                     >
-                      <i className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`} />
+                      <i
+                        className={`bi ${
+                          showPassword ? "bi-eye-slash" : "bi-eye"
+                        }`}
+                      />
                     </button>
                   </div>
-                  
+
                   <div className="password-requirements">
-                    <div className="password-requirements-title">Password Requirements:</div>
+                    <div className="password-requirements-title">
+                      Password Requirements:
+                    </div>
                     <ul className="requirements-list">
-                      <li className={`requirement-item ${passwordRequirements.minLength ? 'met' : ''}`}>
-                        <span className={`requirement-icon ${passwordRequirements.minLength ? 'met' : ''}`}>
-                          {passwordRequirements.minLength ? '✓' : '○'}
+                      <li
+                        className={`requirement-item ${
+                          passwordRequirements.minLength ? "met" : ""
+                        }`}
+                      >
+                        <span
+                          className={`requirement-icon ${
+                            passwordRequirements.minLength ? "met" : ""
+                          }`}
+                        >
+                          {passwordRequirements.minLength ? "✓" : "○"}
                         </span>
                         At least 8 characters long
                       </li>
-                      <li className={`requirement-item ${passwordRequirements.hasNumber ? 'met' : ''}`}>
-                        <span className={`requirement-icon ${passwordRequirements.hasNumber ? 'met' : ''}`}>
-                          {passwordRequirements.hasNumber ? '✓' : '○'}
+                      <li
+                        className={`requirement-item ${
+                          passwordRequirements.hasNumber ? "met" : ""
+                        }`}
+                      >
+                        <span
+                          className={`requirement-icon ${
+                            passwordRequirements.hasNumber ? "met" : ""
+                          }`}
+                        >
+                          {passwordRequirements.hasNumber ? "✓" : "○"}
                         </span>
                         At least one number
                       </li>
-                      <li className={`requirement-item ${passwordRequirements.hasSpecialChar ? 'met' : ''}`}>
-                        <span className={`requirement-icon ${passwordRequirements.hasSpecialChar ? 'met' : ''}`}>
-                          {passwordRequirements.hasSpecialChar ? '✓' : '○'}
+                      <li
+                        className={`requirement-item ${
+                          passwordRequirements.hasSpecialChar ? "met" : ""
+                        }`}
+                      >
+                        <span
+                          className={`requirement-icon ${
+                            passwordRequirements.hasSpecialChar ? "met" : ""
+                          }`}
+                        >
+                          {passwordRequirements.hasSpecialChar ? "✓" : "○"}
                         </span>
                         At least one special character
                       </li>
                     </ul>
                   </div>
-                  
+
                   {errors.password && (
                     <div className="error-message">
                       {Array.isArray(errors.password) ? (
-                        <ul style={{ margin: 0, paddingLeft: '1rem' }}>
+                        <ul style={{ margin: 0, paddingLeft: "1rem" }}>
                           {errors.password.map((error, index) => (
                             <li key={index}>{error}</li>
                           ))}
@@ -1165,12 +1301,16 @@ const SignupPage = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="confirmPassword" className="form-label">Confirm Password</label>
+                  <label htmlFor="confirmPassword" className="form-label">
+                    Confirm Password
+                  </label>
                   <div className="input-group">
                     <input
                       ref={confirmPasswordRef}
                       type={showConfirmPassword ? "text" : "password"}
-                      className={`form-control ${errors.confirmPassword ? 'error' : ''}`}
+                      className={`form-control ${
+                        errors.confirmPassword ? "error" : ""
+                      }`}
                       id="confirmPassword"
                       required
                       value={confirmPassword}
@@ -1181,38 +1321,57 @@ const SignupPage = () => {
                     <button
                       type="button"
                       className="btn"
-                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
                     >
-                      <i className={`bi ${showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'}`} />
+                      <i
+                        className={`bi ${
+                          showConfirmPassword ? "bi-eye-slash" : "bi-eye"
+                        }`}
+                      />
                     </button>
                   </div>
-                  {errors.confirmPassword && <div className="error-message">{errors.confirmPassword}</div>}
+                  {errors.confirmPassword && (
+                    <div className="error-message">
+                      {errors.confirmPassword}
+                    </div>
+                  )}
                 </div>
               </div>
 
               {/* OTP Verification Section */}
               {otpSent && (
                 <div className="otp-section">
-                  <h3 className="section-title" style={{ color: '#42a5f5', marginBottom: '15px' }}>
+                  <h3
+                    className="section-title"
+                    style={{ color: "#42a5f5", marginBottom: "15px" }}
+                  >
                     OTP Verification
                   </h3>
-                  
+
                   <div className="form-group">
-                    <label htmlFor="otp" className="form-label">Enter OTP</label>
+                    <label htmlFor="otp" className="form-label">
+                      Enter OTP
+                    </label>
                     <input
                       ref={otpRef}
                       type="text"
-                      className={`form-control ${errors.otp ? 'error' : ''}`}
+                      className={`form-control ${errors.otp ? "error" : ""}`}
                       id="otp"
                       value={otp}
-                      onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                      onChange={(e) =>
+                        setOtp(e.target.value.replace(/\D/g, ""))
+                      }
                       placeholder="Enter 6-digit OTP sent to your phone"
                       maxLength="6"
-                      style={{ textAlign: 'center', fontSize: '1.2rem' }}
+                      style={{ textAlign: "center", fontSize: "1.2rem" }}
                     />
-                    {errors.otp && <div className="error-message">{errors.otp}</div>}
+                    {errors.otp && (
+                      <div className="error-message">{errors.otp}</div>
+                    )}
                   </div>
-                  
+
                   <div className="otp-timer">
                     {otpTimer > 0 ? (
                       <div>
@@ -1233,14 +1392,18 @@ const SignupPage = () => {
               )}
 
               {/* Submit Button */}
-              <div style={{ marginTop: '30px' }}>
+              <div style={{ marginTop: "30px" }}>
                 <button
                   type="submit"
                   className="btn-primary"
                   disabled={isLoading}
                 >
                   {isLoading && (
-                    <span className="spinner-border" role="status" aria-hidden="true"></span>
+                    <span
+                      className="spinner-border"
+                      role="status"
+                      aria-hidden="true"
+                    ></span>
                   )}
                   {otpSent ? "Verify & Continue" : "Send OTP"}
                 </button>
@@ -1250,8 +1413,10 @@ const SignupPage = () => {
 
           <div className="card-footer">
             <p>
-              Already have an account? 
-              <Link to="/" style={{ marginLeft: '8px' }}>LogIn</Link>
+              Already have an account?
+              <Link to="/" style={{ marginLeft: "8px" }}>
+                LogIn
+              </Link>
             </p>
           </div>
         </div>

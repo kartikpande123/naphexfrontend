@@ -73,13 +73,24 @@ const AboutPage = () => {
                     backgroundClip: 'text'
                   }}
                 >
-                  NADAKATTI ENTERPRISES PRESENTS
+                  Registered Under Government of India
                 </h2>
-                <div className="d-flex justify-content-center align-items-center mb-3">
-                  <Building2 size={18} color="#22d3ee" className="me-2" />
-                  <span className="text-white fw-semibold" style={{ fontSize: '0.95rem', letterSpacing: '0.5px' }}>
-                    GSTN: 29AAWFN6270D1ZR
-                  </span>
+                <div className="d-flex flex-column align-items-center mb-3 gap-2">
+                  <div className="d-flex align-items-center">
+                    <Building2 size={18} color="#22d3ee" className="me-2" />
+                    <span className="text-white fw-semibold" style={{ fontSize: '0.95rem', letterSpacing: '0.5px' }}>
+                      Registration No: 29AAWFN6270D1ZR
+                    </span>
+                  </div>
+                  <div className="text-white fw-semibold" style={{ fontSize: '0.95rem', letterSpacing: '0.5px' }}>
+                    Legal Name: NADAKATTI ENTERPRISES
+                  </div>
+                  <div className="text-white" style={{ fontSize: '0.9rem', maxWidth: '600px' }}>
+                   Narendra cross, Dharwad-580005, Karnataka, Mob: 7892739656
+
+
+
+                  </div>
                 </div>
                 <h1 
                   className="display-1 fw-bold mb-4"

@@ -20,12 +20,10 @@ const TransactionHistory = () => {
   // Get phone number from localStorage
   const getUserPhoneNo = () => {
     try {
-      // This will work in your actual environment
       const userDataRaw = localStorage.getItem("userData");
       const userData = userDataRaw ? JSON.parse(userDataRaw) : null;
       return userData?.phoneNo || "";
     } catch (err) {
-      // Fallback for demo (since localStorage isn't available in Claude artifacts)
       console.log("localStorage not available, using demo phone number");
       return "7022852377";
     }
@@ -43,7 +41,6 @@ const TransactionHistory = () => {
     setError('');
     
     try {
-      // Make actual API call
       const response = await fetch(`${API_BASE_URL}/user-profile/json/${phoneNo}`);
       const data = await response.json();
       
@@ -61,8 +58,11 @@ const TransactionHistory = () => {
       const demoUserData = {
         name: 'Demo User',
         tokens: 1500,
+        binaryTokens: 500,
+        wontokens: 300,
         orders: generateDemoOrders(50),
-        withdrawals: generateDemoWithdrawals(25)
+        withdrawals: generateDemoWithdrawals(25),
+        wonWithdrawals: generateDemoWonWithdrawals(15)
       };
       setUserData(demoUserData);
       processTransactions(demoUserData);
@@ -96,9 +96,31 @@ const TransactionHistory = () => {
         createdAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
         status: ['approved', 'pending', 'rejected'][Math.floor(Math.random() * 3)],
         tax: Math.floor(Math.random() * 30),
+        finalTokens: Math.floor(Math.random() * 400) + 80,
         method: {
           bankAccountNo: `****${Math.floor(Math.random() * 9999)}`
-        }
+        },
+        tokenType: 'binaryTokens',
+        taxPercentage: 23
+      };
+    }
+    return withdrawals;
+  };
+
+  const generateDemoWonWithdrawals = (count) => {
+    const withdrawals = {};
+    for (let i = 1; i <= count; i++) {
+      withdrawals[`won_withdrawal_${i}`] = {
+        requestedTokens: Math.floor(Math.random() * 300) + 50,
+        createdAt: new Date(Date.now() - Math.random() * 365 * 24 * 60 * 60 * 1000).toISOString(),
+        status: ['approved', 'pending', 'rejected'][Math.floor(Math.random() * 3)],
+        tax: Math.floor(Math.random() * 20),
+        finalTokens: Math.floor(Math.random() * 250) + 40,
+        method: {
+          bankAccountNo: `****${Math.floor(Math.random() * 9999)}`
+        },
+        tokenType: 'wonTokens',
+        taxPercentage: 30
       };
     }
     return withdrawals;
@@ -107,16 +129,16 @@ const TransactionHistory = () => {
   const processTransactions = (userData) => {
     const allTransactions = [];
     let runningBalance = 0;
+    let runningBinaryBalance = userData.binaryTokens || 0;
+    let runningWonBalance = userData.wontokens || 0;
 
     // Process deposits (orders) - these add to balance
     if (userData.orders) {
       Object.entries(userData.orders).forEach(([orderId, order]) => {
-        // Check if this is an entry fee order
         const isEntryFee = order.type === 'entry_fee' || 
                           (order.paymentDetails?.order_meta?.order_note === 'Entry Fee') ||
                           (order.order_note === 'Entry Fee');
         
-        // For entry fees, credit 200 tokens regardless of amount paid
         const creditedAmount = isEntryFee ? 200 : (order.creditedTokens || 0);
         runningBalance += creditedAmount;
         
@@ -130,35 +152,78 @@ const TransactionHistory = () => {
           tax: order.taxAmount || 0,
           taxRate: order.taxRate || '0%',
           status: order.status || 'pending',
-          method: isEntryFee ? 'Entry Fee Payment' : 'Online Payment'
+          method: isEntryFee ? 'Entry Fee Payment' : 'Online Payment',
+          tokenType: 'regular'
         };
         allTransactions.push(transaction);
       });
     }
 
-    // Process withdrawals - these subtract from balance
+    // Process binary token withdrawals
     if (userData.withdrawals) {
       Object.entries(userData.withdrawals).forEach(([withdrawalId, withdrawal]) => {
-        const balanceBefore = runningBalance;
+        const balanceBefore = runningBinaryBalance;
         let balanceAfter = balanceBefore;
         
-        // Only subtract from balance if withdrawal is approved/completed
         if (withdrawal.status === 'approved' || withdrawal.status === 'completed') {
-          runningBalance -= (withdrawal.requestedTokens || 0);
-          balanceAfter = runningBalance;
+          runningBinaryBalance -= (withdrawal.requestedTokens || 0);
+          balanceAfter = runningBinaryBalance;
         }
+        
+        // Fix for method display - show "Bank" instead of "Bank: undefined"
+        const methodDisplay = withdrawal.method && withdrawal.method.bankAccountNo 
+          ? `Bank: ${withdrawal.method.bankAccountNo}`
+          : 'Bank';
         
         const transaction = {
           id: withdrawalId,
           type: 'withdrawal',
-          date: new Date(withdrawal.createdAt || Date.now()),
+          date: new Date(withdrawal.createdAt || withdrawal.createdAt || Date.now()),
           amountRequested: withdrawal.requestedTokens || 0,
           amountCredited: -(withdrawal.requestedTokens || 0),
-          balanceAfter: withdrawal.status === 'pending' ? null : balanceAfter, // Don't show balance for pending withdrawals
+          finalAmount: withdrawal.finalTokens || 0,
+          balanceAfter: withdrawal.status === 'pending' ? null : balanceAfter,
           tax: withdrawal.tax || 0,
-          taxRate: withdrawal.tax ? `${((withdrawal.tax / withdrawal.requestedTokens) * 100).toFixed(0)}%` : '0%',
+          taxRate: withdrawal.taxPercentage ? `${withdrawal.taxPercentage}%` : '23%',
           status: withdrawal.status || 'pending',
-          method: withdrawal.method ? `Bank: ${withdrawal.method.bankAccountNo}` : 'Bank Transfer'
+          method: methodDisplay,
+          tokenType: 'binaryTokens',
+          withdrawalType: 'Binary Tokens Withdrawal'
+        };
+        allTransactions.push(transaction);
+      });
+    }
+
+    // Process won token withdrawals
+    if (userData.wonWithdrawals) {
+      Object.entries(userData.wonWithdrawals).forEach(([withdrawalId, withdrawal]) => {
+        const balanceBefore = runningWonBalance;
+        let balanceAfter = balanceBefore;
+        
+        if (withdrawal.status === 'approved' || withdrawal.status === 'completed') {
+          runningWonBalance -= (withdrawal.requestedTokens || 0);
+          balanceAfter = runningWonBalance;
+        }
+        
+        // Fix for method display - show "Bank" instead of "Bank: undefined"
+        const methodDisplay = withdrawal.method && withdrawal.method.bankAccountNo 
+          ? `Bank: ${withdrawal.method.bankAccountNo}`
+          : 'Bank';
+        
+        const transaction = {
+          id: withdrawalId,
+          type: 'withdrawal',
+          date: new Date(withdrawal.createdAt || withdrawal.createdAt || Date.now()),
+          amountRequested: withdrawal.requestedTokens || 0,
+          amountCredited: -(withdrawal.requestedTokens || 0),
+          finalAmount: withdrawal.finalTokens || 0,
+          balanceAfter: withdrawal.status === 'pending' ? null : balanceAfter,
+          tax: withdrawal.tax || 0,
+          taxRate: withdrawal.taxPercentage ? `${withdrawal.taxPercentage}%` : '30%',
+          status: withdrawal.status || 'pending',
+          method: methodDisplay,
+          tokenType: 'wonTokens',
+          withdrawalType: 'Won Tokens Withdrawal'
         };
         allTransactions.push(transaction);
       });
@@ -247,6 +312,29 @@ const TransactionHistory = () => {
       case 'pending':
       default:
         return 'Pending';
+    }
+  };
+
+  const getTokenTypeStyle = (tokenType) => {
+    switch (tokenType) {
+      case 'binaryTokens':
+        return {
+          color: '#8b5cf6',
+          backgroundColor: '#ede9fe',
+          label: '⚡ Binary'
+        };
+      case 'wonTokens':
+        return {
+          color: '#10b981',
+          backgroundColor: '#d1fae5',
+          label: '🏆 Won'
+        };
+      default:
+        return {
+          color: '#6b7280',
+          backgroundColor: '#f3f4f6',
+          label: 'Regular'
+        };
     }
   };
 
@@ -399,44 +487,36 @@ const TransactionHistory = () => {
       fontWeight: '500',
       transition: 'all 0.2s ease'
     },
-    searchSection: {
-      marginBottom: '24px',
-      textAlign: 'center'
-    },
-    refreshBtn: {
-      background: 'rgb(13, 110, 253)',
-      color: 'white',
-      border: 'none',
-      padding: '12px 24px',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      fontWeight: '600',
-      transition: 'all 0.2s ease',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-    },
-    loadMoreBtn: {
-      background: '#6b7280',
-      color: 'white',
-      border: 'none',
-      padding: '12px 32px',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      fontSize: '14px',
-      fontWeight: '600',
-      transition: 'all 0.2s ease',
-      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-      marginTop: '24px'
-    },
     balanceInfo: {
       background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
       padding: '20px',
       borderRadius: '12px',
       marginBottom: '24px',
-      textAlign: 'center',
       border: '1px solid #d1d5db',
       fontSize: '16px',
       fontWeight: '600',
+      color: '#374151'
+    },
+    balanceGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+      gap: '16px',
+      textAlign: 'center'
+    },
+    balanceItem: {
+      padding: '12px',
+      borderRadius: '8px',
+      backgroundColor: 'white',
+      border: '1px solid #e5e7eb'
+    },
+    balanceLabel: {
+      fontSize: '14px',
+      color: '#6b7280',
+      marginBottom: '4px'
+    },
+    balanceValue: {
+      fontSize: '18px',
+      fontWeight: '700',
       color: '#374151'
     },
     transactionCount: {
@@ -453,7 +533,7 @@ const TransactionHistory = () => {
     },
     table: {
       width: '100%',
-      minWidth: '800px',
+      minWidth: '900px',
       borderCollapse: 'separate',
       borderSpacing: 0,
       backgroundColor: 'white'
@@ -490,9 +570,6 @@ const TransactionHistory = () => {
     evenRow: {
       backgroundColor: '#fafafa'
     },
-    hoverRow: {
-      transition: 'background-color 0.2s ease'
-    },
     statusBadge: {
       padding: '6px 12px',
       borderRadius: '16px',
@@ -505,8 +582,13 @@ const TransactionHistory = () => {
       textTransform: 'uppercase',
       letterSpacing: '0.025em'
     },
-    typeCell: {
-      fontWeight: '600'
+    tokenTypeBadge: {
+      padding: '4px 8px',
+      borderRadius: '6px',
+      fontSize: '11px',
+      fontWeight: '600',
+      textTransform: 'uppercase',
+      letterSpacing: '0.025em'
     },
     depositType: {
       color: '#10b981',
@@ -559,27 +641,18 @@ const TransactionHistory = () => {
       textAlign: 'center',
       marginTop: '24px'
     },
-    // Mobile responsive styles
-    '@media (max-width: 768px)': {
-      container: {
-        margin: '10px',
-        borderRadius: '12px'
-      },
-      header: {
-        padding: '24px 16px'
-      },
-      content: {
-        padding: '20px 16px'
-      },
-      legend: {
-        gap: '12px'
-      },
-      headerTitle: {
-        fontSize: '24px'
-      },
-      filtersGrid: {
-        gridTemplateColumns: '1fr'
-      }
+    loadMoreBtn: {
+      background: '#6b7280',
+      color: 'white',
+      border: 'none',
+      padding: '12px 32px',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontSize: '14px',
+      fontWeight: '600',
+      transition: 'all 0.2s ease',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+      marginTop: '24px'
     }
   };
 
@@ -721,8 +794,26 @@ const TransactionHistory = () => {
 
         {userData && (
           <div style={styles.balanceInfo}>
-            <strong>Current Balance: {userData.tokens || 0} Tokens</strong>
-            {userData.name && <span> | User: {userData.name}</span>}
+            <div style={styles.balanceGrid}>
+              <div style={styles.balanceItem}>
+                <div style={styles.balanceLabel}>Regular Tokens</div>
+                <div style={styles.balanceValue}>{userData.tokens || 0}</div>
+              </div>
+              <div style={styles.balanceItem}>
+                <div style={styles.balanceLabel}>Binary Tokens</div>
+                <div style={styles.balanceValue}>{userData.binaryTokens || 0}</div>
+              </div>
+              <div style={styles.balanceItem}>
+                <div style={styles.balanceLabel}>Won Tokens</div>
+                <div style={styles.balanceValue}>{userData.wontokens || 0}</div>
+              </div>
+              {userData.name && (
+                <div style={styles.balanceItem}>
+                  <div style={styles.balanceLabel}>User</div>
+                  <div style={styles.balanceValue}>{userData.name}</div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -742,56 +833,81 @@ const TransactionHistory = () => {
                 <thead>
                   <tr>
                     <th style={styles.th}>Date</th>
-                    <th style={{...styles.th}}>Type</th>
-                    <th style={{...styles.th}}>Amount Requested</th>
-                    <th style={{...styles.th}}>Amount Credited</th>
-                    <th style={{...styles.th}}>Tax Details</th>
-                    <th style={{...styles.th}}>Method</th>
+                    <th style={styles.th}>Type</th>
+                    <th style={styles.th}>Token Type</th>
+                    <th style={styles.th}>Amount Requested</th>
+                    <th style={styles.th}>Amount Credited</th>
+                    <th style={styles.th}>Final Amount</th>
+                    <th style={styles.th}>Tax Details</th>
+                    <th style={styles.th}>Method</th>
                     <th style={{...styles.th, ...styles.thLast}}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {displayedTransactions.map((transaction, index) => (
-                    <tr 
-                      key={transaction.id}
-                      className="table-row"
-                      style={index % 2 === 1 ? styles.evenRow : {}}
-                    >
-                      <td style={styles.td}>
-                        {formatDate(transaction.date)}
-                      </td>
-                      <td style={styles.td}>
-                        <span style={transaction.type === 'deposit' ? styles.depositType : styles.withdrawalType}>
-                          {transaction.type === 'deposit' ? 'Deposit' : 'Withdrawal'}
-                        </span>
-                      </td>
-                      <td style={{...styles.td, fontWeight: '600'}}>
-                        ₹{transaction.amountRequested}
-                      </td>
-                      <td style={{
-                        ...styles.td,
-                        ...(transaction.amountCredited > 0 ? styles.amountPositive : styles.amountNegative)
-                      }}>
-                        {transaction.type === 'deposit' ? '+' : ''}{transaction.amountCredited} Tokens
-                      </td>
-                      <td style={styles.td}>
-                        ₹{transaction.tax} ({transaction.taxRate})
-                      </td>
-                      <td style={{...styles.td, fontSize: '13px'}}>
-                        {transaction.method}
-                      </td>
-                      <td style={{...styles.td, ...styles.tdLast}}>
-                        <span
-                          style={{
-                            ...styles.statusBadge,
-                            backgroundColor: getStatusColor(transaction.status)
-                          }}
-                        >
-                          {getStatusText(transaction.status)}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                  {displayedTransactions.map((transaction, index) => {
+                    const tokenStyle = getTokenTypeStyle(transaction.tokenType);
+                    return (
+                      <tr 
+                        key={transaction.id}
+                        className="table-row"
+                        style={index % 2 === 1 ? styles.evenRow : {}}
+                      >
+                        <td style={styles.td}>
+                          {formatDate(transaction.date)}
+                        </td>
+                        <td style={styles.td}>
+                          {transaction.type === 'deposit' ? (
+                            <span style={styles.depositType}>
+                              Deposit
+                            </span>
+                          ) : (
+                            <span style={styles.withdrawalType}>
+                              Withdrawal
+                            </span>
+                          )}
+                        </td>
+                        <td style={styles.td}>
+                          <span 
+                            style={{
+                              ...styles.tokenTypeBadge,
+                              color: tokenStyle.color,
+                              backgroundColor: tokenStyle.backgroundColor
+                            }}
+                          >
+                            {tokenStyle.label}
+                          </span>
+                        </td>
+                        <td style={{...styles.td, fontWeight: '600'}}>
+                          ₹{transaction.amountRequested}
+                        </td>
+                        <td style={{
+                          ...styles.td,
+                          ...(transaction.amountCredited > 0 ? styles.amountPositive : styles.amountNegative)
+                        }}>
+                          {transaction.type === 'deposit' ? '+' : ''}{transaction.amountCredited} Tokens
+                        </td>
+                        <td style={{...styles.td, fontWeight: '600', color: '#dc2626'}}>
+                          {transaction.finalAmount ? `₹${transaction.finalAmount}` : '-'}
+                        </td>
+                        <td style={styles.td}>
+                          ₹{transaction.tax} ({transaction.taxRate})
+                        </td>
+                        <td style={{...styles.td, fontSize: '13px'}}>
+                          {transaction.method}
+                        </td>
+                        <td style={{...styles.td, ...styles.tdLast}}>
+                          <span
+                            style={{
+                              ...styles.statusBadge,
+                              backgroundColor: getStatusColor(transaction.status)
+                            }}
+                          >
+                            {getStatusText(transaction.status)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

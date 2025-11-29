@@ -147,7 +147,7 @@ const AdminBinaryTree = () => {
         totalRightBusiness: userData.totalRightBusiness,
         bonusReceived: userData.totalBonusReceivedTillDate,
         totalBonusReceivedAfterTax: userData.totalBonusReceivedAfterTax,
-        yesterdayBonusAfterTax: userData.yesterdayBonusAfterTax,
+        yesterdayBonusReceived: userData.yesterdayBonusReceived, // Changed from yesterdayBonusAfterTax
         children: []
       };
     });
@@ -622,8 +622,8 @@ const scrollToNode = (nodeId) => {
               <span className="financial-value">₹{node.totalRightBusiness || 0}</span>
             </div>
             <div className="financial-item">
-              <span className="financial-label">Y.Bonus@Tax:</span>
-              <span className="financial-value">₹{node.yesterdayBonusAfterTax || 0}</span>
+              <span className="financial-label">Yesterday Bonus:</span>
+              <span className="financial-value">₹{node.yesterdayBonusReceived || 0}</span>
             </div>
           </div>
 

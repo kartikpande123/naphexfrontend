@@ -75,9 +75,18 @@ const Home = () => {
     let bankDetailsCount = 0;
 
     users.forEach(user => {
-      // Count pending withdrawals
+      // Count pending binary token withdrawals
       if (user.withdrawals) {
         Object.values(user.withdrawals).forEach(withdrawal => {
+          if (withdrawal.status === 'pending') {
+            withdrawalCount++;
+          }
+        });
+      }
+
+      // Count pending won token withdrawals
+      if (user.wonWithdrawals) {
+        Object.values(user.wonWithdrawals).forEach(withdrawal => {
           if (withdrawal.status === 'pending') {
             withdrawalCount++;
           }

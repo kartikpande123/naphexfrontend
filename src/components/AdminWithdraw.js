@@ -17,7 +17,9 @@ import {
   Database,
   Loader,
   Filter,
-  X
+  X,
+  Coins,
+  Award
 } from 'lucide-react';
 
 export default function AdminWithdrawTransactions() {
@@ -36,6 +38,7 @@ export default function AdminWithdrawTransactions() {
           let allTransactions = [];
 
           parsedData.data.forEach((user) => {
+            // Process binary token withdrawals
             if (user.withdrawals) {
               Object.keys(user.withdrawals).forEach((wid) => {
                 const w = user.withdrawals[wid];
@@ -53,6 +56,33 @@ export default function AdminWithdrawTransactions() {
                       ? `UPI: ${w.method.upiId}`
                       : "N/A",
                     finalTokens: w.finalTokens,
+                    tokenType: "Binary Tokens",
+                    taxPercentage: w.taxPercentage || 23
+                  });
+                }
+              });
+            }
+
+            // Process won token withdrawals
+            if (user.wonWithdrawals) {
+              Object.keys(user.wonWithdrawals).forEach((wid) => {
+                const w = user.wonWithdrawals[wid];
+                if (w.status === "approved") {
+                  allTransactions.push({
+                    userId: user.userIds?.myuserid || user.userId,
+                    name: user.name,
+                    createdAt: new Date(w.createdAt).toLocaleString(),
+                    rawDate: new Date(w.createdAt),
+                    requestedTokens: w.requestedTokens,
+                    tax: w.tax,
+                    method: w.method?.bankAccountNo
+                      ? `Bank: ${w.method.bankAccountNo} (${w.method.ifsc})`
+                      : w.method?.upiId
+                      ? `UPI: ${w.method.upiId}`
+                      : "N/A",
+                    finalTokens: w.finalTokens,
+                    tokenType: "Won Tokens",
+                    taxPercentage: w.taxPercentage || 30
                   });
                 }
               });
@@ -102,6 +132,20 @@ export default function AdminWithdrawTransactions() {
 
   const clearFilter = () => {
     setSelectedDate('');
+  };
+
+  const getTokenTypeBadge = (tokenType) => {
+    if (tokenType === "Binary Tokens") {
+      return {
+        background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
+        icon: <Coins size={14} className="me-1" />
+      };
+    } else {
+      return {
+        background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+        icon: <Award size={14} className="me-1" />
+      };
+    }
   };
 
   const styles = {
@@ -229,6 +273,16 @@ export default function AdminWithdrawTransactions() {
       borderRadius: '4px',
       display: 'inline-block'
     },
+    tokenTypeBadge: {
+      padding: '4px 8px',
+      borderRadius: '12px',
+      fontSize: '0.75rem',
+      fontWeight: '600',
+      color: 'white',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center'
+    },
     loadMoreBtn: {
       background: 'linear-gradient(135deg, #007bff 0%, #0056b3 100%)',
       border: 'none',
@@ -265,7 +319,7 @@ export default function AdminWithdrawTransactions() {
                 </h1>
               </div>
               <p style={styles.headerSubtitle}>
-                Real-time monitoring of approved user withdrawal requests
+                Real-time monitoring of approved user withdrawal requests (Binary & Won Tokens)
               </p>
             </div>
           </div>
@@ -343,19 +397,23 @@ export default function AdminWithdrawTransactions() {
                 <div className="col-md-3">
                   <div style={styles.statCard}>
                     <div className="d-flex align-items-center justify-content-center mb-2">
-                      <Eye size={24} className="me-2" />
-                      <h5 className="mb-0">Displaying</h5>
+                      <Coins size={24} className="me-2" />
+                      <h5 className="mb-0">Binary Tokens</h5>
                     </div>
-                    <h3 className="mb-0">{Math.min(visibleCount, filteredTransactions.length)}</h3>
+                    <h3 className="mb-0">
+                      {transactions.filter(t => t.tokenType === "Binary Tokens").length}
+                    </h3>
                   </div>
                 </div>
                 <div className="col-md-3">
                   <div style={styles.statCard}>
                     <div className="d-flex align-items-center justify-content-center mb-2">
-                      <Filter size={24} className="me-2" />
-                      <h5 className="mb-0">Filtered</h5>
+                      <Award size={24} className="me-2" />
+                      <h5 className="mb-0">Won Tokens</h5>
                     </div>
-                    <h3 className="mb-0">{filteredTransactions.length}</h3>
+                    <h3 className="mb-0">
+                      {transactions.filter(t => t.tokenType === "Won Tokens").length}
+                    </h3>
                   </div>
                 </div>
                 <div className="col-md-3">
@@ -398,6 +456,12 @@ export default function AdminWithdrawTransactions() {
                       </th>
                       <th className="px-4 py-3" style={styles.tableCell}>
                         <div className="d-flex align-items-center justify-content-center">
+                          <Coins size={16} className="me-2" />
+                          Token Type
+                        </div>
+                      </th>
+                      <th className="px-4 py-3" style={styles.tableCell}>
+                        <div className="d-flex align-items-center justify-content-center">
                           <DollarSign size={16} className="me-2" />
                           Requested Amount
                         </div>
@@ -423,43 +487,61 @@ export default function AdminWithdrawTransactions() {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredTransactions.slice(0, visibleCount).map((t, idx) => (
-                      <tr
-                        key={idx}
-                        style={idx % 2 === 0 ? styles.tableRow : {...styles.tableRow, ...styles.alternateRow}}
-                        className="text-center"
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.backgroundColor = '#e7f3ff';
-                          e.currentTarget.style.transform = 'translateX(2px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#ffffff' : '#f8f9fa';
-                          e.currentTarget.style.transform = 'translateX(0)';
-                        }}
-                      >
-                        <td className="px-4 py-3" style={styles.tableCell}>
-                          <small className="text-muted">{t.createdAt}</small>
-                        </td>
-                        <td className="px-4 py-3" style={styles.tableCell}>
-                          <span className="badge bg-secondary">{t.userId}</span>
-                        </td>
-                        <td className="px-4 py-3" style={styles.tableCell}>
-                          <strong>{t.name}</strong>
-                        </td>
-                        <td className="px-4 py-3" style={{...styles.tableCell, ...styles.amountCell}}>
-                          ₹{t.requestedTokens}
-                        </td>
-                        <td className="px-4 py-3" style={{...styles.tableCell, ...styles.amountCell}}>
-                          ₹{t.tax}
-                        </td>
-                        <td className="px-4 py-3" style={styles.tableCell}>
-                          <span style={styles.methodCell}>{t.method}</span>
-                        </td>
-                        <td className="px-4 py-3" style={{...styles.lastColumn, ...styles.finalAmountCell}}>
-                          ₹{t.finalTokens}
-                        </td>
-                      </tr>
-                    ))}
+                    {filteredTransactions.slice(0, visibleCount).map((t, idx) => {
+                      const tokenBadge = getTokenTypeBadge(t.tokenType);
+                      return (
+                        <tr
+                          key={idx}
+                          style={idx % 2 === 0 ? styles.tableRow : {...styles.tableRow, ...styles.alternateRow}}
+                          className="text-center"
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#e7f3ff';
+                            e.currentTarget.style.transform = 'translateX(2px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = idx % 2 === 0 ? '#ffffff' : '#f8f9fa';
+                            e.currentTarget.style.transform = 'translateX(0)';
+                          }}
+                        >
+                          <td className="px-4 py-3" style={styles.tableCell}>
+                            <small className="text-muted">{t.createdAt}</small>
+                          </td>
+                          <td className="px-4 py-3" style={styles.tableCell}>
+                            <span className="badge bg-secondary">{t.userId}</span>
+                          </td>
+                          <td className="px-4 py-3" style={styles.tableCell}>
+                            <strong>{t.name}</strong>
+                          </td>
+                          <td className="px-4 py-3" style={styles.tableCell}>
+                            <span 
+                              style={{
+                                ...styles.tokenTypeBadge,
+                                background: tokenBadge.background
+                              }}
+                            >
+                              {tokenBadge.icon}
+                              {t.tokenType}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3" style={{...styles.tableCell, ...styles.amountCell}}>
+                            ₹{t.requestedTokens}
+                          </td>
+                          <td className="px-4 py-3" style={{...styles.tableCell, ...styles.amountCell}}>
+                            <div>
+                              ₹{t.tax}
+                              <br />
+                              <small className="text-muted">({t.taxPercentage}%)</small>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3" style={styles.tableCell}>
+                            <span style={styles.methodCell}>{t.method}</span>
+                          </td>
+                          <td className="px-4 py-3" style={{...styles.lastColumn, ...styles.finalAmountCell}}>
+                            ₹{t.finalTokens}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

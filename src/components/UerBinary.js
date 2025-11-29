@@ -552,10 +552,6 @@ const UserBinaryTree = () => {
                 <span className="metric-value">₹{formatNumber(node.totalPlayedAmount || 0)}</span>
               </div>
               <div className="metric">
-                <span className="metric-label">Bonus After Tax(tdy):</span>
-                <span className="metric-value">₹{formatNumber(node.bonusAfterTax || 0)}</span>
-              </div>
-              <div className="metric">
                 <span className="metric-label">Total Bonus Received:</span>
                 <span className="metric-value">₹{formatNumber(node.totalBonusReceivedTillDate || 0)}</span>
               </div>

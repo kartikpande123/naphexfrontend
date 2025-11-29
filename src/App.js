@@ -57,6 +57,8 @@ import CancellationRefundPolicy from './components/CancellationAndRefund';
 import AdminRejectedTokens from './components/AdminRejectedToken';
 import HowToPlayVideo from './components/HowToPlayVideo';
 import AdminDeleteUser from './components/AdminDeleteUser';
+import IngameTransaction from './components/IngameTransaction';
+import AdminIngameTransaction from './components/AdminIngameTransaction';
 
 // Protected Route Component for Users
 const ProtectedRoute = ({ children }) => {
@@ -238,6 +240,11 @@ function App() {
               <AdminDeleteUser />
             </AdminProtectedRoute>
           } />
+          <Route path="/adminingametransactions" element={
+            <AdminProtectedRoute>
+              <AdminIngameTransaction />
+            </AdminProtectedRoute>
+          } />
 
 
           {/* ---------------------------------------------------------*/}
@@ -315,6 +322,11 @@ function App() {
           <Route path="/userwins" element={
             <ProtectedRoute>
               <UserWIns />
+            </ProtectedRoute>
+          } />
+          <Route path="/ingametransactions" element={
+            <ProtectedRoute>
+              <IngameTransaction />
             </ProtectedRoute>
           } />
         

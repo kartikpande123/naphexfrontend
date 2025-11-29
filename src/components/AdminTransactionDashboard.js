@@ -111,6 +111,10 @@ function AdminTransactionDashboard() {
         navigate("/admintaxdetails");
     }
 
+    function goAddIngameTrans(){
+        navigate("/adminingametransactions");
+    }
+
     const menuItems = [
         {
             title: 'Withdrawal Transactions',
@@ -123,6 +127,12 @@ function AdminTransactionDashboard() {
             icon: Plus,
             onClick: goAddToken,
             description: 'Handle token addition details'
+        },
+        {
+            title: 'User In-Game Token Transfers',
+            icon: Plus,
+            onClick: goAddIngameTrans,
+            description: 'View all user in-game token transfers'
         },
         {
             title: 'Tax Overview',

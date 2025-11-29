@@ -1,186 +1,202 @@
-import React, { useState, useEffect } from 'react';
-import { Container, Row, Col, Nav, Spinner, Alert, Card, Badge, ListGroup, Table, Toast, ToastContainer, Modal, Button, Form } from 'react-bootstrap';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import API_BASE_URL from './ApiConfig';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from "react";
+import {
+  Container,
+  Row,
+  Col,
+  Nav,
+  Spinner,
+  Alert,
+  Card,
+  Badge,
+  ListGroup,
+  Table,
+  Toast,
+  ToastContainer,
+  Modal,
+  Button,
+  Form,
+} from "react-bootstrap";
+import "bootstrap/dist/css/bootstrap.min.css";
+import API_BASE_URL from "./ApiConfig";
+import { useNavigate } from "react-router-dom";
 
 const MyAccount = () => {
-  const [activeTab, setActiveTab] = useState('profile');
+  const [activeTab, setActiveTab] = useState("profile");
   const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [phoneNo, setPhoneNo] = useState('');
+  const [phoneNo, setPhoneNo] = useState("");
   const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState('');
+  const [toastMessage, setToastMessage] = useState("");
   const [showImageModal, setShowImageModal] = useState(false);
-  const [selectedImage, setSelectedImage] = useState('');
-  const [selectedImageTitle, setSelectedImageTitle] = useState('');
+  const [selectedImage, setSelectedImage] = useState("");
+  const [selectedImageTitle, setSelectedImageTitle] = useState("");
   const navigate = useNavigate();
 
   // Inline CSS styles
   const styles = {
     sidebarWrapper: {
-      marginBottom: '20px'
+      marginBottom: "20px",
     },
     sidebar: {
-      borderRadius: '8px',
-      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-      position: 'sticky',
-      top: '20px'
+      borderRadius: "8px",
+      boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+      position: "sticky",
+      top: "20px",
     },
     navLink: {
-      padding: '12px 20px',
-      color: '#495057',
-      borderLeft: '4px solid transparent',
-      transition: 'all 0.3s ease',
-      cursor: 'pointer'
+      padding: "12px 20px",
+      color: "#495057",
+      borderLeft: "4px solid transparent",
+      transition: "all 0.3s ease",
+      cursor: "pointer",
     },
     navLinkHover: {
-      backgroundColor: '#f8f9fa',
-      color: '#0d6efd'
+      backgroundColor: "#f8f9fa",
+      color: "#0d6efd",
     },
     navLinkActive: {
-      backgroundColor: '#f0f7ff',
-      color: '#0d6efd',
-      borderLeftColor: '#0d6efd',
-      fontWeight: '600'
+      backgroundColor: "#f0f7ff",
+      color: "#0d6efd",
+      borderLeftColor: "#0d6efd",
+      fontWeight: "600",
     },
     miniAvatar: {
-      width: '40px',
-      height: '40px',
-      borderRadius: '50%',
-      backgroundColor: '#0d6efd',
-      color: 'white',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontWeight: 'bold',
-      fontSize: '18px'
+      width: "40px",
+      height: "40px",
+      borderRadius: "50%",
+      backgroundColor: "#0d6efd",
+      color: "white",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: "bold",
+      fontSize: "18px",
     },
     tokenBadge: {
-      backgroundColor: 'rgba(13, 110, 253, 0.1)',
-      color: '#0d6efd',
-      padding: '4px 8px',
-      borderRadius: '12px',
-      fontSize: '0.8rem',
-      display: 'inline-block',
-      marginTop: '4px'
+      backgroundColor: "rgba(13, 110, 253, 0.1)",
+      color: "#0d6efd",
+      padding: "4px 8px",
+      borderRadius: "12px",
+      fontSize: "0.8rem",
+      display: "inline-block",
+      marginTop: "4px",
     },
     avatarContainer: {
-      display: 'flex',
-      justifyContent: 'center',
-      marginBottom: '15px'
+      display: "flex",
+      justifyContent: "center",
+      marginBottom: "15px",
     },
     avatar: {
-      width: '100px',
-      height: '100px',
-      borderRadius: '50%',
-      backgroundColor: '#0d6efd',
-      color: 'white',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontWeight: 'bold',
-      fontSize: '40px'
+      width: "100px",
+      height: "100px",
+      borderRadius: "50%",
+      backgroundColor: "#0d6efd",
+      color: "white",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      fontWeight: "bold",
+      fontSize: "40px",
     },
     referralCard: {
-      borderRadius: '8px',
-      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-      overflow: 'hidden',
-      marginBottom: '24px'
+      borderRadius: "8px",
+      boxShadow: "0 2px 8px rgba(0, 0, 0, 0.1)",
+      overflow: "hidden",
+      marginBottom: "24px",
     },
     referralCode: {
-      fontSize: '24px',
-      fontWeight: 'bold',
-      padding: '15px',
-      backgroundColor: '#f8f9fa',
-      borderRadius: '6px',
-      margin: '15px 0',
-      letterSpacing: '1px',
-      userSelect: 'all',
-      cursor: 'text'
+      fontSize: "24px",
+      fontWeight: "bold",
+      padding: "15px",
+      backgroundColor: "#f8f9fa",
+      borderRadius: "6px",
+      margin: "15px 0",
+      letterSpacing: "1px",
+      userSelect: "all",
+      cursor: "text",
     },
     tokenDisplay: {
-      textAlign: 'center',
-      padding: '20px',
-      backgroundColor: '#f8f9fa',
-      borderRadius: '8px',
-      marginBottom: '20px'
+      textAlign: "center",
+      padding: "20px",
+      backgroundColor: "#f8f9fa",
+      borderRadius: "8px",
+      marginBottom: "20px",
     },
     supportIcon: {
-      fontSize: '48px',
-      color: '#0d6efd',
-      marginBottom: '15px',
-      display: 'block'
+      fontSize: "48px",
+      color: "#0d6efd",
+      marginBottom: "15px",
+      display: "block",
     },
     supportCard: {
-      transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-      marginBottom: '20px',
-      cursor: 'pointer'
+      transition: "transform 0.3s ease, box-shadow 0.3s ease",
+      marginBottom: "20px",
+      cursor: "pointer",
     },
     supportCardHover: {
-      transform: 'translateY(-5px)',
-      boxShadow: '0 10px 20px rgba(0, 0, 0, 0.1)'
+      transform: "translateY(-5px)",
+      boxShadow: "0 10px 20px rgba(0, 0, 0, 0.1)",
     },
     cardHeaderGradient: {
-      background: 'linear-gradient(135deg, #0d6efd, #0a58ca)',
-      color: 'white'
+      background: "linear-gradient(135deg, #0d6efd, #0a58ca)",
+      color: "white",
     },
     userInfo: {
-      padding: '15px'
+      padding: "15px",
     },
     loadingContainer: {
-      textAlign: 'center',
-      padding: '50px'
+      textAlign: "center",
+      padding: "50px",
     },
     kycImage: {
-      width: '100%',
-      height: '200px',
-      objectFit: 'cover',
-      borderRadius: '8px',
-      cursor: 'pointer',
-      transition: 'transform 0.3s ease',
-      border: '2px solid #e9ecef'
+      width: "100%",
+      height: "200px",
+      objectFit: "cover",
+      borderRadius: "8px",
+      cursor: "pointer",
+      transition: "transform 0.3s ease",
+      border: "2px solid #e9ecef",
     },
     kycImageHover: {
-      transform: 'scale(1.05)'
+      transform: "scale(1.05)",
     },
     kycCard: {
-      marginBottom: '20px',
-      borderRadius: '12px',
-      overflow: 'hidden',
-      boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)'
+      marginBottom: "20px",
+      borderRadius: "12px",
+      overflow: "hidden",
+      boxShadow: "0 4px 6px rgba(0, 0, 0, 0.1)",
     },
     statusBadge: {
-      padding: '8px 16px',
-      borderRadius: '20px',
-      fontSize: '0.9rem',
-      fontWeight: 'bold'
+      padding: "8px 16px",
+      borderRadius: "20px",
+      fontSize: "0.9rem",
+      fontWeight: "bold",
     },
     modalImage: {
-      width: '100%',
-      height: 'auto',
-      maxHeight: '80vh',
-      objectFit: 'contain'
+      width: "100%",
+      height: "auto",
+      maxHeight: "80vh",
+      objectFit: "contain",
     },
     forgotPasswordCard: {
-      borderRadius: '12px',
-      boxShadow: '0 4px 15px rgba(0, 0, 0, 0.1)',
-      marginBottom: '20px'
+      borderRadius: "12px",
+      boxShadow: "0 4px 15px rgba(0, 0, 0, 0.1)",
+      marginBottom: "20px",
     },
     buttonGroup: {
-      display: 'flex',
-      gap: '10px',
-      justifyContent: 'center',
-      flexWrap: 'wrap'
-    }
+      display: "flex",
+      gap: "10px",
+      justifyContent: "center",
+      flexWrap: "wrap",
+    },
   };
 
   useEffect(() => {
     // Get user data from localStorage
     const getUserDataFromLocalStorage = () => {
       try {
-        const localUserData = localStorage.getItem('userData');
+        const localUserData = localStorage.getItem("userData");
         if (localUserData) {
           const parsedData = JSON.parse(localUserData);
           if (parsedData && parsedData.phoneNo) {
@@ -190,7 +206,7 @@ const MyAccount = () => {
         }
         return null;
       } catch (err) {
-        console.error('Error getting user data from localStorage:', err);
+        console.error("Error getting user data from localStorage:", err);
         return null;
       }
     };
@@ -200,7 +216,7 @@ const MyAccount = () => {
     if (userPhoneNo) {
       fetchUserData(userPhoneNo);
     } else {
-      setError('User phone number not found. Please log in again.');
+      setError("User phone number not found. Please log in again.");
       setLoading(false);
     }
   }, []);
@@ -210,11 +226,13 @@ const MyAccount = () => {
       setLoading(true);
 
       // Create an EventSource connection to the server
-      const eventSource = new EventSource(`${API_BASE_URL}/user-profile/${userPhoneNo}`);
+      const eventSource = new EventSource(
+        `${API_BASE_URL}/user-profile/${userPhoneNo}`
+      );
 
       eventSource.onmessage = (event) => {
         const data = JSON.parse(event.data);
-        console.log('Received user data:', data); // Debug log
+        console.log("Received user data:", data); // Debug log
 
         if (data.success) {
           setUserData(data.userData);
@@ -229,8 +247,8 @@ const MyAccount = () => {
       };
 
       eventSource.onerror = (err) => {
-        console.error('EventSource error:', err);
-        setError('Failed to connect to server');
+        console.error("EventSource error:", err);
+        setError("Failed to connect to server");
         setLoading(false);
         eventSource.close();
       };
@@ -240,8 +258,8 @@ const MyAccount = () => {
         eventSource.close();
       };
     } catch (err) {
-      console.error('Fetch error:', err);
-      setError('An error occurred while fetching user data');
+      console.error("Fetch error:", err);
+      setError("An error occurred while fetching user data");
       setLoading(false);
     }
   };
@@ -254,17 +272,17 @@ const MyAccount = () => {
       setShowToast(true);
     } catch (err) {
       // Fallback for older browsers
-      const textArea = document.createElement('textarea');
+      const textArea = document.createElement("textarea");
       textArea.value = text;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
 
       try {
-        document.execCommand('copy');
+        document.execCommand("copy");
         setToastMessage(`${label} copied to clipboard!`);
         setShowToast(true);
       } catch (err) {
@@ -285,13 +303,13 @@ const MyAccount = () => {
       try {
         await navigator.share({
           title: `My ${label}`,
-          text: shareText
+          text: shareText,
           // Removed URL - only sharing the ID text
         });
         setToastMessage(`${label} shared successfully!`);
         setShowToast(true);
       } catch (err) {
-        if (err.name !== 'AbortError') {
+        if (err.name !== "AbortError") {
           // If user cancels, don't show error
           fallbackShare(shareText, label);
         }
@@ -305,22 +323,26 @@ const MyAccount = () => {
   const fallbackShare = async (shareText, label) => {
     try {
       await navigator.clipboard.writeText(shareText);
-      setToastMessage(`${label} share text copied to clipboard! You can now paste it on any social media platform.`);
+      setToastMessage(
+        `${label} share text copied to clipboard! You can now paste it on any social media platform.`
+      );
       setShowToast(true);
     } catch (err) {
       // Final fallback
-      const textArea = document.createElement('textarea');
+      const textArea = document.createElement("textarea");
       textArea.value = shareText;
-      textArea.style.position = 'fixed';
-      textArea.style.left = '-999999px';
-      textArea.style.top = '-999999px';
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      textArea.style.top = "-999999px";
       document.body.appendChild(textArea);
       textArea.focus();
       textArea.select();
 
       try {
-        document.execCommand('copy');
-        setToastMessage(`${label} share text copied to clipboard! You can now paste it on any social media platform.`);
+        document.execCommand("copy");
+        setToastMessage(
+          `${label} share text copied to clipboard! You can now paste it on any social media platform.`
+        );
         setShowToast(true);
       } catch (err) {
         setToastMessage(`Failed to prepare ${label} for sharing`);
@@ -334,17 +356,17 @@ const MyAccount = () => {
   // Helper function to format date
   const formatDate = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     });
   };
 
   const handleContactSupport = () => {
-    navigate('/help');
+    navigate("/help");
   };
 
   const handleImageClick = (imageUrl, title) => {
@@ -354,7 +376,7 @@ const MyAccount = () => {
   };
 
   const handleForgotPassword = () => {
-    navigate('/forgotpassword');
+    navigate("/forgotpassword");
   };
 
   // Helper function to safely get user ID values
@@ -389,14 +411,30 @@ const MyAccount = () => {
   // Helper function to get KYC status badge
   const getKycStatusBadge = (status) => {
     switch (status?.toLowerCase()) {
-      case 'accepted':
-        return <Badge bg="success" style={styles.statusBadge}>✓ Verified</Badge>;
-      case 'submitted':
-        return <Badge bg="warning" style={styles.statusBadge}>⏳ Under Review</Badge>;
-      case 'rejected':
-        return <Badge bg="danger" style={styles.statusBadge}>✗ Rejected</Badge>;
+      case "accepted":
+        return (
+          <Badge bg="success" style={styles.statusBadge}>
+            ✓ Verified
+          </Badge>
+        );
+      case "submitted":
+        return (
+          <Badge bg="warning" style={styles.statusBadge}>
+            ⏳ Under Review
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge bg="danger" style={styles.statusBadge}>
+            ✗ Rejected
+          </Badge>
+        );
       default:
-        return <Badge bg="secondary" style={styles.statusBadge}>Not Submitted</Badge>;
+        return (
+          <Badge bg="secondary" style={styles.statusBadge}>
+            Not Submitted
+          </Badge>
+        );
     }
   };
 
@@ -411,23 +449,15 @@ const MyAccount = () => {
     }
 
     if (error) {
-      return (
-        <Alert variant="danger">
-          {error}
-        </Alert>
-      );
+      return <Alert variant="danger">{error}</Alert>;
     }
 
     if (!userData) {
-      return (
-        <Alert variant="warning">
-          No user data found.
-        </Alert>
-      );
+      return <Alert variant="warning">No user data found.</Alert>;
     }
 
     switch (activeTab) {
-      case 'profile':
+      case "profile":
         return (
           <div>
             <Card>
@@ -439,22 +469,33 @@ const MyAccount = () => {
                   <Col md={4} className="text-center mb-4">
                     <div style={styles.avatarContainer}>
                       <div style={styles.avatar}>
-                        {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+                        {userData.name
+                          ? userData.name.charAt(0).toUpperCase()
+                          : "U"}
                       </div>
                     </div>
-                    <h4 className="mt-3">{userData.name || 'Unknown User'}</h4>
-                    <p className="text-muted">{userData.phoneNo || 'No phone number'}</p>
+                    <h4 className="mt-3">{userData.name || "Unknown User"}</h4>
+                    <p className="text-muted">
+                      {userData.phoneNo || "No phone number"}
+                    </p>
                   </Col>
                   <Col md={8}>
                     <ListGroup variant="flush">
                       <ListGroup.Item>
-                        <strong>Location:</strong> {userData.city || 'N/A'}, {userData.state || 'N/A'}
+                        <strong>Location:</strong> {userData.city || "N/A"},{" "}
+                        {userData.state || "N/A"}
                       </ListGroup.Item>
                       <ListGroup.Item>
-                        <strong>Account Created:</strong> {userData.createdAt ? formatDate(userData.createdAt) : 'N/A'}
+                        <strong>Account Created:</strong>{" "}
+                        {userData.createdAt
+                          ? formatDate(userData.createdAt)
+                          : "N/A"}
                       </ListGroup.Item>
                       <ListGroup.Item>
-                        <strong>Available Tokens:</strong> <Badge bg="success" pill>{(userData.tokens || 0).toLocaleString()}</Badge>
+                        <strong>Available Tokens:</strong>{" "}
+                        <Badge bg="success" pill>
+                          {(userData.tokens || 0).toLocaleString()}
+                        </Badge>
                       </ListGroup.Item>
                       <ListGroup.Item>
                         <strong>User ID:</strong> {getUserId()}
@@ -480,10 +521,18 @@ const MyAccount = () => {
                 <Row className="justify-content-center">
                   <Col md={6}>
                     <div className="text-center">
-                      <i className="bi bi-shield-lock" style={{ fontSize: '48px', color: '#0d6efd', marginBottom: '20px' }}></i>
+                      <i
+                        className="bi bi-shield-lock"
+                        style={{
+                          fontSize: "48px",
+                          color: "#0d6efd",
+                          marginBottom: "20px",
+                        }}
+                      ></i>
                       <h5>Reset Your Password</h5>
                       <p className="text-muted mb-4">
-                        Need to change your password? Click the button below to go to the password reset page.
+                        Need to change your password? Click the button below to
+                        go to the password reset page.
                       </p>
                       <Button
                         variant="primary"
@@ -501,7 +550,7 @@ const MyAccount = () => {
           </div>
         );
 
-      case 'refrelid':
+      case "refrelid":
         return (
           <Card>
             <Card.Header style={styles.cardHeaderGradient}>
@@ -513,20 +562,22 @@ const MyAccount = () => {
                   <Card style={styles.referralCard}>
                     <Card.Body className="text-center">
                       <h5>Your Referral ID</h5>
-                      <div style={styles.referralCode}>
-                        {getReferralId()}
-                      </div>
+                      <div style={styles.referralCode}>{getReferralId()}</div>
                       <div style={styles.buttonGroup}>
                         <button
                           className="btn btn-outline-primary"
-                          onClick={() => copyToClipboard(getReferralId(), "Referral ID")}
+                          onClick={() =>
+                            copyToClipboard(getReferralId(), "Referral ID")
+                          }
                           disabled={getReferralId() === "Loading..."}
                         >
                           <i className="bi bi-clipboard me-2"></i>Copy
                         </button>
                         <button
                           className="btn btn-success"
-                          onClick={() => shareId(getReferralId(), "Referral ID")}
+                          onClick={() =>
+                            shareId(getReferralId(), "Referral ID")
+                          }
                           disabled={getReferralId() === "Loading..."}
                         >
                           <i className="bi bi-share me-2"></i>Share
@@ -538,13 +589,13 @@ const MyAccount = () => {
                   <Card style={styles.referralCard}>
                     <Card.Body className="text-center">
                       <h5>Your User ID</h5>
-                      <div style={styles.referralCode}>
-                        {getUserId()}
-                      </div>
+                      <div style={styles.referralCode}>{getUserId()}</div>
                       <div style={styles.buttonGroup}>
                         <button
                           className="btn btn-outline-primary"
-                          onClick={() => copyToClipboard(getUserId(), "User ID")}
+                          onClick={() =>
+                            copyToClipboard(getUserId(), "User ID")
+                          }
                           disabled={getUserId() === "Loading..."}
                         >
                           <i className="bi bi-clipboard me-2"></i>Copy
@@ -565,7 +616,7 @@ const MyAccount = () => {
           </Card>
         );
 
-      case 'account':
+      case "account":
         return (
           <Card>
             <Card.Header style={styles.cardHeaderGradient}>
@@ -581,13 +632,14 @@ const MyAccount = () => {
                     <Card.Body>
                       <ListGroup variant="flush">
                         <ListGroup.Item>
-                          <strong>Name:</strong> {userData.name || 'N/A'}
+                          <strong>Name:</strong> {userData.name || "N/A"}
                         </ListGroup.Item>
                         <ListGroup.Item>
-                          <strong>Phone:</strong> {userData.phoneNo || 'N/A'}
+                          <strong>Phone:</strong> {userData.phoneNo || "N/A"}
                         </ListGroup.Item>
                         <ListGroup.Item>
-                          <strong>Location:</strong> {userData.city || 'N/A'}, {userData.state || 'N/A'}
+                          <strong>Location:</strong> {userData.city || "N/A"},{" "}
+                          {userData.state || "N/A"}
                         </ListGroup.Item>
                         <ListGroup.Item>
                           <strong>User ID:</strong> {getUserId()}
@@ -606,7 +658,9 @@ const MyAccount = () => {
                     </Card.Header>
                     <Card.Body>
                       <div style={styles.tokenDisplay}>
-                        <h2 className="mb-0">{(userData.tokens || 0).toLocaleString()}</h2>
+                        <h2 className="mb-0">
+                          {(userData.tokens || 0).toLocaleString()}
+                        </h2>
                         <small className="text-muted">Available Tokens</small>
                       </div>
                       <div className="d-grid gap-2">
@@ -617,28 +671,36 @@ const MyAccount = () => {
                           <i className="bi bi-plus-circle me-2"></i>
                           Add Tokens
                         </button>
-                        <button 
+                        <button
                           className="btn btn-primary"
                           onClick={() => navigate("/withdraw")}
                         >
                           <i className="bi bi-arrow-down-circle me-2"></i>
                           Withdraw Tokens
                         </button>
-                        <button 
+                        <button
                           className="btn btn-outline-secondary"
                           onClick={() => navigate("/bankdetails")}
                         >
                           <i className="bi bi-bank me-2"></i>
                           Bank Details
                         </button>
-                        <button 
+                        <button
                           className="btn btn-outline-secondary"
                           onClick={() => navigate("/transactions")}
                         >
                           <i className="bi bi-bank me-2"></i>
                           Transaction History
                         </button>
-                        <button 
+
+                        <button
+                          className="btn btn-outline-secondary"
+                          onClick={() => navigate("/ingametransactions")}
+                        >
+                          <i className="bi bi-bank me-2"></i>
+                          Token In Game Transaction History
+                        </button>
+                        <button
                           className="btn btn-outline-secondary"
                           onClick={() => navigate("/userwins")}
                         >
@@ -654,7 +716,7 @@ const MyAccount = () => {
           </Card>
         );
 
-      case 'details':
+      case "details":
         return (
           <div>
             {/* KYC Details Section - Forgot Password Section Removed */}
@@ -672,14 +734,19 @@ const MyAccount = () => {
                       <Col md={6}>
                         <ListGroup variant="flush">
                           <ListGroup.Item>
-                            <strong>KYC Status:</strong> {getKycStatusBadge(userData.kycStatus)}
+                            <strong>KYC Status:</strong>{" "}
+                            {getKycStatusBadge(userData.kycStatus)}
                           </ListGroup.Item>
                           <ListGroup.Item>
-                            <strong>Submitted Date:</strong> {userData.kycSubmittedAt ? formatDate(userData.kycSubmittedAt) : 'N/A'}
+                            <strong>Submitted Date:</strong>{" "}
+                            {userData.kycSubmittedAt
+                              ? formatDate(userData.kycSubmittedAt)
+                              : "N/A"}
                           </ListGroup.Item>
                           {userData.kycAcceptedAt && (
                             <ListGroup.Item>
-                              <strong>Accepted Date:</strong> {formatDate(userData.kycAcceptedAt)}
+                              <strong>Accepted Date:</strong>{" "}
+                              {formatDate(userData.kycAcceptedAt)}
                             </ListGroup.Item>
                           )}
                         </ListGroup>
@@ -702,17 +769,32 @@ const MyAccount = () => {
                                 src={userData.kyc.aadharCardUrl}
                                 alt="Aadhar Card"
                                 style={styles.kycImage}
-                                onClick={() => handleImageClick(userData.kyc.aadharCardUrl, 'Aadhar Card')}
-                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                onClick={() =>
+                                  handleImageClick(
+                                    userData.kyc.aadharCardUrl,
+                                    "Aadhar Card"
+                                  )
+                                }
+                                onMouseEnter={(e) =>
+                                  (e.target.style.transform = "scale(1.05)")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.target.style.transform = "scale(1)")
+                                }
                               />
                               <Button
                                 variant="outline-primary"
                                 size="sm"
                                 className="mt-2"
-                                onClick={() => handleImageClick(userData.kyc.aadharCardUrl, 'Aadhar Card')}
+                                onClick={() =>
+                                  handleImageClick(
+                                    userData.kyc.aadharCardUrl,
+                                    "Aadhar Card"
+                                  )
+                                }
                               >
-                                <i className="bi bi-eye me-1"></i>View Full Image
+                                <i className="bi bi-eye me-1"></i>View Full
+                                Image
                               </Button>
                             </Card.Body>
                           </Card>
@@ -733,17 +815,32 @@ const MyAccount = () => {
                                 src={userData.kyc.panCardUrl}
                                 alt="PAN Card"
                                 style={styles.kycImage}
-                                onClick={() => handleImageClick(userData.kyc.panCardUrl, 'PAN Card')}
-                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                onClick={() =>
+                                  handleImageClick(
+                                    userData.kyc.panCardUrl,
+                                    "PAN Card"
+                                  )
+                                }
+                                onMouseEnter={(e) =>
+                                  (e.target.style.transform = "scale(1.05)")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.target.style.transform = "scale(1)")
+                                }
                               />
                               <Button
                                 variant="outline-primary"
                                 size="sm"
                                 className="mt-2"
-                                onClick={() => handleImageClick(userData.kyc.panCardUrl, 'PAN Card')}
+                                onClick={() =>
+                                  handleImageClick(
+                                    userData.kyc.panCardUrl,
+                                    "PAN Card"
+                                  )
+                                }
                               >
-                                <i className="bi bi-eye me-1"></i>View Full Image
+                                <i className="bi bi-eye me-1"></i>View Full
+                                Image
                               </Button>
                             </Card.Body>
                           </Card>
@@ -764,17 +861,32 @@ const MyAccount = () => {
                                 src={userData.kyc.bankPassbookUrl}
                                 alt="Bank Passbook"
                                 style={styles.kycImage}
-                                onClick={() => handleImageClick(userData.kyc.bankPassbookUrl, 'Bank Passbook')}
-                                onMouseEnter={(e) => e.target.style.transform = 'scale(1.05)'}
-                                onMouseLeave={(e) => e.target.style.transform = 'scale(1)'}
+                                onClick={() =>
+                                  handleImageClick(
+                                    userData.kyc.bankPassbookUrl,
+                                    "Bank Passbook"
+                                  )
+                                }
+                                onMouseEnter={(e) =>
+                                  (e.target.style.transform = "scale(1.05)")
+                                }
+                                onMouseLeave={(e) =>
+                                  (e.target.style.transform = "scale(1)")
+                                }
                               />
                               <Button
                                 variant="outline-primary"
                                 size="sm"
                                 className="mt-2"
-                                onClick={() => handleImageClick(userData.kyc.bankPassbookUrl, 'Bank Passbook')}
+                                onClick={() =>
+                                  handleImageClick(
+                                    userData.kyc.bankPassbookUrl,
+                                    "Bank Passbook"
+                                  )
+                                }
                               >
-                                <i className="bi bi-eye me-1"></i>View Full Image
+                                <i className="bi bi-eye me-1"></i>View Full
+                                Image
                               </Button>
                             </Card.Body>
                           </Card>
@@ -782,17 +894,21 @@ const MyAccount = () => {
                       )}
                     </Row>
 
-                    {(!userData.kyc.aadharCardUrl && !userData.kyc.panCardUrl && !userData.kyc.bankPassbookUrl) && (
-                      <Alert variant="info">
-                        <i className="bi bi-info-circle me-2"></i>
-                        No KYC documents found. Please complete your KYC verification.
-                      </Alert>
-                    )}
+                    {!userData.kyc.aadharCardUrl &&
+                      !userData.kyc.panCardUrl &&
+                      !userData.kyc.bankPassbookUrl && (
+                        <Alert variant="info">
+                          <i className="bi bi-info-circle me-2"></i>
+                          No KYC documents found. Please complete your KYC
+                          verification.
+                        </Alert>
+                      )}
                   </div>
                 ) : (
                   <Alert variant="warning">
                     <i className="bi bi-exclamation-triangle me-2"></i>
-                    KYC verification not completed. Please submit your documents for verification.
+                    KYC verification not completed. Please submit your documents
+                    for verification.
                   </Alert>
                 )}
               </Card.Body>
@@ -800,7 +916,7 @@ const MyAccount = () => {
           </div>
         );
 
-      case 'support':
+      case "support":
         return (
           <Card>
             <Card.Header style={styles.cardHeaderGradient}>
@@ -811,15 +927,23 @@ const MyAccount = () => {
                 <Col md={10}>
                   <Row>
                     <Col lg={4} md={6} className="mb-4">
-                      <Card style={styles.supportCard}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                      <Card
+                        style={styles.supportCard}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.transform = "translateY(-5px)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.transform = "translateY(0)")
+                        }
                       >
                         <Card.Body className="text-center p-4">
-                          <i className="bi bi-headset" style={styles.supportIcon}></i>
+                          <i
+                            className="bi bi-headset"
+                            style={styles.supportIcon}
+                          ></i>
                           <h5>Get Support</h5>
                           <p>Need help? Contact support for assistance..</p>
-                          <button 
+                          <button
                             className="btn btn-outline-primary"
                             onClick={() => navigate("/help")}
                           >
@@ -830,16 +954,26 @@ const MyAccount = () => {
                     </Col>
 
                     <Col lg={4} md={6} className="mb-4">
-                      <Card style={styles.supportCard}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                      <Card
+                        style={styles.supportCard}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.transform = "translateY(-5px)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.transform = "translateY(0)")
+                        }
                       >
                         <Card.Body className="text-center p-4">
-                          <i className="bi bi-book" style={styles.supportIcon}></i>
+                          <i
+                            className="bi bi-book"
+                            style={styles.supportIcon}
+                          ></i>
                           <h5>Game Rules</h5>
-                          <p>Learn about the rules and how to play our games.</p>
-                          <button 
-                            className="btn btn-outline-primary" 
+                          <p>
+                            Learn about the rules and how to play our games.
+                          </p>
+                          <button
+                            className="btn btn-outline-primary"
                             onClick={() => navigate("/rules")}
                           >
                             Read Game Rules
@@ -848,16 +982,24 @@ const MyAccount = () => {
                       </Card>
                     </Col>
                     <Col lg={4} md={6} className="mb-4">
-                      <Card style={styles.supportCard}
-                        onMouseEnter={(e) => e.currentTarget.style.transform = 'translateY(-5px)'}
-                        onMouseLeave={(e) => e.currentTarget.style.transform = 'translateY(0)'}
+                      <Card
+                        style={styles.supportCard}
+                        onMouseEnter={(e) =>
+                          (e.currentTarget.style.transform = "translateY(-5px)")
+                        }
+                        onMouseLeave={(e) =>
+                          (e.currentTarget.style.transform = "translateY(0)")
+                        }
                       >
                         <Card.Body className="text-center p-4">
-                          <i className="bi bi-book" style={styles.supportIcon}></i>
+                          <i
+                            className="bi bi-book"
+                            style={styles.supportIcon}
+                          ></i>
                           <h5>FAQ's</h5>
                           <p>Know Some Interesting facts about our game.</p>
-                          <button 
-                            className="btn btn-outline-primary" 
+                          <button
+                            className="btn btn-outline-primary"
                             onClick={() => navigate("/faqs")}
                           >
                             Read FAQ's
@@ -883,9 +1025,10 @@ const MyAccount = () => {
 
   // Add Bootstrap Icons CSS link to document
   useEffect(() => {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css';
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href =
+      "https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css";
     document.head.appendChild(link);
 
     return () => {
@@ -900,7 +1043,10 @@ const MyAccount = () => {
           {/* Sidebar */}
           <Col lg={3} md={4} style={styles.sidebarWrapper}>
             <Card style={styles.sidebar}>
-              <Card.Header className="text-white" style={{ backgroundColor: "rgb(13, 110, 253)" }}>
+              <Card.Header
+                className="text-white"
+                style={{ backgroundColor: "rgb(13, 110, 253)" }}
+              >
                 <h4 className="mb-0">My Account</h4>
               </Card.Header>
               <Card.Body className="p-0">
@@ -908,13 +1054,22 @@ const MyAccount = () => {
                   <div style={styles.userInfo}>
                     <div className="d-flex align-items-center">
                       <div style={styles.miniAvatar}>
-                        {userData.name ? userData.name.charAt(0).toUpperCase() : 'U'}
+                        {userData.name
+                          ? userData.name.charAt(0).toUpperCase()
+                          : "U"}
                       </div>
                       <div className="ms-3">
-                        <h5 className="mb-0">{userData.name || 'Unknown User'}</h5>
+                        <h5 className="mb-0">
+                          {userData.name || "Unknown User"}
+                        </h5>
                         <div style={styles.tokenBadge}>
                           <i className="bi bi-coin me-1"></i>
-                          <span>{userData.tokens ? userData.tokens.toLocaleString() : 0} Tokens</span>
+                          <span>
+                            {userData.tokens
+                              ? userData.tokens.toLocaleString()
+                              : 0}{" "}
+                            Tokens
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -924,18 +1079,19 @@ const MyAccount = () => {
                   <Nav.Link
                     style={{
                       ...styles.navLink,
-                      ...(activeTab === 'profile' ? styles.navLinkActive : {})
+                      ...(activeTab === "profile" ? styles.navLinkActive : {}),
                     }}
-                    onClick={() => setActiveTab('profile')}
+                    onClick={() => setActiveTab("profile")}
                     onMouseEnter={(e) => {
-                      if (activeTab !== 'profile') {
-                        e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
+                      if (activeTab !== "profile") {
+                        e.currentTarget.style.backgroundColor =
+                          styles.navLinkHover.backgroundColor;
                         e.currentTarget.style.color = styles.navLinkHover.color;
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (activeTab !== 'profile') {
-                        e.currentTarget.style.backgroundColor = '';
+                      if (activeTab !== "profile") {
+                        e.currentTarget.style.backgroundColor = "";
                         e.currentTarget.style.color = styles.navLink.color;
                       }
                     }}
@@ -946,18 +1102,19 @@ const MyAccount = () => {
                   <Nav.Link
                     style={{
                       ...styles.navLink,
-                      ...(activeTab === 'refrelid' ? styles.navLinkActive : {})
+                      ...(activeTab === "refrelid" ? styles.navLinkActive : {}),
                     }}
-                    onClick={() => setActiveTab('refrelid')}
+                    onClick={() => setActiveTab("refrelid")}
                     onMouseEnter={(e) => {
-                      if (activeTab !== 'refrelid') {
-                        e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
+                      if (activeTab !== "refrelid") {
+                        e.currentTarget.style.backgroundColor =
+                          styles.navLinkHover.backgroundColor;
                         e.currentTarget.style.color = styles.navLinkHover.color;
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (activeTab !== 'refrelid') {
-                        e.currentTarget.style.backgroundColor = '';
+                      if (activeTab !== "refrelid") {
+                        e.currentTarget.style.backgroundColor = "";
                         e.currentTarget.style.color = styles.navLink.color;
                       }
                     }}
@@ -968,18 +1125,19 @@ const MyAccount = () => {
                   <Nav.Link
                     style={{
                       ...styles.navLink,
-                      ...(activeTab === 'account' ? styles.navLinkActive : {})
+                      ...(activeTab === "account" ? styles.navLinkActive : {}),
                     }}
-                    onClick={() => setActiveTab('account')}
+                    onClick={() => setActiveTab("account")}
                     onMouseEnter={(e) => {
-                      if (activeTab !== 'account') {
-                        e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
+                      if (activeTab !== "account") {
+                        e.currentTarget.style.backgroundColor =
+                          styles.navLinkHover.backgroundColor;
                         e.currentTarget.style.color = styles.navLinkHover.color;
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (activeTab !== 'account') {
-                        e.currentTarget.style.backgroundColor = '';
+                      if (activeTab !== "account") {
+                        e.currentTarget.style.backgroundColor = "";
                         e.currentTarget.style.color = styles.navLink.color;
                       }
                     }}
@@ -990,18 +1148,19 @@ const MyAccount = () => {
                   <Nav.Link
                     style={{
                       ...styles.navLink,
-                      ...(activeTab === 'details' ? styles.navLinkActive : {})
+                      ...(activeTab === "details" ? styles.navLinkActive : {}),
                     }}
-                    onClick={() => setActiveTab('details')}
+                    onClick={() => setActiveTab("details")}
                     onMouseEnter={(e) => {
-                      if (activeTab !== 'details') {
-                        e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
+                      if (activeTab !== "details") {
+                        e.currentTarget.style.backgroundColor =
+                          styles.navLinkHover.backgroundColor;
                         e.currentTarget.style.color = styles.navLinkHover.color;
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (activeTab !== 'details') {
-                        e.currentTarget.style.backgroundColor = '';
+                      if (activeTab !== "details") {
+                        e.currentTarget.style.backgroundColor = "";
                         e.currentTarget.style.color = styles.navLink.color;
                       }
                     }}
@@ -1012,18 +1171,19 @@ const MyAccount = () => {
                   <Nav.Link
                     style={{
                       ...styles.navLink,
-                      ...(activeTab === 'support' ? styles.navLinkActive : {})
+                      ...(activeTab === "support" ? styles.navLinkActive : {}),
                     }}
-                    onClick={() => setActiveTab('support')}
+                    onClick={() => setActiveTab("support")}
                     onMouseEnter={(e) => {
-                      if (activeTab !== 'support') {
-                        e.currentTarget.style.backgroundColor = styles.navLinkHover.backgroundColor;
+                      if (activeTab !== "support") {
+                        e.currentTarget.style.backgroundColor =
+                          styles.navLinkHover.backgroundColor;
                         e.currentTarget.style.color = styles.navLinkHover.color;
                       }
                     }}
                     onMouseLeave={(e) => {
-                      if (activeTab !== 'support') {
-                        e.currentTarget.style.backgroundColor = '';
+                      if (activeTab !== "support") {
+                        e.currentTarget.style.backgroundColor = "";
                         e.currentTarget.style.color = styles.navLink.color;
                       }
                     }}
@@ -1066,7 +1226,7 @@ const MyAccount = () => {
           </Button>
           <Button
             variant="primary"
-            onClick={() => window.open(selectedImage, '_blank')}
+            onClick={() => window.open(selectedImage, "_blank")}
           >
             <i className="bi bi-download me-2"></i>
             Download
@@ -1086,9 +1246,7 @@ const MyAccount = () => {
           <Toast.Header>
             <strong className="me-auto">Success</strong>
           </Toast.Header>
-          <Toast.Body className="text-white">
-            {toastMessage}
-          </Toast.Body>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
         </Toast>
       </ToastContainer>
     </>
