@@ -14,12 +14,14 @@ import {
   Loader,
   PieChart,
   BarChart3,
-  Tag
+  Tag,
+  GamepadIcon
 } from 'lucide-react';
 
 export default function AdminTaxDetails() {
   const [withdrawTaxes, setWithdrawTaxes] = useState([]);
   const [depositTaxes, setDepositTaxes] = useState([]);
+  const [gameTaxes, setGameTaxes] = useState([]);
   const [activeTab, setActiveTab] = useState("withdraw");
 
   useEffect(() => {
@@ -31,6 +33,7 @@ export default function AdminTaxDetails() {
         if (parsedData.success && parsedData.data) {
           let allWithdraws = [];
           let allDeposits = [];
+          let allGameTaxes = [];
 
           parsedData.data.forEach((user) => {
             // Withdraw Tax - Only include approved withdrawals (exclude rejected ones)
@@ -68,14 +71,55 @@ export default function AdminTaxDetails() {
                 }
               });
             }
+
+            // In-game Transaction Tax - From binarytokensingame and wontokensingame
+            if (user.binarytokensingame) {
+              Object.keys(user.binarytokensingame).forEach((tid) => {
+                const transaction = user.binarytokensingame[tid];
+                if (transaction.taxDeducted && transaction.taxDeducted > 0) {
+                  allGameTaxes.push({
+                    userId: user.userIds?.myuserid || user.userId,
+                    name: user.name,
+                    transactionId: tid,
+                    createdAt: new Date(transaction.timestamp || transaction.date).toLocaleString(),
+                    amount: transaction.requestedAmount,
+                    tax: transaction.taxDeducted,
+                    taxPercentage: transaction.taxPercentage,
+                    type: 'binary_tokens',
+                    status: transaction.status || 'completed'
+                  });
+                }
+              });
+            }
+
+            if (user.wontokensingame) {
+              Object.keys(user.wontokensingame).forEach((tid) => {
+                const transaction = user.wontokensingame[tid];
+                if (transaction.taxDeducted && transaction.taxDeducted > 0) {
+                  allGameTaxes.push({
+                    userId: user.userIds?.myuserid || user.userId,
+                    name: user.name,
+                    transactionId: tid,
+                    createdAt: new Date(transaction.timestamp || transaction.date).toLocaleString(),
+                    amount: transaction.requestedAmount,
+                    tax: transaction.taxDeducted,
+                    taxPercentage: transaction.taxPercentage,
+                    type: 'won_tokens',
+                    status: transaction.status || 'completed'
+                  });
+                }
+              });
+            }
           });
 
           // Sort latest first
           allWithdraws.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
           allDeposits.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          allGameTaxes.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
           setWithdrawTaxes(allWithdraws);
           setDepositTaxes(allDeposits);
+          setGameTaxes(allGameTaxes);
         }
       } catch (err) {
         console.error("Error parsing event data:", err);
@@ -93,7 +137,25 @@ export default function AdminTaxDetails() {
   }, []);
 
   const getTotalTax = (list) => {
-    return list.reduce((sum, item) => sum + (item.tax || 0), 0);
+    const total = list.reduce((sum, item) => sum + (item.tax || 0), 0);
+    // Format to 1 decimal place
+    return Math.round(total * 10) / 10;
+  };
+
+  const getTaxTypeStats = (list) => {
+    const stats = {
+      binary_tokens: { count: 0, total: 0 },
+      won_tokens: { count: 0, total: 0 }
+    };
+    
+    list.forEach(item => {
+      if (stats[item.type]) {
+        stats[item.type].count += 1;
+        stats[item.type].total += item.tax || 0;
+      }
+    });
+    
+    return stats;
   };
 
   const styles = {
@@ -163,14 +225,24 @@ export default function AdminTaxDetails() {
       color: '#ffffff',
       boxShadow: '0 4px 15px rgba(40, 167, 69, 0.4)'
     },
+    gameTab: {
+      borderColor: '#ff6b35',
+      color: '#ff6b35'
+    },
+    gameTabActive: {
+      backgroundColor: '#ff6b35',
+      borderColor: '#ff6b35',
+      color: '#ffffff',
+      boxShadow: '0 4px 15px rgba(255, 107, 53, 0.4)'
+    },
     summaryCard: {
-      background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
       borderRadius: '15px',
       padding: '1.5rem',
       color: 'white',
       textAlign: 'center',
-      boxShadow: '0 6px 20px rgba(23, 162, 184, 0.3)',
-      margin: '1.5rem'
+      boxShadow: '0 6px 20px rgba(0,0,0,0.15)',
+      margin: '0.5rem',
+      border: '2px solid rgba(255,255,255,0.2)'
     },
     statsContainer: {
       background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
@@ -178,16 +250,13 @@ export default function AdminTaxDetails() {
       borderBottom: '1px solid #e9ecef'
     },
     statCard: {
-      background: activeTab === 'withdraw' 
-        ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)'
-        : 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
       borderRadius: '12px',
-      padding: '1rem',
+      padding: '1.5rem',
       color: 'white',
       textAlign: 'center',
-      boxShadow: activeTab === 'withdraw'
-        ? '0 4px 15px rgba(220, 53, 69, 0.3)'
-        : '0 4px 15px rgba(40, 167, 69, 0.3)'
+      boxShadow: '0 4px 15px rgba(0,0,0,0.1)',
+      border: '2px solid rgba(255,255,255,0.2)',
+      height: '100%'
     },
     tableContainer: {
       borderRadius: '0 0 20px 20px',
@@ -202,7 +271,9 @@ export default function AdminTaxDetails() {
       letterSpacing: '0.5px',
       borderBottom: activeTab === 'withdraw' 
         ? '3px solid #dc3545'
-        : '3px solid #28a745',
+        : activeTab === 'deposit'
+        ? '3px solid #28a745'
+        : '3px solid #ff6b35',
       borderRight: '1px solid #495057'
     },
     tableRow: {
@@ -229,7 +300,7 @@ export default function AdminTaxDetails() {
     },
     taxCell: {
       fontWeight: '700',
-      color: '#dc3545',
+      color: activeTab === 'withdraw' ? '#dc3545' : activeTab === 'deposit' ? '#28a745' : '#ff6b35',
       fontSize: '1.1rem'
     },
     noDataCard: {
@@ -238,6 +309,24 @@ export default function AdminTaxDetails() {
       padding: '3rem',
       textAlign: 'center',
       margin: '2rem'
+    },
+    typeBadge: {
+      binary_tokens: {
+        background: 'linear-gradient(135deg, #6f42c1 0%, #563d7c 100%)',
+        color: 'white'
+      },
+      won_tokens: {
+        background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
+        color: 'white'
+      },
+      entry_fee: {
+        background: 'linear-gradient(135deg, #17a2b8 0%, #138496 100%)',
+        color: 'white'
+      },
+      tokens: {
+        background: 'linear-gradient(135deg, #ffc107 0%, #e0a800 100%)',
+        color: 'black'
+      }
     }
   };
 
@@ -266,11 +355,19 @@ export default function AdminTaxDetails() {
                     Name
                   </div>
                 </th>
-                {activeTab === 'deposit' && (
+                {(activeTab === 'deposit' || activeTab === 'game') && (
                   <th className="px-4 py-3" style={styles.tableCell}>
                     <div className="d-flex align-items-center justify-content-center">
                       <Tag size={16} className="me-2" />
                       Type
+                    </div>
+                  </th>
+                )}
+                {activeTab === 'game' && (
+                  <th className="px-4 py-3" style={styles.tableCell}>
+                    <div className="d-flex align-items-center justify-content-center">
+                      <Calculator size={16} className="me-2" />
+                      Tax %
                     </div>
                   </th>
                 )}
@@ -295,7 +392,11 @@ export default function AdminTaxDetails() {
                   style={idx % 2 === 0 ? styles.tableRow : {...styles.tableRow, ...styles.alternateRow}}
                   className="text-center"
                   onMouseEnter={(e) => {
-                    const hoverColor = activeTab === 'withdraw' ? '#ffeaea' : '#e8f5e8';
+                    const hoverColor = activeTab === 'withdraw' 
+                      ? '#ffeaea' 
+                      : activeTab === 'deposit'
+                      ? '#e8f5e8'
+                      : '#fff3e8';
                     e.currentTarget.style.backgroundColor = hoverColor;
                     e.currentTarget.style.transform = 'translateX(2px)';
                   }}
@@ -313,10 +414,23 @@ export default function AdminTaxDetails() {
                   <td className="px-4 py-3" style={styles.tableCell}>
                     <strong>{t.name}</strong>
                   </td>
-                  {activeTab === 'deposit' && (
+                  {(activeTab === 'deposit' || activeTab === 'game') && (
                     <td className="px-4 py-3" style={styles.tableCell}>
-                      <span className={`badge ${t.type === 'entry_fee' ? 'bg-info' : 'bg-success'}`}>
-                        {t.type === 'entry_fee' ? 'Entry Fee' : 'Tokens'}
+                      <span 
+                        className="badge" 
+                        style={styles.typeBadge[t.type] || { background: '#6c757d', color: 'white' }}
+                      >
+                        {t.type === 'entry_fee' ? 'Entry Fee' : 
+                         t.type === 'tokens' ? 'Tokens' :
+                         t.type === 'binary_tokens' ? 'Binary Tokens' :
+                         t.type === 'won_tokens' ? 'Won Tokens' : t.type}
+                      </span>
+                    </td>
+                  )}
+                  {activeTab === 'game' && (
+                    <td className="px-4 py-3" style={styles.tableCell}>
+                      <span className="badge bg-info">
+                        {t.taxPercentage}%
                       </span>
                     </td>
                   )}
@@ -349,10 +463,17 @@ export default function AdminTaxDetails() {
     </div>
   );
 
-  const activeData = activeTab === "withdraw" ? withdrawTaxes : depositTaxes;
+  const activeData = activeTab === "withdraw" 
+    ? withdrawTaxes 
+    : activeTab === "deposit" 
+    ? depositTaxes 
+    : gameTaxes;
+  
   const totalTax = getTotalTax(activeData);
   const withdrawTotal = getTotalTax(withdrawTaxes);
   const depositTotal = getTotalTax(depositTaxes);
+  const gameTotal = getTotalTax(gameTaxes);
+  const gameStats = getTaxTypeStats(gameTaxes);
 
   return (
     <div style={styles.pageContainer}>
@@ -368,7 +489,7 @@ export default function AdminTaxDetails() {
                 </h1>
               </div>
               <p style={styles.headerSubtitle}>
-                Comprehensive tax tracking for deposits and withdrawals
+                Comprehensive tax tracking for deposits, withdrawals, and in-game transactions
               </p>
             </div>
           </div>
@@ -402,15 +523,27 @@ export default function AdminTaxDetails() {
                 <TrendingUp size={20} className="me-2" />
                 Deposit Tax
               </button>
+              <button
+                style={{
+                  ...styles.tabButton,
+                  ...(activeTab === "game" ? 
+                    {...styles.gameTab, ...styles.gameTabActive} : 
+                    styles.gameTab)
+                }}
+                onClick={() => setActiveTab("game")}
+                className="d-flex align-items-center"
+              >
+                <GamepadIcon size={20} className="me-2" />
+                In-game Tax
+              </button>
             </div>
 
-            {/* Summary Cards */}
+            {/* Summary Cards - Horizontal Layout */}
             <div className="row g-3">
-              <div className="col-md-6">
+              <div className="col-md-4">
                 <div style={{
                   ...styles.summaryCard,
                   background: 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)',
-                  boxShadow: '0 6px 20px rgba(220, 53, 69, 0.3)'
                 }}>
                   <div className="d-flex align-items-center justify-content-center mb-2">
                     <TrendingDown size={24} className="me-2" />
@@ -420,11 +553,10 @@ export default function AdminTaxDetails() {
                   <small className="opacity-75">{withdrawTaxes.length} transactions</small>
                 </div>
               </div>
-              <div className="col-md-6">
+              <div className="col-md-4">
                 <div style={{
                   ...styles.summaryCard,
                   background: 'linear-gradient(135deg, #28a745 0%, #20c997 100%)',
-                  boxShadow: '0 6px 20px rgba(40, 167, 69, 0.3)'
                 }}>
                   <div className="d-flex align-items-center justify-content-center mb-2">
                     <TrendingUp size={24} className="me-2" />
@@ -434,14 +566,37 @@ export default function AdminTaxDetails() {
                   <small className="opacity-75">{depositTaxes.length} transactions</small>
                 </div>
               </div>
+              <div className="col-md-4">
+                <div style={{
+                  ...styles.summaryCard,
+                  background: 'linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%)',
+                }}>
+                  <div className="d-flex align-items-center justify-content-center mb-2">
+                    <GamepadIcon size={24} className="me-2" />
+                    <h5 className="mb-0">Total In-game Tax</h5>
+                  </div>
+                  <h2 className="mb-0">₹{gameTotal}</h2>
+                  <small className="opacity-75">
+                    {gameTaxes.length} transactions
+                    {gameStats.binary_tokens.count > 0 && ` (${gameStats.binary_tokens.count} binary, ${gameStats.won_tokens.count} won)`}
+                  </small>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Stats Section */}
+          {/* Stats Section - Simplified */}
           <div style={styles.statsContainer}>
-            <div className="row g-3">
+            <div className="row g-3 justify-content-center">
               <div className="col-md-4">
-                <div style={styles.statCard}>
+                <div style={{
+                  ...styles.statCard,
+                  background: activeTab === 'withdraw' 
+                    ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)'
+                    : activeTab === 'deposit'
+                    ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)'
+                    : 'linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%)',
+                }}>
                   <div className="d-flex align-items-center justify-content-center mb-2">
                     <Database size={24} className="me-2" />
                     <h5 className="mb-0">Active Records</h5>
@@ -450,21 +605,19 @@ export default function AdminTaxDetails() {
                 </div>
               </div>
               <div className="col-md-4">
-                <div style={styles.statCard}>
+                <div style={{
+                  ...styles.statCard,
+                  background: activeTab === 'withdraw' 
+                    ? 'linear-gradient(135deg, #dc3545 0%, #c82333 100%)'
+                    : activeTab === 'deposit'
+                    ? 'linear-gradient(135deg, #28a745 0%, #20c997 100%)'
+                    : 'linear-gradient(135deg, #ff6b35 0%, #e55a2b 100%)',
+                }}>
                   <div className="d-flex align-items-center justify-content-center mb-2">
                     <Calculator size={24} className="me-2" />
                     <h5 className="mb-0">Current Tax Total</h5>
                   </div>
                   <h3 className="mb-0">₹{totalTax}</h3>
-                </div>
-              </div>
-              <div className="col-md-4">
-                <div style={styles.statCard}>
-                  <div className="d-flex align-items-center justify-content-center mb-2">
-                    <BarChart3 size={24} className="me-2" />
-                    <h5 className="mb-0">Category</h5>
-                  </div>
-                  <h3 className="mb-0 text-capitalize">{activeTab}</h3>
                 </div>
               </div>
             </div>

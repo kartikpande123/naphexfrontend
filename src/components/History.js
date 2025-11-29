@@ -16,6 +16,16 @@ const UserGameHistory = () => {
     lastError: null
   });
   
+  // Helper function to format tokens to 2 decimal places
+  const formatTokens = (tokens) => {
+    return typeof tokens === 'number' ? tokens.toFixed(2) : parseFloat(tokens || 0).toFixed(2);
+  };
+
+  // Helper function to format currency to 2 decimal places
+  const formatCurrency = (amount) => {
+    return typeof amount === 'number' ? amount.toFixed(2) : parseFloat(amount || 0).toFixed(2);
+  };
+  
   useEffect(() => {
     let eventSource = null;
     
@@ -341,7 +351,7 @@ const UserGameHistory = () => {
               </div>
               <div className="tokens-info border border-success rounded-pill px-3 py-2 bg-light">
                 <span className="fw-bold text-success">
-                  <i className="bi bi-coin me-1"></i> Available Tokens: {userData?.tokens || 0}
+                  <i className="bi bi-coin me-1"></i> Available Tokens: {formatTokens(userData?.tokens || 0)}
                 </span>
               </div>
             </div>
@@ -382,7 +392,7 @@ const UserGameHistory = () => {
                       </td>
                       <td className="text-end fw-bold border-end align-middle">
                         <span className="amount-cell bg-light px-3 py-1 rounded-pill">
-                          ₹{game.amount}
+                          ₹{formatCurrency(game.amount)}
                         </span>
                       </td>
                     </tr>
@@ -401,7 +411,7 @@ const UserGameHistory = () => {
                   <td colSpan={4} className="text-end fw-bold border-start">Total Amount Played:</td>
                   <td className="text-end fw-bold text-success border-end">
                     <div className="total-amount bg-success bg-opacity-10 px-3 py-2 rounded">
-                      ₹{totalAmount}
+                      ₹{formatCurrency(totalAmount)}
                     </div>
                   </td>
                 </tr>

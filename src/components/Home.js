@@ -24,6 +24,11 @@ const Home = () => {
 
   const navigate = useNavigate();
 
+  // Helper function to format tokens to 2 decimal places
+  const formatTokens = (tokens) => {
+    return typeof tokens === 'number' ? tokens.toFixed(2) : parseFloat(tokens || 0).toFixed(2);
+  };
+
   // Helper function to create unique winner ID from composite key
   const createWinnerId = (winner) => {
     return `${winner.date}_${winner.session}_${winner.userId}_${winner.gameId}`;
@@ -420,7 +425,9 @@ const Home = () => {
                     cursor: !isEntryFeePaid ? 'not-allowed' : 'pointer'
                   }}
                 >
-                  <span className="token-amount">{tokenCount}</span> Tokens
+                  <span className="token-amount">
+                    {formatTokens(tokenCount)}
+                  </span> Tokens
                   <i className="bi bi-plus-circle-fill ms-2 token-icon"></i>
                 </button>
               </li>
