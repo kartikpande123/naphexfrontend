@@ -17,6 +17,16 @@ const TransactionHistory = () => {
 
   const TRANSACTIONS_PER_PAGE = 20;
 
+  // Helper function to format tokens to 2 decimal places
+  const formatTokens = (tokens) => {
+    return typeof tokens === 'number' ? tokens.toFixed(2) : parseFloat(tokens || 0).toFixed(2);
+  };
+
+  // Helper function to format currency to 2 decimal places
+  const formatCurrency = (amount) => {
+    return typeof amount === 'number' ? amount.toFixed(2) : parseFloat(amount || 0).toFixed(2);
+  };
+
   // Get phone number from localStorage
   const getUserPhoneNo = () => {
     try {
@@ -797,15 +807,15 @@ const TransactionHistory = () => {
             <div style={styles.balanceGrid}>
               <div style={styles.balanceItem}>
                 <div style={styles.balanceLabel}>Regular Tokens</div>
-                <div style={styles.balanceValue}>{userData.tokens || 0}</div>
+                <div style={styles.balanceValue}>{formatTokens(userData.tokens || 0)}</div>
               </div>
               <div style={styles.balanceItem}>
                 <div style={styles.balanceLabel}>Binary Tokens</div>
-                <div style={styles.balanceValue}>{userData.binaryTokens || 0}</div>
+                <div style={styles.balanceValue}>{formatTokens(userData.binaryTokens || 0)}</div>
               </div>
               <div style={styles.balanceItem}>
                 <div style={styles.balanceLabel}>Won Tokens</div>
-                <div style={styles.balanceValue}>{userData.wontokens || 0}</div>
+                <div style={styles.balanceValue}>{formatTokens(userData.wontokens || 0)}</div>
               </div>
               {userData.name && (
                 <div style={styles.balanceItem}>
@@ -878,19 +888,19 @@ const TransactionHistory = () => {
                           </span>
                         </td>
                         <td style={{...styles.td, fontWeight: '600'}}>
-                          ₹{transaction.amountRequested}
+                          ₹{formatCurrency(transaction.amountRequested)}
                         </td>
                         <td style={{
                           ...styles.td,
                           ...(transaction.amountCredited > 0 ? styles.amountPositive : styles.amountNegative)
                         }}>
-                          {transaction.type === 'deposit' ? '+' : ''}{transaction.amountCredited} Tokens
+                          {transaction.type === 'deposit' ? '+' : ''}{formatTokens(transaction.amountCredited)} Tokens
                         </td>
                         <td style={{...styles.td, fontWeight: '600', color: '#dc2626'}}>
-                          {transaction.finalAmount ? `₹${transaction.finalAmount}` : '-'}
+                          {transaction.finalAmount ? `₹${formatCurrency(transaction.finalAmount)}` : '-'}
                         </td>
                         <td style={styles.td}>
-                          ₹{transaction.tax} ({transaction.taxRate})
+                          ₹{formatCurrency(transaction.tax)} ({transaction.taxRate})
                         </td>
                         <td style={{...styles.td, fontSize: '13px'}}>
                           {transaction.method}

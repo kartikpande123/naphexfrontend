@@ -15,6 +15,16 @@ const IngameTransaction = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
+  // Helper function to format tokens to 2 decimal places
+  const formatTokens = (tokens) => {
+    return typeof tokens === 'number' ? tokens.toFixed(2) : parseFloat(tokens || 0).toFixed(2);
+  };
+
+  // Helper function to format currency to 2 decimal places
+  const formatCurrency = (amount) => {
+    return typeof amount === 'number' ? amount.toFixed(2) : parseFloat(amount || 0).toFixed(2);
+  };
+
   // Internal CSS styles
   const styles = {
     mainContainer: {
@@ -382,7 +392,7 @@ const IngameTransaction = () => {
                       <div style={styles.balanceItem}>
                         <div style={styles.balanceLabel}>💰 Regular Tokens</div>
                         <h3 style={{ ...styles.balanceValue, color: '#2d3748' }}>
-                          {userData.tokens || 0}
+                          {formatTokens(userData.tokens || 0)}
                         </h3>
                         <div style={styles.balanceDivider}></div>
                       </div>
@@ -391,7 +401,7 @@ const IngameTransaction = () => {
                       <div style={styles.balanceItem}>
                         <div style={styles.balanceLabel}>⚡ Binary Tokens</div>
                         <h3 style={{ ...styles.balanceValue, color: '#0d6efd' }}>
-                          {userData.binaryTokens || 0}
+                          {formatTokens(userData.binaryTokens || 0)}
                         </h3>
                         <div style={styles.balanceDivider}></div>
                       </div>
@@ -400,7 +410,7 @@ const IngameTransaction = () => {
                       <div style={styles.balanceItem}>
                         <div style={styles.balanceLabel}>🏆 Won Tokens</div>
                         <h3 style={{ ...styles.balanceValue, color: '#198754' }}>
-                          {userData.wontokens || 0}
+                          {formatTokens(userData.wontokens || 0)}
                         </h3>
                         <div style={styles.balanceDivider}></div>
                       </div>
@@ -525,12 +535,12 @@ const IngameTransaction = () => {
                               </Badge>
                             </td>
                             <td className="py-3">
-                              <div style={styles.amountText}>₹{transaction.requestedAmount}</div>
+                              <div style={styles.amountText}>₹{formatCurrency(transaction.requestedAmount)}</div>
                             </td>
                             <td className="py-3">
                               <div style={styles.taxDetails}>
                                 <div style={{ color: '#2d3748', fontWeight: '600' }}>
-                                  ₹{transaction.taxDeducted}
+                                  ₹{formatCurrency(transaction.taxDeducted)}
                                 </div>
                                 <div style={{ color: '#718096' }}>
                                   ({transaction.taxPercentage}%)
