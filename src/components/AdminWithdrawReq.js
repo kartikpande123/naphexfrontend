@@ -6,6 +6,8 @@ import API_BASE_URL from "./ApiConfig";
 export default function AdminWithdrawReq() {
   const [withdrawals, setWithdrawals] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [transactionId, setTransactionId] = useState(""); // State for transaction ID
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState(null); // Track selected withdrawal
 
   useEffect(() => {
     const eventSource = new EventSource(`${API_BASE_URL}/api/users`);
@@ -28,7 +30,7 @@ export default function AdminWithdrawReq() {
                     phoneNo: user.phoneNo,
                     ...wd,
                     withdrawalId: wid,
-                    withdrawalType: "binary", // Mark as binary withdrawal
+                    withdrawalType: "binary",
                   });
                 }
               });
@@ -44,7 +46,7 @@ export default function AdminWithdrawReq() {
                     phoneNo: user.phoneNo,
                     ...wd,
                     withdrawalId: wid,
-                    withdrawalType: "won", // Mark as won withdrawal
+                    withdrawalType: "won",
                   });
                 }
               });
@@ -88,15 +90,22 @@ export default function AdminWithdrawReq() {
       ? `${API_BASE_URL}/won-withdrawals/${userId}/${withdrawalId}`
       : `${API_BASE_URL}/withdrawals/${userId}/${withdrawalId}`;
 
+    const payload = { 
+      status: action,
+      ...(action === "approved" && transactionId.trim() && { transactionId: transactionId.trim() })
+    };
+
     fetch(endpoint, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: action }),
+      body: JSON.stringify(payload),
     })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
           toast.success(`${userName}'s withdrawal ${action} successfully!`);
+          setTransactionId(""); // Reset transaction ID
+          setSelectedWithdrawal(null); // Reset selected withdrawal
         } else {
           toast.error(`Failed to ${action} withdrawal for ${userName}`);
         }
@@ -105,6 +114,53 @@ export default function AdminWithdrawReq() {
         console.error(err);
         toast.error(`Error ${action}ing withdrawal for ${userName}`);
       });
+  };
+
+  const handleReject = (userId, withdrawalId, userName, withdrawalType) => {
+    // Direct rejection without modal
+    const endpoint = withdrawalType === "won" 
+      ? `${API_BASE_URL}/won-withdrawals/${userId}/${withdrawalId}`
+      : `${API_BASE_URL}/withdrawals/${userId}/${withdrawalId}`;
+
+    fetch(endpoint, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ status: "rejected" }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          toast.success(`${userName}'s withdrawal rejected successfully!`);
+        } else {
+          toast.error(`Failed to reject withdrawal for ${userName}`);
+        }
+      })
+      .catch((err) => {
+        console.error(err);
+        toast.error(`Error rejecting withdrawal for ${userName}`);
+      });
+  };
+
+  const openApproveModal = (userId, withdrawalId, userName, withdrawalType) => {
+    setSelectedWithdrawal({ userId, withdrawalId, userName, withdrawalType });
+    setTransactionId(""); // Reset transaction ID when opening modal
+  };
+
+  const closeApproveModal = () => {
+    setSelectedWithdrawal(null);
+    setTransactionId("");
+  };
+
+  const handleApproveWithTransactionId = () => {
+    if (selectedWithdrawal) {
+      handleAction(
+        selectedWithdrawal.userId,
+        selectedWithdrawal.withdrawalId,
+        "approved",
+        selectedWithdrawal.userName,
+        selectedWithdrawal.withdrawalType
+      );
+    }
   };
 
   const getTokenTypeBadge = (withdrawal) => {
@@ -434,6 +490,146 @@ export default function AdminWithdrawReq() {
           margin-left: 1rem;
           display: inline-block;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.5);
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          z-index: 1000;
+          padding: 1rem;
+        }
+
+        .modal-content {
+          background: white;
+          border-radius: 12px;
+          padding: 2rem;
+          width: 100%;
+          max-width: 500px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-header {
+          margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+          font-size: 1.5rem;
+          font-weight: 600;
+          color: #1f2937;
+          margin: 0;
+        }
+
+        .modal-subtitle {
+          color: #6b7280;
+          margin-top: 0.5rem;
+        }
+
+        .input-group {
+          margin-bottom: 1.5rem;
+        }
+
+        .input-label {
+          display: block;
+          font-weight: 500;
+          color: #374151;
+          margin-bottom: 0.5rem;
+        }
+
+        .input-field {
+          width: 100%;
+          padding: 0.75rem 1rem;
+          border: 2px solid #e5e7eb;
+          border-radius: 8px;
+          font-size: 1rem;
+          transition: border-color 0.3s ease;
+        }
+
+        .input-field:focus {
+          outline: none;
+          border-color: #2563eb;
+        }
+
+        .input-note {
+          font-size: 0.875rem;
+          color: #6b7280;
+          margin-top: 0.5rem;
+        }
+
+        .modal-actions {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 1rem;
+          margin-top: 2rem;
+        }
+
+        .modal-action-btn {
+          flex: 1;
+          min-width: 120px;
+          padding: 0.75rem 1.5rem;
+          border-radius: 8px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          text-align: center;
+          border: 2px solid transparent;
+        }
+
+        .modal-cancel-btn {
+          background: #f3f4f6;
+          border-color: #e5e7eb;
+          color: #374151;
+        }
+
+        .modal-cancel-btn:hover {
+          background: #e5e7eb;
+        }
+
+        .modal-approve-without-btn {
+          background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+          color: white;
+          border: none;
+        }
+
+        .modal-approve-without-btn:hover {
+          background: linear-gradient(135deg, #059669 0%, #047857 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+        }
+
+        .modal-approve-with-btn {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          color: white;
+          border: none;
+        }
+
+        .modal-approve-with-btn:hover {
+          background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(37, 99, 235, 0.3);
+        }
+
+        .modal-approve-with-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+          transform: none;
+        }
+
+        .transaction-id-display {
+          background: #f8fafc;
+          padding: 0.75rem 1rem;
+          border-radius: 8px;
+          margin-top: 0.5rem;
+          font-family: monospace;
+          color: #2563eb;
+          border: 1px solid #dbeafe;
+        }
       `}</style>
 
       <div className="withdrawal-container">
@@ -551,13 +747,13 @@ export default function AdminWithdrawReq() {
                   <div className="action-buttons">
                     <button
                       className="approve-btn"
-                      onClick={() => handleAction(wd.userId, wd.withdrawalId, "approved", wd.name, wd.withdrawalType)}
+                      onClick={() => openApproveModal(wd.userId, wd.withdrawalId, wd.name, wd.withdrawalType)}
                     >
                       ✓ Approve
                     </button>
                     <button
                       className="reject-btn"
-                      onClick={() => handleAction(wd.userId, wd.withdrawalId, "rejected", wd.name, wd.withdrawalType)}
+                      onClick={() => handleReject(wd.userId, wd.withdrawalId, wd.name, wd.withdrawalType)}
                     >
                       ✕ Reject
                     </button>
@@ -568,6 +764,70 @@ export default function AdminWithdrawReq() {
           )}
         </div>
       </div>
+
+      {/* Transaction ID Modal */}
+      {selectedWithdrawal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h3 className="modal-title">Approve Withdrawal</h3>
+              <p className="modal-subtitle">
+                For {selectedWithdrawal.userName} • {selectedWithdrawal.withdrawalType === "won" ? "Won Tokens" : "Binary Tokens"}
+              </p>
+            </div>
+            
+            <div className="input-group">
+              <label className="input-label">
+                Transaction ID (Optional)
+              </label>
+              <input
+                type="text"
+                className="input-field"
+                placeholder="Enter transaction/reference number (optional)"
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                autoFocus
+              />
+              {transactionId && (
+                <div className="transaction-id-display">
+                  Transaction ID: {transactionId}
+                </div>
+              )}
+              <p className="input-note">
+                Optional: Add a transaction/reference number for tracking purposes. Leave blank if not available.
+              </p>
+            </div>
+
+            <div className="modal-actions">
+              <button
+                className="modal-action-btn modal-cancel-btn"
+                onClick={closeApproveModal}
+              >
+                Cancel
+              </button>
+              <button
+                className="modal-action-btn modal-approve-without-btn"
+                onClick={() => handleAction(
+                  selectedWithdrawal.userId,
+                  selectedWithdrawal.withdrawalId,
+                  "approved",
+                  selectedWithdrawal.userName,
+                  selectedWithdrawal.withdrawalType
+                )}
+              >
+                Approve Without ID
+              </button>
+              <button
+                className="modal-action-btn modal-approve-with-btn"
+                onClick={handleApproveWithTransactionId}
+                disabled={!transactionId.trim()}
+              >
+                {transactionId.trim() ? `Approve with ID` : 'Enter ID First'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ToastContainer
         position="top-right"
