@@ -56,24 +56,22 @@ const BinaryUsersDashboard = () => {
     return Object.keys(dateData).map(userId => {
       const user = dateData[userId];
       
-      // Combine total bonus received with total bonus after tax
-      const combinedTotalBonusAfterTax = (user.totalBonusReceivedAfterTax || 0) + (user.totalBonusReceivedTillDate || 0);
-      
       return {
         name: user.name || 'Unknown',
         userId: userId,
-        totalTodayLeftBusiness: user.totalLeftBusiness || 0,
-        totalTodayRightBusiness: user.totalRightBusiness || 0,
-        totalPlayedAmount: user.totalPlayed || 0,
-        // Use totalForToday for played amount today
-        playedAmountToday: user.totalPlayed || 0,
+        totalLeftBusiness: user.totalLeftBusiness || 0,
+        totalRightBusiness: user.totalRightBusiness || 0,
+        finalLeftBusiness: user.finalLeftBusiness || 0,
+        finalRightBusiness: user.finalRightBusiness || 0,
+        leftCarryForward: user.leftCarryForward || 0,
+        rightCarryForward: user.rightCarryForward || 0,
+        totalPlayedAmount: user.totalPlayedAmount || 0,
         bonusReceived: user.bonusReceived || 0,
-        gstDeducted: user.gstDeducted || 0,
-        tdsDeducted: user.tdsDeducted || 0,
-        bonusAfterTax: user.bonusAfterTax || 0,
-        carryForwardYesterday: user.lastDayCarryForward || 0,
-        carryForwardNextDay: user.carryForwardForNextDay || 0,
-        totalBonusAfterTax: combinedTotalBonusAfterTax,
+        bonusStepMatched: user.bonusStepMatched || 0,
+        eligibleStep: user.eligibleStep || 0,
+        totalEligibleAmount: user.totalEligibleAmount || 0,
+        yesterdayEligibleAmount: user.yesterdayEligibleAmount || 0,
+        totalBonusReceivedTillDate: user.totalBonusReceivedTillDate || 0,
         referralId: user.referralId || 'None',
         leftChild: user.leftChild || 'None',
         rightChild: user.rightChild || 'None'
@@ -198,7 +196,7 @@ const BinaryUsersDashboard = () => {
           </div>
           <div className="card-body p-0">
             <div className="table-responsive" style={{ maxHeight: '70vh' }}>
-              <table className="table table-hover custom-table mb-0" style={{ minWidth: '1800px' }}>
+              <table className="table table-hover custom-table mb-0" style={{ minWidth: '2200px' }}>
                 <thead>
                   <tr className="table-header">
                     <th className="position-sticky bg-primary text-white" style={{ left: 0, zIndex: 2, minWidth: '160px' }}>
@@ -208,17 +206,19 @@ const BinaryUsersDashboard = () => {
                       User ID
                     </th>
                     <th className="bg-primary text-white" style={{ minWidth: '160px' }}>Referral ID</th>
-                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Total Today Left Business</th>
-                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Total Today Right Business</th>
-                    <th className="bg-primary text-white" style={{ minWidth: '220px', textAlign: 'right' }}>Total Played (played today + carryforward)</th>
-                    <th className="bg-primary text-white" style={{ minWidth: '130px', textAlign: 'right' }}>Played Today</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Total Left Business</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Total Right Business</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Final Left Business</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Final Right Business</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Left Carry Forward</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Right Carry Forward</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Total Played Amount</th>
                     <th className="bg-primary text-white" style={{ minWidth: '140px', textAlign: 'right' }}>Bonus Received</th>
-                    <th className="bg-primary text-white" style={{ minWidth: '130px', textAlign: 'right' }}>GST Deducted</th>
-                    <th className="bg-primary text-white" style={{ minWidth: '130px', textAlign: 'right' }}>TDS Deducted</th>
-                    <th className="bg-primary text-white" style={{ minWidth: '140px', textAlign: 'right' }}>Bonus After Tax</th>
-                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Last Day Carry Forward</th>
-                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Next Day Carry Forward</th>
-                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Total Bonus After Tax</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '160px', textAlign: 'right' }}>Bonus Step Matched</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '140px', textAlign: 'right' }}>Eligible Step</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '180px', textAlign: 'right' }}>Total Eligible Amount</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '200px', textAlign: 'right' }}>Yesterday Eligible Amount</th>
+                    <th className="bg-primary text-white" style={{ minWidth: '200px', textAlign: 'right' }}>Total Bonus Till Date</th>
                     <th className="bg-primary text-white" style={{ minWidth: '140px' }}>Left Child</th>
                     <th className="bg-primary text-white" style={{ minWidth: '140px' }}>Right Child</th>
                   </tr>
@@ -233,24 +233,26 @@ const BinaryUsersDashboard = () => {
                         {row.userId}
                       </td>
                       <td className="text-nowrap fw-medium">{row.referralId}</td>
-                      <td className="text-end fw-medium">{row.totalTodayLeftBusiness.toLocaleString()}</td>
-                      <td className="text-end fw-medium">{row.totalTodayRightBusiness.toLocaleString()}</td>
-                      <td className="text-end fw-medium">{row.totalPlayedAmount.toLocaleString()}</td>
-                      <td className="text-end fw-semibold highlight-cell">{row.playedAmountToday.toLocaleString()}</td>
+                      <td className="text-end fw-medium">{row.totalLeftBusiness.toLocaleString()}</td>
+                      <td className="text-end fw-medium">{row.totalRightBusiness.toLocaleString()}</td>
+                      <td className="text-end fw-medium">{row.finalLeftBusiness.toLocaleString()}</td>
+                      <td className="text-end fw-medium">{row.finalRightBusiness.toLocaleString()}</td>
+                      <td className="text-end fw-medium">{row.leftCarryForward.toLocaleString()}</td>
+                      <td className="text-end fw-medium">{row.rightCarryForward.toLocaleString()}</td>
+                      <td className="text-end fw-semibold highlight-cell">{row.totalPlayedAmount.toLocaleString()}</td>
                       <td className="text-end fw-medium">{row.bonusReceived.toLocaleString()}</td>
-                      <td className="text-end fw-medium">{row.gstDeducted.toLocaleString()}</td>
-                      <td className="text-end fw-medium">{row.tdsDeducted.toLocaleString()}</td>
-                      <td className="text-end fw-medium">{row.bonusAfterTax.toLocaleString()}</td>
-                      <td className="text-end fw-medium">{row.carryForwardYesterday.toLocaleString()}</td>
-                      <td className="text-end fw-medium">{row.carryForwardNextDay.toLocaleString()}</td>
-                      <td className="text-end fw-semibold success-cell">{row.totalBonusAfterTax.toLocaleString()}</td>
+                      <td className="text-end fw-medium">{row.bonusStepMatched.toLocaleString()}</td>
+                      <td className="text-end fw-medium">{row.eligibleStep.toLocaleString()}</td>
+                      <td className="text-end fw-medium">{row.totalEligibleAmount.toLocaleString()}</td>
+                      <td className="text-end fw-medium">{row.yesterdayEligibleAmount.toLocaleString()}</td>
+                      <td className="text-end fw-semibold success-cell">{row.totalBonusReceivedTillDate.toLocaleString()}</td>
                       <td className="fw-medium">{row.leftChild}</td>
                       <td className="fw-medium">{row.rightChild}</td>
                     </tr>
                   ))}
                   {tableData.length === 0 && (
                     <tr>
-                      <td colSpan="16" className="text-center py-5">
+                      <td colSpan="18" className="text-center py-5">
                         <div className="d-flex flex-column align-items-center">
                           <Search size={48} className="text-muted mb-3" />
                           <h4 className="mb-2">No results found</h4>
