@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import API_BASE_URL from './ApiConfig';
 import payBgImage from '../images/pay-bg.png';
-import upiQrCode from '../images/upi_bar.jpg';
+import upiQrCode from '../images/upi_bar2.jpg';
 
 const AddTokens = ({ onClose, onTokensUpdated }) => {
   const [loading, setLoading] = useState(false);

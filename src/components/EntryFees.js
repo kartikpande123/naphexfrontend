@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import API_BASE_URL from './ApiConfig';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import upiQrCode from '../images/upi_bar.jpg';
+import upiQrCode from '../images/upi_bar2.jpg';
 
 const EntryFees = ({ onContinue }) => {
   const [loading, setLoading] = useState(false);
