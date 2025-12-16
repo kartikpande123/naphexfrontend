@@ -24,10 +24,10 @@ const EntryFees = ({ onContinue }) => {
   const UPI_ID = "9019842426-2@ybl";
   
   // Calculate entry fee with 28% tax
-  const BASE_AMOUNT = 390.625; // Base amount before tax
+  const BASE_AMOUNT = 1171.875; // Base amount before tax (1500 / 1.28)
   const TAX_RATE = 0.28; // 28% tax
-  const TAX_AMOUNT = BASE_AMOUNT * TAX_RATE; // 109.375
-  const TOTAL_AMOUNT = 500; // Total amount including tax
+  const TAX_AMOUNT = BASE_AMOUNT * TAX_RATE; // 328.125
+  const TOTAL_AMOUNT = 1500; // Total amount including tax
 
   useEffect(() => {
     checkEntryFeeStatus();
@@ -335,7 +335,7 @@ const EntryFees = ({ onContinue }) => {
                 borderBottom: 'none'
               }}
             >
-              <h5 className="modal-title mb-0">🎮 Game Entry - ₹500</h5>
+              <h5 className="modal-title mb-0">🎮 Game Entry - ₹1500</h5>
               <button
                 type="button"
                 className="btn btn-outline-light btn-sm"
@@ -435,7 +435,7 @@ const EntryFees = ({ onContinue }) => {
                       border: '1px solid #c3e6cb'
                     }}
                   >
-                    🎁 <strong>Bonus:</strong> Unlock 200 tokens instantly upon completing the entry fee!
+                    🎁 <strong>Bonus:</strong> Unlock 1080 tokens instantly upon completing the entry fee!
                   </div>
 
                   {paymentStatus && (
@@ -465,7 +465,7 @@ const EntryFees = ({ onContinue }) => {
                         boxShadow: '0 4px 12px rgba(0,123,255,0.2)'
                       }}
                     >
-                      💳 Pay ₹500 Now
+                      💳 Pay ₹1500 Now
                     </button>
                   ) : (
                     <div className="mt-4">

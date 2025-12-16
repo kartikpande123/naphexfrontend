@@ -22,19 +22,27 @@ const FriendsEarnings = () => {
     const [requestedAmount, setRequestedAmount] = useState('');
     const [addingTokens, setAddingTokens] = useState(false);
     const [addTokensMessage, setAddTokensMessage] = useState('');
+    const [showBonusStepsModal, setShowBonusStepsModal] = useState(false);
+
+    // BONUS STEPS
+    const BONUS_STEPS = [
+        1000, 2500, 5000, 10000, 25000,
+        50000, 100000, 250000, 500000,
+        1000000, 2500000, 5000000, 10000000
+    ];
 
     // Enhanced Color Scheme
     const colors = {
-        primary: "#2563eb",       // Professional blue
-        secondary: "#7c3aed",     // Elegant purple
-        accent: "#06b6d4",        // Modern cyan
-        success: "#10b981",       // Fresh green
-        warning: "#f59e0b",       // Amber for warnings
-        lightBg: "#f8fafc",       // Light background
-        cardBg: "#ffffff",        // White for cards
-        text: "#1e293b",          // Dark slate for text
-        textLight: "#64748b",     // Lighter text
-        border: "#e2e8f0",        // Subtle borders
+        primary: "#2563eb",
+        secondary: "#7c3aed",
+        accent: "#06b6d4",
+        success: "#10b981",
+        warning: "#f59e0b",
+        lightBg: "#f8fafc",
+        cardBg: "#ffffff",
+        text: "#1e293b",
+        textLight: "#64748b",
+        border: "#e2e8f0",
         gradient: {
             primary: "linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)",
             secondary: "linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%)",
@@ -156,7 +164,6 @@ const FriendsEarnings = () => {
             return;
         }
 
-        // Validate amount format (allows 1 decimal place)
         if (!validateAmountFormat(requestedAmount)) {
             setAddTokensMessage('Only 1 decimal place allowed (e.g., 10.5)');
             return;
@@ -187,7 +194,6 @@ const FriendsEarnings = () => {
             if (response.data.success) {
                 setAddTokensMessage(`Success! ${response.data.data.tokensAdded} tokens added to game after 28% tax deduction`);
                 
-                // Update local user data
                 const updatedUserData = { 
                     ...userData,
                     binaryTokens: response.data.data.newBinaryTokens,
@@ -195,7 +201,6 @@ const FriendsEarnings = () => {
                 };
                 setUserData(updatedUserData);
                 
-                // Update localStorage
                 const storedData = JSON.parse(localStorage.getItem('userData'));
                 if (storedData) {
                     storedData.binaryTokens = response.data.data.newBinaryTokens;
@@ -221,16 +226,13 @@ const FriendsEarnings = () => {
     const handleAmountChange = (e) => {
         let value = e.target.value;
         
-        // Allow only numbers and one decimal point
         value = value.replace(/[^\d.]/g, '');
         
-        // Ensure only one decimal point
         const decimalCount = (value.match(/\./g) || []).length;
         if (decimalCount > 1) {
             value = value.substring(0, value.lastIndexOf('.'));
         }
         
-        // Limit to 1 decimal place
         if (value.includes('.')) {
             const parts = value.split('.');
             if (parts[1].length > 1) {
@@ -280,7 +282,6 @@ const FriendsEarnings = () => {
                     throw new Error('User ID not found');
                 }
 
-                // Fetch latest earnings data
                 const earningsResponse = await axios.get(`${API_BASE_URL}/latest`, {
                     params: { userId }
                 });
@@ -292,7 +293,6 @@ const FriendsEarnings = () => {
                     throw new Error(earningsResponse.data.message || 'Failed to fetch earnings data');
                 }
 
-                // Fetch bonus history data
                 const historyResponse = await axios.get(`${API_BASE_URL}/userDailyEarnings`, {
                     params: { userId }
                 });
@@ -332,7 +332,6 @@ const FriendsEarnings = () => {
         navigate("/withdraw")
     };
 
-    // Get capital first letter from name
     const getNameInitial = (name) => {
         if (!name) return 'U';
         return name.charAt(0).toUpperCase();
@@ -366,7 +365,6 @@ const FriendsEarnings = () => {
         
         const userInitial = getNameInitial(userData?.name);
 
-        // Calculate tax and tokens for preview
         const calculateTransferPreview = () => {
             if (!requestedAmount || isNaN(parseFloat(requestedAmount))) {
                 return null;
@@ -387,6 +385,84 @@ const FriendsEarnings = () => {
 
         return (
             <div className="container my-4" style={{ maxWidth: '1200px' }}>
+                {/* Bonus Steps Modal */}
+                {showBonusStepsModal && (
+                    <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                        <div className="modal-dialog modal-dialog-centered">
+                            <div className="modal-content shadow-lg" style={{ 
+                                borderRadius: '16px',
+                                border: 'none',
+                                overflow: 'hidden'
+                            }}>
+                                <div className="modal-header border-0 text-white py-4" style={{ 
+                                    background: colors.gradient.primary 
+                                }}>
+                                    <h5 className="modal-title fw-bold fs-5">
+                                        <i className="bi bi-ladder me-2"></i>
+                                        Bonus Steps
+                                    </h5>
+                                    <button type="button" className="btn-close btn-close-white" onClick={() => setShowBonusStepsModal(false)}></button>
+                                </div>
+                                <div className="modal-body p-4">
+                                    <div className="alert border-0 mb-4" style={{ 
+                                        backgroundColor: colors.lightBg,
+                                        borderRadius: '12px',
+                                        borderLeft: `4px solid ${colors.accent}`
+                                    }}>
+                                        <i className="bi bi-info-circle-fill me-2" style={{ color: colors.accent }}></i>
+                                        <strong>Note:</strong> Reach these steps to get bonus from binary friends
+                                    </div>
+                                    
+                                    <div className="row g-3">
+                                        {BONUS_STEPS.map((step, index) => (
+                                            <div key={index} className="col-6 col-md-4">
+                                                <div className="p-3 text-center shadow-sm" style={{
+                                                    backgroundColor: colors.lightBg,
+                                                    borderRadius: '12px',
+                                                    border: `2px solid ${colors.border}`,
+                                                    transition: 'all 0.3s ease'
+                                                }}
+                                                onMouseOver={(e) => {
+                                                    e.currentTarget.style.transform = 'translateY(-4px)';
+                                                    e.currentTarget.style.borderColor = colors.primary;
+                                                }}
+                                                onMouseOut={(e) => {
+                                                    e.currentTarget.style.transform = 'translateY(0)';
+                                                    e.currentTarget.style.borderColor = colors.border;
+                                                }}>
+                                                    <div className="badge mb-2" style={{
+                                                        backgroundColor: colors.primary,
+                                                        color: 'white',
+                                                        fontSize: '10px'
+                                                    }}>
+                                                        Step {index + 1}
+                                                    </div>
+                                                    <div className="fw-bold fs-5" style={{ color: colors.text }}>
+                                                        ₹{step.toLocaleString()}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                                <div className="modal-footer border-0 pt-0">
+                                    <button 
+                                        type="button" 
+                                        className="btn btn-lg px-4 py-2 fw-semibold text-white border-0" 
+                                        onClick={() => setShowBonusStepsModal(false)}
+                                        style={{
+                                            borderRadius: '12px',
+                                            background: colors.gradient.primary
+                                        }}
+                                    >
+                                        Close
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Transfer Tokens Modal */}
                 {showAddTokensModal && (
                     <div className="modal show d-block" tabIndex="-1" style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}>
@@ -508,10 +584,10 @@ const FriendsEarnings = () => {
                     </div>
                 )}
 
-                {/* Header */}
+                {/* Header with Bonus Steps Button */}
                 <div className="row mb-4">
                     <div className="col-12">
-                        <div className="text-center">
+                        <div className="text-center position-relative">
                             <div className="position-relative py-4 px-5 d-inline-block" style={{
                                 background: colors.gradient.primary,
                                 borderRadius: '20px',
@@ -533,6 +609,28 @@ const FriendsEarnings = () => {
                                         animation: 'float 3s ease-in-out infinite'
                                     }}></div>
                                 </div>
+                            </div>
+                            
+                            {/* Bonus Steps Button */}
+                            <div className="mt-3">
+                                <button 
+                                    onClick={() => setShowBonusStepsModal(true)} 
+                                    className="btn d-flex align-items-center justify-content-center px-4 py-3 border-0 shadow-sm mx-auto" 
+                                    style={{
+                                        background: colors.gradient.accent,
+                                        color: 'white',
+                                        borderRadius: '12px',
+                                        fontWeight: '600',
+                                        fontSize: '16px',
+                                        transition: 'all 0.3s ease',
+                                        minWidth: '180px'
+                                    }}
+                                    onMouseOver={(e) => e.target.style.transform = 'translateY(-2px)'}
+                                    onMouseOut={(e) => e.target.style.transform = 'translateY(0)'}
+                                >
+                                    <i className="bi bi-ladder me-2 fs-5"></i>
+                                    Bonus Steps
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -693,10 +791,8 @@ const FriendsEarnings = () => {
                                 </h5>
                             </div>
                             <div className="card-body p-4 p-md-5">
-                                {/* Tree Structure */}
                                 <div className="py-4">
                                     <div className="position-relative">
-                                        {/* Root Node */}
                                         <div className="d-flex justify-content-center mb-4">
                                             <div className="text-center">
                                                 <div className="rounded-circle d-flex justify-content-center align-items-center mx-auto shadow-lg position-relative" style={{
@@ -725,7 +821,6 @@ const FriendsEarnings = () => {
                                             </div>
                                         </div>
                                         
-                                        {/* Connecting Lines */}
                                         <div className="position-relative" style={{ height: '80px' }}>
                                             <div className="position-absolute" style={{
                                                 left: '50%',
@@ -758,9 +853,7 @@ const FriendsEarnings = () => {
                                             }}></div>
                                         </div>
                                         
-                                        {/* Child Nodes */}
                                         <div className="d-flex justify-content-around flex-wrap gap-4">
-                                            {/* Left Business */}
                                             <div className="text-center flex-fill" style={{ minWidth: '250px' }}>
                                                 <div className="rounded-circle d-flex justify-content-center align-items-center mb-3 mx-auto shadow position-relative" style={{
                                                     width: '120px',
@@ -794,7 +887,6 @@ const FriendsEarnings = () => {
                                                 </div>
                                             </div>
                                             
-                                            {/* Right Business */}
                                             <div className="text-center flex-fill" style={{ minWidth: '250px' }}>
                                                 <div className="rounded-circle d-flex justify-content-center align-items-center mb-3 mx-auto shadow position-relative" style={{
                                                     width: '120px',
@@ -831,7 +923,6 @@ const FriendsEarnings = () => {
                                     </div>
                                 </div>
                                 
-                                {/* Summary Info */}
                                 <div className="row mt-5 pt-4 border-top" style={{ borderColor: colors.border }}>
                                     <div className="col-md-6 mb-3 mb-md-0">
                                         <div className="d-flex flex-column flex-sm-row align-items-center justify-content-center justify-content-md-start gap-3 p-3" style={{
@@ -889,7 +980,6 @@ const FriendsEarnings = () => {
                                         <i className="bi bi-clock-history me-2"></i>
                                         Bonus History
                                     </h5>
-                                    {/* Date Search Input */}
                                     <div className="d-flex align-items-center">
                                         <div className="position-relative">
                                             <input
@@ -1031,10 +1121,8 @@ const FriendsEarnings = () => {
                     </div>
                 </div>
 
-                {/* Empty footer space */}
                 <div className="mt-5"></div>
 
-                {/* Add some custom styles for animations */}
                 <style jsx>{`
                     @keyframes float {
                         0%, 100% { transform: translateY(0px); }
