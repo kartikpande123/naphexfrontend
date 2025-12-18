@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, BarChart3 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';  // Add this import
 import "./OpenCloseResults.css"
 
 // Import your number image assets
@@ -16,6 +17,7 @@ import number9 from '../images/picture-9.png';
 import API_BASE_URL from './ApiConfig';
 
 const ResultsDashboard = () => {
+    const navigate = useNavigate();  // Add this hook
     const [results, setResults] = useState({
         date: null,
         todayResults: { session1: null, session2: null },
@@ -288,6 +290,11 @@ const ResultsDashboard = () => {
         setSearchDate(e.target.value);
     };
 
+    // Add handler for chart view button
+    const handleChartView = () => {
+        navigate('/chartresult');
+    };
+
     if (loading) {
         return (
             <div className="d-flex justify-content-center align-items-center vh-100">
@@ -304,9 +311,33 @@ const ResultsDashboard = () => {
 
     return (
         <div className="container-fluid py-4 px-2">
-            {/* Header - Mobile Responsive */}
-            <div className="header-container">
-                <h1 className="header-title">Results</h1>
+            {/* Header - Mobile Responsive with Chart Button */}
+            <div className="header-container" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '20px',
+                flexWrap: 'wrap',
+                gap: '10px'
+            }}>
+                <h1 className="header-title" style={{ margin: 0 }}>Results</h1>
+                <button
+                    onClick={handleChartView}
+                    className="btn btn-primary"
+                    style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        padding: '10px 20px',
+                        fontSize: '14px',
+                        fontWeight: '500',
+                        borderRadius: '8px',
+                        whiteSpace: 'nowrap'
+                    }}
+                >
+                    <BarChart3 size={20} />
+                    <span>Fruits Game Results Chart</span>
+                </button>
             </div>
 
             {/* Date Search - Mobile Responsive */}

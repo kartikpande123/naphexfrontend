@@ -59,6 +59,7 @@ import HowToPlayVideo from './components/HowToPlayVideo';
 import AdminDeleteUser from './components/AdminDeleteUser';
 import IngameTransaction from './components/IngameTransaction';
 import AdminIngameTransaction from './components/AdminIngameTransaction';
+import ChartResult from './components/ChartResult';
 
 // Protected Route Component for Users
 const ProtectedRoute = ({ children }) => {
@@ -104,6 +105,7 @@ function App() {
           <Route path='/adminlogin' element={<AdminLogin />} />
           <Route path='/howtoplay' element={<HowToPlayVideo />} />
           <Route path='/cancellationrefundpolicy' element={<CancellationRefundPolicy />} />
+          <Route path='/chartresult' element={<ChartResult />} />
 
 
           {/* ---------------------------------------------------------*/}
