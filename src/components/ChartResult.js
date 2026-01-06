@@ -50,39 +50,36 @@ const NaphexResults = () => {
     const openNum = data?.["open-number"];
     const closeNum = data?.["close-number"];
 
-    const PP =
-      openNum !== undefined && closeNum !== undefined
-        ? `${openNum}${closeNum}`
-        : "-";
-
     return (
       <div style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: '0px',
+        gap: '1px',
         padding: '2px',
         fontSize: 'clamp(6px, 1.5vw, 10px)',
         border: '1px solid #ccc',
         borderRadius: '3px',
         backgroundColor: '#fff'
       }}>
+        {/* Row 1 - Top row with pp label */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
-          gap: '1px',
+          gap: '2px',
           textAlign: 'center',
           alignItems: 'end',
-          padding: '2px 0'
+          padding: '1px 0'
         }}>
           <div>{openPana[0]}P</div>
-          <div style={{ fontSize: 'clamp(5px, 1.2vw, 8px)', fontWeight: 'bold', lineHeight: '1' }}>pp</div>
+          <div style={{ fontSize: 'clamp(5px, 1.2vw, 7px)', fontWeight: 'bold', lineHeight: '1' }}>pp</div>
           <div>{closePana[0]}P</div>
         </div>
 
+        {/* Row 2 - Middle row with numbers */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
-          gap: '1px',
+          gap: '2px',
           textAlign: 'center',
           fontWeight: 'bold',
           padding: '1px 0'
@@ -90,17 +87,20 @@ const NaphexResults = () => {
           <div>{openPana[1]}P</div>
           <div style={{ 
             backgroundColor: '#d5d5d5', 
-            padding: '2px 3px', 
+            padding: '2px 4px', 
             borderRadius: '2px',
-            fontWeight: 'bold'
-          }}>{PP}</div>
+            fontWeight: 'bold',
+            color: '#007bff',
+            letterSpacing: '0px'
+          }}>{openNum ?? '-'}{closeNum ?? '-'}</div>
           <div>{closePana[1]}P</div>
         </div>
 
+        {/* Row 3 - Bottom row */}
         <div style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr 1fr',
-          gap: '1px',
+          gap: '2px',
           textAlign: 'center',
           padding: '1px 0'
         }}>
