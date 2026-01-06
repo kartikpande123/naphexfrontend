@@ -23,11 +23,8 @@ const EntryFees = ({ onContinue }) => {
 
   const UPI_ID = "9019842426-2@ybl";
   
-  // Calculate entry fee with 28% tax
-  const BASE_AMOUNT = 1171.875; // Base amount before tax (1500 / 1.28)
-  const TAX_RATE = 0.28; // 28% tax
-  const TAX_AMOUNT = BASE_AMOUNT * TAX_RATE; // 328.125
-  const TOTAL_AMOUNT = 1500; // Total amount including tax
+  // Updated to ₹500 (tax paid by company)
+  const TOTAL_AMOUNT = 500;
 
   useEffect(() => {
     checkEntryFeeStatus();
@@ -335,7 +332,7 @@ const EntryFees = ({ onContinue }) => {
                 borderBottom: 'none'
               }}
             >
-              <h5 className="modal-title mb-0">🎮 Game Entry - ₹1500</h5>
+              <h5 className="modal-title mb-0">🎮 Game Entry - ₹500</h5>
               <button
                 type="button"
                 className="btn btn-outline-light btn-sm"
@@ -396,7 +393,7 @@ const EntryFees = ({ onContinue }) => {
                     Unlock your access to play and compete.
                   </p>
 
-                  {/* Price Breakdown */}
+                  {/* Price Display */}
                   <div
                     className="alert alert-info mt-3"
                     style={{
@@ -406,23 +403,12 @@ const EntryFees = ({ onContinue }) => {
                       border: '1px solid #b8daff'
                     }}
                   >
-                    <div className="text-start">
-                      <strong>💰 Entry Fee Breakdown:</strong>
-                      <div className="mt-2" style={{ fontSize: '0.85rem' }}>
-                        <div className="d-flex justify-content-between">
-                          <span>Base Amount:</span>
-                          <span>₹{BASE_AMOUNT.toFixed(2)}</span>
-                        </div>
-                        <div className="d-flex justify-content-between">
-                          <span>Tax (28%):</span>
-                          <span>₹{TAX_AMOUNT.toFixed(2)}</span>
-                        </div>
-                        <hr className="my-2" />
-                        <div className="d-flex justify-content-between fw-bold">
-                          <span>Total Amount:</span>
-                          <span>₹{TOTAL_AMOUNT}</span>
-                        </div>
+                    <div className="text-center">
+                      <strong>💰 Entry Fee:</strong>
+                      <div className="mt-2" style={{ fontSize: '1.5rem', fontWeight: 'bold', color: '#007bff' }}>
+                        ₹{TOTAL_AMOUNT}
                       </div>
+                      <small className="text-muted d-block mt-1">Tax paid by company</small>
                     </div>
                   </div>
 
@@ -435,7 +421,7 @@ const EntryFees = ({ onContinue }) => {
                       border: '1px solid #c3e6cb'
                     }}
                   >
-                    🎁 <strong>Bonus:</strong> Unlock 1080 tokens instantly upon completing the entry fee!
+                    🎁 <strong>Bonus:</strong> Unlock 500 tokens instantly upon completing the entry fee!
                   </div>
 
                   {paymentStatus && (
@@ -465,7 +451,7 @@ const EntryFees = ({ onContinue }) => {
                         boxShadow: '0 4px 12px rgba(0,123,255,0.2)'
                       }}
                     >
-                      💳 Pay ₹1500 Now
+                      💳 Pay ₹500 Now
                     </button>
                   ) : (
                     <div className="mt-4">

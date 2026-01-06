@@ -149,7 +149,7 @@ const TransactionHistory = () => {
                           (order.paymentDetails?.order_meta?.order_note === 'Entry Fee') ||
                           (order.order_note === 'Entry Fee');
         
-        const creditedAmount = isEntryFee ? 1080 : (order.creditedTokens || 0);
+        const creditedAmount = isEntryFee ? 500 : (order.creditedTokens || 0);
         runningBalance += creditedAmount;
         
         const transaction = {

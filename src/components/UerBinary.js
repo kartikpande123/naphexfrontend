@@ -15,16 +15,14 @@ const UserBinaryTree = () => {
   const [levelOptions, setLevelOptions] = useState([1, 2, 3, 4, 5, 6]);
   const [searchPaths, setSearchPaths] = useState([]);
   
-  // New states for search suggestions
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   
-  // New states for empty slots feature
   const [showEmptySlots, setShowEmptySlots] = useState(false);
   const [emptySlots, setEmptySlots] = useState([]);
-  const [emptySlotsSort, setEmptySlotsSort] = useState("level"); // "level" or "name"
+  const [emptySlotsSort, setEmptySlotsSort] = useState("level");
   
   const treeWrapperRef = useRef(null);
   const nodeRefs = useRef({});
@@ -34,10 +32,7 @@ const UserBinaryTree = () => {
   useEffect(() => {
     const fetchTreeData = async () => {
       try {
-        // Get user data from localStorage
         const userData = JSON.parse(localStorage.getItem('userData')) || {};
-        
-        // Extract the userId from the userData
         const userId = userData.userids?.myuserid;
         
         if (!userId) {
@@ -46,13 +41,11 @@ const UserBinaryTree = () => {
           return;
         }
         
-        // Make API call with the userId
         const response = await axios.get(
           `${API_BASE_URL}/user-downline?userId=${userId}`
         );
         setTreeData(response.data);
         
-        // Extract all users for search suggestions
         const users = [];
         const extractUsers = (node) => {
           if (node) {
@@ -69,7 +62,6 @@ const UserBinaryTree = () => {
         extractUsers(response.data);
         setAllUsers(users);
         
-        // Initialize default expanded nodes (first 2 levels)
         const defaultExpanded = {};
         const initExpandedNodes = (node, level = 0) => {
           if (node) {
@@ -84,14 +76,12 @@ const UserBinaryTree = () => {
         initExpandedNodes(response.data);
         setExpandedNodes(defaultExpanded);
         
-        // Calculate maximum possible levels for dropdown
         const maxPossibleLevel = calculateMaxTreeDepth(response.data);
         if (maxPossibleLevel > 0) {
           const newLevelOptions = Array.from({ length: maxPossibleLevel }, (_, i) => i + 1);
           setLevelOptions(newLevelOptions);
         }
 
-        // Calculate empty slots
         calculateEmptySlots(response.data);
       } catch (err) {
         console.error("Error fetching tree data:", err);
@@ -104,7 +94,6 @@ const UserBinaryTree = () => {
     fetchTreeData();
   }, []);
 
-  // Calculate the maximum depth of the tree
   const calculateMaxTreeDepth = (node, currentDepth = 1) => {
     if (!node || !node.children || node.children.length === 0) {
       return currentDepth;
@@ -115,16 +104,13 @@ const UserBinaryTree = () => {
     );
   };
 
-  // Calculate empty slots in the tree
   const calculateEmptySlots = (rootNode) => {
     const slots = [];
     
     const findEmptySlots = (node, level = 0) => {
       if (!node) return;
       
-      // Check if this node has empty slots
       if (!node.children || node.children.length === 0) {
-        // Both slots are empty
         slots.push({
           parentName: node.name,
           parentId: node.userId,
@@ -132,9 +118,8 @@ const UserBinaryTree = () => {
           availablePositions: ["left", "right"]
         });
       } else if (node.children.length === 1) {
-        // One slot is empty
         const existingChild = node.children[0];
-        const existingPosition = existingChild.position || "left"; // Default to left if no position
+        const existingPosition = existingChild.position || "left";
         const emptyPosition = existingPosition === "left" ? "right" : "left";
         
         slots.push({
@@ -145,7 +130,6 @@ const UserBinaryTree = () => {
         });
       }
       
-      // Recursively check children
       if (node.children) {
         node.children.forEach(child => findEmptySlots(child, level + 1));
       }
@@ -155,7 +139,6 @@ const UserBinaryTree = () => {
     setEmptySlots(slots);
   };
 
-  // Sort empty slots based on selected criteria
   const getSortedEmptySlots = () => {
     const sorted = [...emptySlots];
     
@@ -168,28 +151,21 @@ const UserBinaryTree = () => {
     return sorted;
   };
 
-  // Enhanced scroll to user function
   const scrollToUser = (userId, callback) => {
-    // Multiple attempts to ensure scrolling works
     const attemptScroll = (attempt = 0) => {
       const nodeElement = nodeRefs.current[userId];
       if (nodeElement && treeWrapperRef.current) {
         const wrapper = treeWrapperRef.current;
-        const nodeRect = nodeElement.getBoundingClientRect();
-        const wrapperRect = wrapper.getBoundingClientRect();
         
-        // Calculate the center position using offsetLeft and offsetTop
         const targetScrollLeft = nodeElement.offsetLeft - (wrapper.clientWidth / 2) + (nodeElement.offsetWidth / 2);
         const targetScrollTop = nodeElement.offsetTop - (wrapper.clientHeight / 2) + (nodeElement.offsetHeight / 2);
         
-        // Ensure we don't scroll beyond boundaries
         const maxScrollLeft = wrapper.scrollWidth - wrapper.clientWidth;
         const maxScrollTop = wrapper.scrollHeight - wrapper.clientHeight;
         
         const finalScrollLeft = Math.max(0, Math.min(targetScrollLeft, maxScrollLeft));
         const finalScrollTop = Math.max(0, Math.min(targetScrollTop, maxScrollTop));
         
-        // Use both smooth scrollTo and direct property setting for better compatibility
         try {
           wrapper.scrollTo({
             left: finalScrollLeft,
@@ -197,30 +173,24 @@ const UserBinaryTree = () => {
             behavior: 'smooth'
           });
         } catch (e) {
-          // Fallback for browsers that don't support smooth scrolling
           wrapper.scrollLeft = finalScrollLeft;
           wrapper.scrollTop = finalScrollTop;
         }
         
-        // Execute callback after scrolling
         if (callback) {
           setTimeout(callback, 800);
         }
       } else if (attempt < 5) {
-        // Retry if element not found yet (might still be expanding)
         setTimeout(() => attemptScroll(attempt + 1), 200);
       }
     };
     
-    // Use requestAnimationFrame and setTimeout for better timing
     requestAnimationFrame(() => {
       setTimeout(() => attemptScroll(), 100);
     });
   };
 
-  // Navigate to user (enhanced for empty slots)
   const navigateToUser = (userId) => {
-    // Find the user in the tree and create a path to it
     const findUserPath = (node, targetId, path = []) => {
       if (!node) return null;
       
@@ -243,7 +213,6 @@ const UserBinaryTree = () => {
     const userPath = findUserPath(treeData, userId);
     
     if (userPath) {
-      // Expand all nodes in the path
       setViewMode("custom");
       const newExpandedNodes = {...expandedNodes};
       userPath.forEach(pathNode => {
@@ -251,33 +220,27 @@ const UserBinaryTree = () => {
       });
       setExpandedNodes(newExpandedNodes);
       
-      // Set search results to highlight the user
       setSearchResults([userPath]);
       setSearchPaths([userPath.map(node => node.userId)]);
       
-      // Close the modal
       setShowEmptySlots(false);
       
-      // Enhanced scroll to user with multiple attempts
       setTimeout(() => {
         scrollToUser(userId);
       }, 300);
     }
   };
 
-  // Handle search input change with suggestions
   const handleSearchInputChange = (e) => {
     const value = e.target.value;
     setSearchTerm(value);
     setSelectedSuggestionIndex(-1);
     
-    // Trim whitespace and check if there's actual content
     if (value.trim().length > 0) {
-      // Filter users based on input (using trimmed value for search)
       const suggestions = allUsers.filter(user => 
         user.name.toLowerCase().includes(value.trim().toLowerCase()) ||
         user.userId.toLowerCase().includes(value.trim().toLowerCase())
-      ).slice(0, 10); // Limit to 10 suggestions
+      ).slice(0, 10);
       
       setSearchSuggestions(suggestions);
       setShowSuggestions(suggestions.length > 0);
@@ -287,7 +250,6 @@ const UserBinaryTree = () => {
     }
   };
 
-  // Handle keyboard navigation in suggestions
   const handleKeyDown = (e) => {
     if (!showSuggestions || searchSuggestions.length === 0) return;
     
@@ -317,19 +279,14 @@ const UserBinaryTree = () => {
     }
   };
 
-  // Select a suggestion
   const selectSuggestion = (user) => {
     setSearchTerm(user.name);
     setShowSuggestions(false);
     setSelectedSuggestionIndex(-1);
-    
-    // Immediately search for this user
     performSearch(user.name, user.userId);
   };
 
-  // Enhanced search function
   const performSearch = (searchValue, targetUserId = null) => {
-    // Trim the search value and check for empty content
     const trimmedSearchValue = searchValue.trim();
     
     if (!trimmedSearchValue) {
@@ -345,7 +302,6 @@ const UserBinaryTree = () => {
       
       const currentPath = [...path, node];
       
-      // Check if current node matches search (using trimmed value)
       const matchesSearch = targetUserId ? 
         node.userId === targetUserId :
         (node.name.toLowerCase().includes(trimmedSearchValue.toLowerCase()) || 
@@ -353,11 +309,8 @@ const UserBinaryTree = () => {
       
       if (matchesSearch) {
         results.push([...currentPath]);
-        
-        // Store all node IDs in the path for highlighting
         paths.push(currentPath.map(node => node.userId));
         
-        // Expand all nodes in the path
         setViewMode("custom");
         const newExpandedNodes = {...expandedNodes};
         currentPath.forEach(pathNode => {
@@ -366,7 +319,6 @@ const UserBinaryTree = () => {
         setExpandedNodes(newExpandedNodes);
       }
       
-      // Search in children
       if (node.children) {
         node.children.forEach(child => searchInTree(child, currentPath));
       }
@@ -376,7 +328,6 @@ const UserBinaryTree = () => {
     setSearchResults(results);
     setSearchPaths(paths);
     
-    // Enhanced scroll to first result with multiple attempts
     if (results.length > 0) {
       const firstResult = results[0];
       const highlightedNodeId = firstResult[firstResult.length - 1].userId;
@@ -387,13 +338,10 @@ const UserBinaryTree = () => {
     }
   };
 
-  // Handle search form submission
   const handleSearch = (e) => {
     e.preventDefault();
     
-    // Check if search term is empty or only whitespace
     if (!searchTerm.trim()) {
-      // Optionally show an alert or just return silently
       alert("Please enter a search term");
       return;
     }
@@ -402,7 +350,6 @@ const UserBinaryTree = () => {
     performSearch(searchTerm);
   };
 
-  // Click outside to close suggestions
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (suggestionsRef.current && !suggestionsRef.current.contains(event.target) &&
@@ -418,7 +365,6 @@ const UserBinaryTree = () => {
     };
   }, []);
 
-  // Expand/collapse based on current view mode and max level
   useEffect(() => {
     if (!treeData) return;
     
@@ -428,10 +374,8 @@ const UserBinaryTree = () => {
       if (!node) return;
       
       if (viewMode === "full") {
-        // Show all nodes in full view
         newExpandedNodes[node.userId] = true;
       } else if (viewMode === "default") {
-        // Show only up to max level in default view
         newExpandedNodes[node.userId] = level < maxLevel;
       }
       
@@ -442,7 +386,6 @@ const UserBinaryTree = () => {
     
     processNode(treeData);
     
-    // For custom view, keep existing expanded nodes
     if (viewMode === "custom") {
       newExpandedNodes = {...expandedNodes};
     }
@@ -450,7 +393,6 @@ const UserBinaryTree = () => {
     setExpandedNodes(newExpandedNodes);
   }, [viewMode, maxLevel, treeData]);
 
-  // Toggle node expansion
   const toggleNode = (userId) => {
     setViewMode("custom");
     setExpandedNodes(prev => ({
@@ -459,46 +401,34 @@ const UserBinaryTree = () => {
     }));
   };
 
-  // Show full tree
   const showFullTree = () => {
     setViewMode("full");
   };
 
-  // Show tree up to certain level
   const showUpToLevel = (level) => {
     setMaxLevel(level);
     setViewMode("default");
   };
 
-  // Collapse tree to level 1 (only root node visible)
   const collapseTree = () => {
     setMaxLevel(1);
     setViewMode("default");
   };
 
-  // Show empty slots modal
   const showEmptySlotsModal = () => {
     setShowEmptySlots(true);
   };
 
-  // Check if a node is in search results
   const isHighlighted = (node) => {
     return searchResults.some(path => 
       path.some(pathNode => pathNode.userId === node.userId)
     );
   };
 
-  // Check if node is in a search path (for highlighting the path to the result)
   const isInSearchPath = (nodeId) => {
     return searchPaths.some(path => path.includes(nodeId));
   };
 
-  // Format number with commas for better readability
-  const formatNumber = (num) => {
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-  };
-
-  // Generate empty placeholder node for missing children
   const renderEmptyNode = (position) => {
     const nodeClass = position === "left" ? "empty-node-placeholder left-side" : "empty-node-placeholder right-side";
     
@@ -508,16 +438,15 @@ const UserBinaryTree = () => {
   };
 
   const colors = {
-    primary: '#1e88e5',   // Primary blue
-    secondary: '#5e35b1', // Secondary purple
-    accent: '#00acc1',    // Accent teal
-    lightBg: '#e3f2fd',   // Light background
-    text: '#263238',      // Dark text
-    white: '#ffffff',     // White
-    note: '#f9a825'       // Warning/note color
+    primary: '#1e88e5',
+    secondary: '#5e35b1',
+    accent: '#00acc1',
+    lightBg: '#e3f2fd',
+    text: '#263238',
+    white: '#ffffff',
+    note: '#f9a825'
   };
 
-  // Render tree nodes - MODIFIED to ensure balanced layout
   const renderTree = (node, level = 0, parentNode = null, position = null) => {
     if (!node) return null;
     
@@ -526,8 +455,7 @@ const UserBinaryTree = () => {
     const isPathNode = isInSearchPath(node.userId);
     const hasChildren = node.children && node.children.length > 0;
     
-    // Determine node class
-    let nodeClass = "user-box";
+    let nodeClass = "user-box compact-node";
     if (level === 0) nodeClass += " root-node";
     else if (position === "left") nodeClass += " left-node";
     else if (position === "right") nodeClass += " right-node";
@@ -542,25 +470,12 @@ const UserBinaryTree = () => {
       >
         <div className={nodeClass}>
           <div className="user-details">
-            <span className="user-name">{node.name}</span>
-            <span className="user-id">ID: {node.userId}</span>
-            
-            {/* Additional user details */}
-            <div className="user-metrics">
-              <div className="metric">
-                <span className="metric-label">Played Yesterday:</span>
-                <span className="metric-value">₹{formatNumber(node.totalPlayedAmount || 0)}</span>
-              </div>
-              <div className="metric">
-                <span className="metric-label">Total Bonus Received:</span>
-                <span className="metric-value">₹{formatNumber(node.totalBonusReceivedTillDate || 0)}</span>
-              </div>
-            </div>
+            <span className="user-name compact-name">{node.name}</span>
           </div>
           
           {hasChildren && (
             <button 
-              className="toggle-button"
+              className="toggle-button compact-toggle"
               onClick={(e) => {
                 e.stopPropagation();
                 toggleNode(node.userId);
@@ -573,10 +488,8 @@ const UserBinaryTree = () => {
         
         {isExpanded && hasChildren && (
           <div className="node-children">
-            <div className="children-container">
-              {/* MODIFIED: Ensure left and right child positions are preserved */}
+            <div className="children-container compact-container">
               {node.children.length === 2 ? (
-                // Both children exist - normal rendering
                 node.children.map((child, index) => (
                   <div key={child.userId} className="child-wrapper">
                     {renderTree(
@@ -588,10 +501,7 @@ const UserBinaryTree = () => {
                   </div>
                 ))
               ) : node.children.length === 1 ? (
-                // Only one child exists - need to determine if it's left or right
-                // and render placeholder for the missing position
                 <>
-                  {/* If first (and only) child has position info */}
                   {node.children[0].position === "right" ? (
                     <>
                       <div className="child-wrapper">
@@ -680,7 +590,6 @@ const UserBinaryTree = () => {
                 </svg>
               </button>
               
-              {/* Search Suggestions Dropdown */}
               {showSuggestions && searchSuggestions.length > 0 && (
                 <div 
                   ref={suggestionsRef}
@@ -761,7 +670,6 @@ const UserBinaryTree = () => {
             Collapse Tree
           </button>
 
-          {/* New Empty Slots Button */}
           <button 
             className="control-button empty-slots-button"
             onClick={showEmptySlotsModal}
@@ -811,7 +719,6 @@ const UserBinaryTree = () => {
         </div>
       )}
 
-      {/* Empty Slots Modal */}
       {showEmptySlots && (
         <div className="modal-overlay" onClick={() => setShowEmptySlots(false)}>
           <div className="empty-slots-modal" onClick={(e) => e.stopPropagation()}>

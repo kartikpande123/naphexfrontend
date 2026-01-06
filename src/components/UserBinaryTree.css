@@ -1148,3 +1148,136 @@
     font-size: 11px;
   }
 }
+
+
+/* Compact Node Styles - Add these to your existing UserBinaryTree.css */
+
+/* Compact node sizing */
+.user-box.compact-node {
+  min-width: 90px;
+  max-width: 140px;
+  padding: 8px 12px;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+/* Compact name styling */
+.compact-name {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+  word-break: break-word;
+}
+
+/* Hide metrics in compact mode */
+.user-box.compact-node .user-metrics {
+  display: none;
+}
+
+.user-box.compact-node .user-id {
+  display: none;
+}
+
+/* Compact toggle button */
+.toggle-button.compact-toggle {
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  bottom: -8px;
+}
+
+/* Compact container spacing */
+.children-container.compact-container {
+  gap: 25px;
+}
+
+/* Compact child wrapper */
+.compact-container .child-wrapper {
+  min-width: 90px;
+}
+
+/* Compact empty node placeholder */
+.compact-container .empty-node-placeholder {
+  min-width: 90px;
+  width: 90px;
+  height: 40px;
+}
+
+.compact-container .empty-node-placeholder::before {
+  font-size: 9px;
+}
+
+/* Level-specific compact sizing */
+.tree-node[data-level="0"] .user-box.compact-node {
+  min-width: 100px;
+  padding: 10px 14px;
+}
+
+.tree-node[data-level="0"] .compact-name {
+  font-size: 12px;
+}
+
+.tree-node[data-level="3"] .user-box.compact-node,
+.tree-node[data-level="4"] .user-box.compact-node {
+  min-width: 80px;
+  padding: 7px 10px;
+}
+
+.tree-node[data-level="3"] .compact-name,
+.tree-node[data-level="4"] .compact-name {
+  font-size: 10px;
+}
+
+.tree-node[data-level="5"] .user-box.compact-node,
+.tree-node[data-level="6"] .user-box.compact-node {
+  min-width: 75px;
+  padding: 6px 8px;
+}
+
+.tree-node[data-level="5"] .compact-name,
+.tree-node[data-level="6"] .compact-name {
+  font-size: 9px;
+}
+
+/* Compact spacing for deeper levels */
+.tree-node[data-level="3"] .compact-container,
+.tree-node[data-level="4"] .compact-container {
+  gap: 20px;
+}
+
+.tree-node[data-level="5"] .compact-container,
+.tree-node[data-level="6"] .compact-container {
+  gap: 15px;
+}
+
+/* Responsive adjustments for compact mode */
+@media (max-width: 768px) {
+  .user-box.compact-node {
+    min-width: 80px;
+    padding: 7px 10px;
+  }
+  
+  .compact-name {
+    font-size: 10px;
+  }
+  
+  .children-container.compact-container {
+    gap: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-box.compact-node {
+    min-width: 70px;
+    padding: 6px 8px;
+  }
+  
+  .compact-name {
+    font-size: 9px;
+  }
+  
+  .children-container.compact-container {
+    gap: 15px;
+  }
+}
